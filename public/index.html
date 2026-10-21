@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arena dos Campeões</title>
+    <meta name="description" content="Arena dos Campeões: jogo de cartas online com campeões, bestas, armas e feitiços de vários universos e mitos.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="topo">
+        <a class="marca" href="#inicio">Arena <span>dos Campeões</span></a>
+        <nav aria-label="Principal">
+            <a href="#cartas">Cartas</a>
+            <a href="#guia">Guia</a>
+            <a href="#modos">Modos</a>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- INÍCIO -->
+        <section id="inicio" class="hero">
+            <p class="selo">Jogo de cartas online</p>
+            <h1>Arena dos <em>Campeões</em></h1>
+            <p class="lead">
+                Monte seu baralho com campeões, bestas, armas e feitiços de seis universos
+                e de mitos do mundo inteiro. Entre na arena e prove quem manda.
+            </p>
+            <div class="acoes">
+                <a class="btn primario" href="#modos">Jogar</a>
+                <a class="btn" href="#cartas">Ver as cartas</a>
+            </div>
+
+            <ul class="numeros">
+                <li><strong id="n-cartas">–</strong><span>cartas</span></li>
+                <li><strong id="n-universos">–</strong><span>universos</span></li>
+                <li><strong id="n-elementos">–</strong><span>elementos</span></li>
+            </ul>
+        </section>
+
+        <!-- CATÁLOGO -->
+        <section id="cartas" class="secao">
+            <div class="secao-topo">
+                <h2>Catálogo de cartas</h2>
+                <p class="suave" id="contador" aria-live="polite"></p>
+            </div>
+
+            <div class="filtros">
+                <input type="search" id="busca" placeholder="Buscar por nome ou habilidade" aria-label="Buscar carta">
+                <select id="f-classe" aria-label="Classe"><option value="">Todas as classes</option></select>
+                <select id="f-elemento" aria-label="Elemento"><option value="">Todos os elementos</option></select>
+                <select id="f-universo" aria-label="Universo"><option value="">Todos os universos</option></select>
+                <select id="f-origem" aria-label="Origem"><option value="">Todas as origens</option></select>
+                <button type="button" class="btn pequeno" id="limpar">Limpar</button>
+            </div>
+
+            <div id="grade" class="grade"></div>
+            <p id="vazio" class="vazio" hidden></p>
+        </section>
+
+        <!-- GUIA -->
+        <section id="guia" class="secao">
+            <div class="secao-topo">
+                <h2>Guia rápido</h2>
+                <p class="suave">Clique em qualquer item para filtrar as cartas.</p>
+            </div>
+
+            <div class="guia">
+                <div class="guia-bloco">
+                    <h3>Elementos</h3>
+                    <div class="chips" id="guia-elemento"></div>
+                </div>
+                <div class="guia-bloco">
+                    <h3>Classes</h3>
+                    <div class="chips" id="guia-classe"></div>
+                </div>
+                <div class="guia-bloco">
+                    <h3>Universos</h3>
+                    <div class="chips" id="guia-universo"></div>
+                </div>
+                <div class="guia-bloco">
+                    <h3>Origens</h3>
+                    <div class="chips" id="guia-origem"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODOS -->
+        <section id="modos" class="secao">
+            <div class="secao-topo">
+                <h2>Modos de jogo</h2>
+            </div>
+            <div class="modos">
+                <a class="modo" href="multiplayer.html">
+                    <span class="etiqueta">Lobby aberto</span>
+                    <h3>Multiplayer</h3>
+                    <p>Enfrente outro jogador em tempo real e mostre que seu baralho é o melhor.</p>
+                    <span class="ir">Criar ou entrar em uma sala &rarr;</span>
+                </a>
+                <a class="modo" href="coop.html">
+                    <span class="etiqueta">Lobby aberto</span>
+                    <h3>Co-op</h3>
+                    <p>Junte forças com amigos e enfrentem a arena lado a lado.</p>
+                    <span class="ir">Criar ou entrar em uma sala &rarr;</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="rodape">
+        <p>Arena dos Campeões · feito por criadores e amigos</p>
+    </footer>
+
+    <!-- acesso escondido ao painel dos criadores (canto inferior direito) -->
+    <a class="porta-admin" href="admin.html" aria-label="Área do admin" title="Admin">&#9881;</a>
+
+    <!-- DETALHE DA CARTA -->
+    <dialog id="detalhe" aria-label="Detalhes da carta">
+        <button type="button" class="fechar" id="fechar" aria-label="Fechar">&times;</button>
+        <div id="detalhe-corpo"></div>
+    </dialog>
+
+    <script src="config.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
