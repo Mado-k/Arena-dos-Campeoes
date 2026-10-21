@@ -1,0 +1,87 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background: #1e1e1e;
+    color: #fff;
+    color-scheme: dark; /* faz a lista dos selects abrir escura também */
+}
+
+form {
+    background: #2d2d2d;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+input,
+select,
+textarea {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    background: #3c3c3c;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+textarea {
+    resize: vertical;
+}
+
+input[type="file"] {
+    padding: 6px;
+    font-size: 13px;
+}
+
+button {
+    padding: 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+#mensagem {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.ok { color: #4CAF50; }
+.erro { color: #ff6b6b; }
+
+/* opções da lista dos selects sempre legíveis (fundo escuro, texto claro) */
+select option {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+.voltar {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #aaa;
+    font-size: 14px;
+    text-decoration: none;
+}
+.voltar:hover { color: #fff; }

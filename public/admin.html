@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Arena dos Campeões - Criador de Cartas</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <a class="voltar" href="index.html">&larr; Voltar ao jogo</a>
+    <h1>Arena dos Campeões - Admin</h1>
+    <h2>Cadastrar Nova Carta</h2>
+
+    <form id="form-carta">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" maxlength="60" required>
+
+        <label for="classe">Classe:</label>
+        <select id="classe" name="classe" required>
+            <option value="">— escolha —</option>
+        </select>
+
+        <label for="elemento">Elemento:</label>
+        <select id="elemento" name="elemento">
+            <option value="">— nenhum —</option>
+        </select>
+
+        <label for="universo">Universo:</label>
+        <select id="universo" name="universo">
+            <option value="">— nenhum —</option>
+        </select>
+
+        <label for="origem">Origem:</label>
+        <select id="origem" name="origem">
+            <option value="">— nenhuma —</option>
+        </select>
+
+        <label for="dano">Dano:</label>
+        <input type="number" id="dano" name="dano" min="0" placeholder="vazio se não tiver">
+
+        <label for="vida">Vida:</label>
+        <input type="number" id="vida" name="vida" min="0" placeholder="vazio se não tiver">
+
+        <label for="habilidade">Habilidade:</label>
+        <textarea id="habilidade" name="habilidade" rows="4"></textarea>
+
+        <label for="imagem">Imagem da carta:</label>
+        <input type="file" id="imagem" name="imagem" accept="image/png,image/jpeg,image/webp,image/gif">
+
+        <label for="senha">Senha de admin:</label>
+        <input type="password" id="senha" name="senha" required>
+
+        <button type="submit">Confirmar e Inserir</button>
+    </form>
+
+    <p id="mensagem"></p>
+
+    <script src="config.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

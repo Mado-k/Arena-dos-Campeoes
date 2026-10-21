@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Co-op · Arena dos Campeões</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-modo="coop">
+
+    <header class="topo">
+        <a class="marca" href="index.html">Arena <span>dos Campeões</span></a>
+        <nav aria-label="Principal">
+            <a href="index.html#cartas">Cartas</a>
+            <a href="index.html#modos">Modos</a>
+            <a href="multiplayer.html">Multiplayer</a>
+        </nav>
+    </header>
+
+    <main class="lobby">
+        <div class="lobby-cabeca">
+            <p class="selo">Modo de jogo</p>
+            <h1>Co-op</h1>
+            <p class="lead">Reúna seus amigos e enfrentem a arena lado a lado.</p>
+        </div>
+
+        <!-- ENTRADA -->
+        <section id="entrada" class="lobby-painel">
+            <div class="campo">
+                <label for="apelido">Seu apelido</label>
+                <input type="text" id="apelido" maxlength="20" placeholder="Como você quer aparecer" autocomplete="nickname">
+            </div>
+
+            <div class="lobby-opcoes">
+                <div class="lobby-opcao">
+                    <h2>Criar equipe</h2>
+                    <p>Você vira o anfitrião e recebe um código para chamar o time.</p>
+                    <button type="button" class="btn primario" id="criar">Criar sala</button>
+                </div>
+                <div class="lobby-opcao">
+                    <h2>Entrar com código</h2>
+                    <p>Seus amigos já criaram uma sala? Digite o código aqui.</p>
+                    <div class="linha">
+                        <input type="text" id="codigo" maxlength="5" placeholder="ABCDE" aria-label="Código da sala" autocomplete="off">
+                        <button type="button" class="btn" id="entrar">Entrar</button>
+                    </div>
+                </div>
+            </div>
+
+            <p id="status" class="status" aria-live="polite"></p>
+        </section>
+
+        <!-- SALA -->
+        <section id="sala" class="lobby-painel" hidden>
+            <div class="sala-topo">
+                <div>
+                    <span class="suave">Código da sala</span>
+                    <strong id="sala-codigo" class="codigo-sala"></strong>
+                </div>
+                <button type="button" class="btn pequeno" id="copiar">Copiar convite</button>
+            </div>
+
+            <ul id="jogadores" class="jogadores"></ul>
+            <p id="sala-aviso" class="suave" aria-live="polite"></p>
+
+            <div class="acoes sala-acoes">
+                <button type="button" class="btn primario" id="pronto">Estou pronto</button>
+                <button type="button" class="btn" id="sair">Sair da sala</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="rodape">
+        <p>Arena dos Campeões · feito por criadores e amigos</p>
+        <a href="index.html">Voltar ao início</a>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="lobby.js"></script>
+</body>
+</html>
