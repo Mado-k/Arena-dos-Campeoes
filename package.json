@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Mado-k/Arena-dos-Campeoes#readme",
   "dependencies": {
+    "@supabase/server": "^1.9.2",
     "express": "^5.3.0",
     "multer": "^2.4.0",
     "mysql2": "^3.24.6",
