@@ -2,8 +2,5 @@ node_modules/
 .env
 *.env
 uploads/
-.gitignore
-.gitignoremkdir
 .agents
 CNAME
-.json
