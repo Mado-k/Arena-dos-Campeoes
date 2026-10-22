@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Modo offline · Arena dos Campeões</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="offline.css">
+</head>
+<body class="offline">
+
+    <header class="topo">
+        <a class="marca" href="index.html">Arena <span>dos Campeões</span></a>
+        <nav aria-label="Principal">
+            <a href="index.html#cartas">Cartas</a>
+            <a href="multiplayer.html">Multiplayer</a>
+            <a href="coop.html">Co-op</a>
+        </nav>
+    </header>
+
+    <main>
+
+        <!-- CONFIGURAÇÃO DA PARTIDA -->
+        <section id="config" class="config">
+            <div class="lobby-cabeca">
+                <p class="selo">Mesmo computador · sem internet</p>
+                <h1>Modo offline</h1>
+                <p class="lead">Dois jogadores, um computador. Cada um esconde a mão na vez do outro.</p>
+            </div>
+
+            <div class="config-painel">
+                <div class="config-jogadores">
+                    <fieldset class="j-cfg">
+                        <legend>Jogador 1</legend>
+                        <label for="nome-0">Apelido</label>
+                        <input type="text" id="nome-0" maxlength="20" placeholder="Jogador 1" autocomplete="off">
+                        <label for="rep-0">Representante</label>
+                        <select id="rep-0"></select>
+                        <p id="rep-info-0" class="suave rep-info"></p>
+                    </fieldset>
+
+                    <fieldset class="j-cfg">
+                        <legend>Jogador 2</legend>
+                        <label for="nome-1">Apelido</label>
+                        <input type="text" id="nome-1" maxlength="20" placeholder="Jogador 2" autocomplete="off">
+                        <label for="rep-1">Representante</label>
+                        <select id="rep-1"></select>
+                        <p id="rep-info-1" class="suave rep-info"></p>
+                    </fieldset>
+                </div>
+
+                <div class="config-opcoes">
+                    <div>
+                        <label for="duracao">Duração</label>
+                        <select id="duracao">
+                            <option value="0.15">Rápida (15% da vida do representante)</option>
+                            <option value="0.3" selected>Normal (30%)</option>
+                            <option value="1">Épica (100%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="baralho">Cartas no baralho</label>
+                        <select id="baralho">
+                            <option value="20">20 cartas</option>
+                            <option value="30" selected>30 cartas</option>
+                            <option value="40">40 cartas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="comeca">Quem começa</label>
+                        <select id="comeca">
+                            <option value="sorteio" selected>Sorteio</option>
+                            <option value="0">Jogador 1</option>
+                            <option value="1">Jogador 2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p id="fonte" class="suave"></p>
+                <button type="button" class="btn primario" id="comecar">Começar partida</button>
+            </div>
+
+            <details class="regras">
+                <summary>Como jogar</summary>
+                <ul id="regras-lista"></ul>
+                <p class="suave">Para jogar sem internet de verdade, baixe a pasta do projeto e abra o arquivo <code>public/offline.html</code> direto no navegador.</p>
+            </details>
+        </section>
+
+        <!-- PARTIDA -->
+        <section id="jogo" class="jogo" hidden>
+            <div class="mesa">
+                <section id="lado-op" class="lado"></section>
+
+                <div class="barra">
+                    <div class="turno-info">
+                        <strong id="turno-texto"></strong>
+                        <span id="jogadas-texto" class="suave"></span>
+                    </div>
+                    <p id="instrucao" class="instrucao" aria-live="polite"></p>
+                    <div class="barra-botoes">
+                        <button type="button" class="btn pequeno" id="cancelar" hidden>Cancelar</button>
+                        <button type="button" class="btn primario" id="encerrar">Encerrar turno</button>
+                    </div>
+                </div>
+
+                <section id="lado-ativo" class="lado lado-ativo"></section>
+            </div>
+
+            <aside class="lateral">
+                <div id="painel-carta" class="painel"></div>
+
+                <details class="painel">
+                    <summary>Ajustes manuais da partida</summary>
+                    <p class="suave">Use para aplicar habilidades que o jogo não faz sozinho.</p>
+                    <div id="manual"></div>
+                </details>
+
+                <div class="painel">
+                    <h3>Registro</h3>
+                    <ol id="log" class="log"></ol>
+                </div>
+
+                <button type="button" class="btn pequeno" id="abandonar">Abandonar partida</button>
+            </aside>
+        </section>
+
+    </main>
+
+    <!-- TROCA DE JOGADOR: esconde a mão enquanto o computador troca de mãos -->
+    <div id="cortina" class="cortina" hidden>
+        <div class="cortina-caixa">
+            <p class="selo">Troca de jogador</p>
+            <h2 id="cortina-nome"></h2>
+            <p id="cortina-info" class="suave"></p>
+            <button type="button" class="btn primario" id="cortina-ok">Mostrar minha mão</button>
+        </div>
+    </div>
+
+    <!-- FIM DA PARTIDA -->
+    <div id="fim" class="cortina fim" hidden>
+        <div class="cortina-caixa">
+            <p class="selo">Fim da partida</p>
+            <h2 id="fim-texto"></h2>
+            <div class="acoes">
+                <button type="button" class="btn primario" id="fim-novo">Jogar de novo</button>
+                <button type="button" class="btn" id="fim-ver">Ver tabuleiro</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESCARTE -->
+    <dialog id="pilha" aria-label="Descarte">
+        <button type="button" class="fechar" id="pilha-fechar" aria-label="Fechar">&times;</button>
+        <div class="pilha-corpo">
+            <h3 id="pilha-titulo"></h3>
+            <ul id="pilha-lista"></ul>
+        </div>
+    </dialog>
+
+    <script src="config.js"></script>
+    <script src="cartas-offline.js"></script>
+    <script src="motor.js"></script>
+    <script src="offline.js"></script>
+</body>
+</html>
