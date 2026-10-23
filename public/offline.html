@@ -12,7 +12,7 @@
     <header class="topo">
         <a class="marca" href="index.html">Arena <span>dos Campeões</span></a>
         <nav aria-label="Principal">
-            <a href="index.html#cartas">Cartas</a>
+            <a href="index.html#como-jogar">Como jogar</a>
             <a href="multiplayer.html">Multiplayer</a>
             <a href="coop.html">Co-op</a>
         </nav>
@@ -25,7 +25,7 @@
             <div class="lobby-cabeca">
                 <p class="selo">Mesmo computador · sem internet</p>
                 <h1>Modo offline</h1>
-                <p class="lead">Dois jogadores, um computador. Cada um esconde a mão na vez do outro.</p>
+                <p class="lead">Dois jogadores, um computador. Vença três campeões do adversário!</p>
             </div>
 
             <div class="config-painel">
@@ -34,7 +34,7 @@
                         <legend>Jogador 1</legend>
                         <label for="nome-0">Apelido</label>
                         <input type="text" id="nome-0" maxlength="20" placeholder="Jogador 1" autocomplete="off">
-                        <label for="rep-0">Representante</label>
+                        <label for="rep-0">Representante (opcional)</label>
                         <select id="rep-0"></select>
                         <p id="rep-info-0" class="suave rep-info"></p>
                     </fieldset>
@@ -43,21 +43,13 @@
                         <legend>Jogador 2</legend>
                         <label for="nome-1">Apelido</label>
                         <input type="text" id="nome-1" maxlength="20" placeholder="Jogador 2" autocomplete="off">
-                        <label for="rep-1">Representante</label>
+                        <label for="rep-1">Representante (opcional)</label>
                         <select id="rep-1"></select>
                         <p id="rep-info-1" class="suave rep-info"></p>
                     </fieldset>
                 </div>
 
                 <div class="config-opcoes">
-                    <div>
-                        <label for="duracao">Duração</label>
-                        <select id="duracao">
-                            <option value="0.15">Rápida (15% da vida do representante)</option>
-                            <option value="0.3" selected>Normal (30%)</option>
-                            <option value="1">Épica (100%)</option>
-                        </select>
-                    </div>
                     <div>
                         <label for="baralho">Cartas no baralho</label>
                         <select id="baralho">
@@ -95,11 +87,11 @@
                 <div class="barra">
                     <div class="turno-info">
                         <strong id="turno-texto"></strong>
-                        <span id="jogadas-texto" class="suave"></span>
+                        <span id="acoes-texto" class="acoes-texto"></span>
                     </div>
                     <p id="instrucao" class="instrucao" aria-live="polite"></p>
                     <div class="barra-botoes">
-                        <button type="button" class="btn pequeno" id="cancelar" hidden>Cancelar</button>
+                        <button type="button" class="btn" id="comprar">Comprar carta</button>
                         <button type="button" class="btn primario" id="encerrar">Encerrar turno</button>
                     </div>
                 </div>
@@ -112,7 +104,7 @@
 
                 <details class="painel">
                     <summary>Ajustes manuais da partida</summary>
-                    <p class="suave">Use para aplicar habilidades que o jogo não faz sozinho.</p>
+                    <p class="suave">Use para aplicar habilidades que o jogo não faz sozinho. Não gastam ações.</p>
                     <div id="manual"></div>
                 </details>
 

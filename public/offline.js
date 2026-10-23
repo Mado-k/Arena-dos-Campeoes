@@ -11,7 +11,6 @@
     let fonte = 'embutidas';
     let estado = null;
     let selecao = null;     // uid da carta selecionada
-    let alvo = null;        // modo "escolha um alvo": { texto, cartaValida, jogadorValido, resolver }
     let cortina = false;    // tela de troca de jogador
     let fimMostrado = false;
     let aviso = { texto: '', erro: false };
@@ -26,7 +25,7 @@
     }
 
     function botao(texto, aoClicar, opcoes = {}) {
-        const b = el('button', opcoes.classe || 'btn pequeno', texto);
+        const b = el('button', opcoes.classe === undefined ? 'btn pequeno' : opcoes.classe, texto);
         b.type = 'button';
         if (opcoes.desativado) b.disabled = true;
         if (opcoes.dica) b.title = opcoes.dica;
@@ -36,6 +35,7 @@
 
     const idElemento = (s) => Motor.norm(s) || 'neutro';
     const ehRepresentante = (c) => Motor.norm(c.classe) === 'representante';
+    const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
     function imagemSrc(c) {
         if (!c.imagem) return null;
@@ -74,16 +74,16 @@
             if (!r.ok) throw new Error(`status ${r.status}`);
             const lista = await r.json();
             if (!Array.isArray(lista) || !lista.some((c) => !ehRepresentante(c))) throw new Error('banco vazio');
-            cartas = lista;
+            cartas = lista.map(Motor.normalizarCarta);
             fonte = 'servidor';
         } catch {
-            cartas = embutidas;
+            cartas = embutidas.map(Motor.normalizarCarta);
             fonte = 'embutidas';
         }
 
         representantes = cartas.filter(ehRepresentante);
         if (!representantes.length) {
-            representantes = embutidas.filter(ehRepresentante);
+            representantes = embutidas.map(Motor.normalizarCarta).filter(ehRepresentante);
             cartas = cartas.concat(representantes);
         }
 
@@ -96,25 +96,28 @@
     // ---------- configuração ----------
     function montarRegras() {
         const itens = [
-            'Objetivo: zerar a vida do oponente. A vida de cada jogador vem do representante escolhido, vezes a duração da partida.',
-            `Representante: cada criatura do universo dele ganha +${R.bonusRepresentante} de vida ao entrar em campo.`,
-            `Início: ${R.maoInicial} cartas na mão. Quem começa não compra no primeiro turno; depois, compra 1 carta por turno (máx. ${R.maxMao} na mão). Se o baralho acabar, o descarte é reembaralhado.`,
-            `Cada turno você pode jogar até ${R.jogadasPorTurno} cartas (invocar, apoiar, equipar ou lançar). Atacar e ajustes manuais não gastam jogadas.`,
-            `Campeões e bestas vão para o campo (máx. ${R.maxCampo}). Atacam uma vez por turno, a partir do turno seguinte ao da invocação.`,
-            'Ataque: causa dano na criatura alvo; se ela sobreviver, contra-ataca. Se o oponente não tiver criaturas, o ataque vai direto na vida dele.',
-            `Armas somam dano e itens com vida somam vida à criatura em que são equipados (máx. ${R.maxEquip} por criatura). Quando a criatura cai, eles vão para o descarte.`,
-            `Auxiliares ficam na zona de apoio (máx. ${R.maxApoio}). Feitiços são usados uma vez; se tiverem dano, atingem uma criatura ou o jogador.`,
-            'Cartas com ⚙ aplicam parte da habilidade sozinhas (dobro de dano, imunidades...). As demais habilidades são aplicadas por vocês, com os "Ajustes manuais".'
+            `Objetivo: vença ${R.campeoesParaVencer} campeões do adversário, usando suas cartas. Bestas derrotadas não contam.`,
+            `Início: cada jogador recebe ${R.maoInicial} cartas.`,
+            `Em cada turno você tem ${R.acoesPorTurno} ações. Cada uma pode ser: atacar, comprar uma carta, usar a habilidade de uma carta ou jogar uma carta.`,
+            `Em batalha só pode haver ${R.maxCampo} campeão ou besta por jogador, e ele não volta para a mão depois de jogado. Só pode haver ${R.maxApoio} auxiliares na batalha.`,
+            `Armas: só em campeões, e cada campeão carrega uma única arma. Itens: um por campeão, e até ${R.maxItensBesta} por besta.`,
+            'Toda carta tem ataque e defesa. Atacar causa dano na defesa da criatura do adversário; se ela sobreviver, contra-ataca. Sem defesa, a criatura é derrotada.',
+            'Feitiços com ataque atingem a criatura em batalha do adversário. "Usar habilidade" gasta uma ação, e o efeito é aplicado pelos jogadores com os "Ajustes manuais".',
+            'Cartas com ⚙ aplicam parte da habilidade sozinhas (dobro de dano, imunidades...).',
+            `Representante (opcional): dá +${R.bonusRepresentante} de defesa às criaturas do universo dele.`
         ];
         $('regras-lista').replaceChildren(...itens.map((t) => el('li', null, t)));
     }
 
     function infoRepresentante(i) {
-        const rep = representantes[Number($(`rep-${i}`).value)];
-        if (!rep) return;
+        const valor = $(`rep-${i}`).value;
+        const rep = valor === '' ? null : representantes[Number(valor)];
+        if (!rep) {
+            $(`rep-info-${i}`).textContent = 'Sem representante: nenhuma criatura recebe bônus.';
+            return;
+        }
         const partes = [];
         if (rep.universo) partes.push(`Universo: ${rep.universo}`);
-        if (rep.vida) partes.push(`Vida base: ${rep.vida}`);
         const habilidade = rep.habilidade ? rep.habilidade.charAt(0).toUpperCase() + rep.habilidade.slice(1) : '';
         $(`rep-info-${i}`).textContent = [partes.join(' · '), habilidade].filter(Boolean).join(' — ');
     }
@@ -123,8 +126,9 @@
         for (const i of [0, 1]) {
             const sel = $(`rep-${i}`);
             sel.replaceChildren();
+            sel.add(new Option('Nenhum', ''));
             representantes.forEach((r, k) => sel.add(new Option(`${r.nome}${r.universo ? ` (${r.universo})` : ''}`, String(k))));
-            sel.value = String(Math.min(i, representantes.length - 1));
+            sel.value = '';
             sel.onchange = () => infoRepresentante(i);
             infoRepresentante(i);
         }
@@ -134,7 +138,6 @@
     function voltarParaConfig() {
         estado = null;
         selecao = null;
-        alvo = null;
         cortina = false;
         $('cortina').hidden = true;
         $('fim').hidden = true;
@@ -146,19 +149,15 @@
     $('comecar').addEventListener('click', () => {
         const nomes = [0, 1].map((i) => ($(`nome-${i}`).value.trim() || `Jogador ${i + 1}`).slice(0, 20));
         if (nomes[0].toLowerCase() === nomes[1].toLowerCase()) nomes[1] += ' (2)';
-        const reps = [0, 1].map((i) => representantes[Number($(`rep-${i}`).value)]);
+        const reps = [0, 1].map((i) => {
+            const v = $(`rep-${i}`).value;
+            return v === '' ? null : representantes[Number(v)];
+        });
         const comeca = $('comeca').value === 'sorteio' ? undefined : Number($('comeca').value);
 
-        estado = Motor.novoJogo({
-            nomes,
-            reps,
-            fatorVida: Number($('duracao').value),
-            tamanhoBaralho: Number($('baralho').value),
-            comeca
-        }, cartas);
+        estado = Motor.novoJogo({ nomes, reps, tamanhoBaralho: Number($('baralho').value), comeca }, cartas);
 
         selecao = null;
-        alvo = null;
         fimMostrado = false;
         setAviso('');
         $('config').hidden = true;
@@ -189,19 +188,13 @@
         if (!estado || cortina || estado.vencedor !== null) return;
         Motor.encerrarTurno(estado);
         selecao = null;
-        alvo = null;
         setAviso('');
         abrirCortina();
     });
 
-    $('cancelar').addEventListener('click', () => {
-        alvo = null;
-        setAviso('');
-        render();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && alvo) { alvo = null; render(); }
+    $('comprar').addEventListener('click', () => {
+        if (!estado || cortina) return;
+        rodar(Motor.comprarAcao(estado));
     });
 
     $('abandonar').addEventListener('click', () => {
@@ -210,88 +203,59 @@
 
     // ---------- interação ----------
     function rodar(res) {
-        if (res.erro) {
-            setAviso(res.erro, true);
-        } else {
-            setAviso('');
-            alvo = null;
-        }
+        if (res.erro) setAviso(res.erro, true);
+        else setAviso('');
         render();
         return res;
     }
 
-    function iniciarAlvo(cfg) {
-        alvo = cfg;
-        setAviso('');
-        render();
-    }
-
-    function aoClicarCarta(inst, zona, dono) {
+    function aoClicarCarta(inst) {
         if (cortina) return;
-        if (alvo && alvo.cartaValida({ zona, dono, inst })) {
-            rodar(alvo.resolver({ tipo: 'criatura', uid: inst.uid }));
-            return;
-        }
         selecao = inst.uid;
         render();
     }
 
-    function aoClicarJogador(indice) {
-        if (cortina || !alvo || !alvo.jogadorValido(indice)) return;
-        rodar(alvo.resolver({ tipo: 'jogador' }));
-    }
-
     // ---------- desenho ----------
-    function elementoStats(inst) {
+    function elementoStats(inst, emJogo) {
         const b = inst.base;
         const caixa = el('div', 'c-stats');
         const cl = Motor.classeDe(inst);
-        if (Motor.ehCriatura(inst)) {
-            caixa.append(el('span', 'd', `⚔ ${Motor.danoTotal(inst, null)}`), el('span', 'v', `♥ ${inst.vida}`));
-        } else {
-            const mais = cl === 'arma' || cl === 'item' ? '+' : '';
-            if (Number(b.dano)) caixa.append(el('span', 'd', `⚔ ${mais}${b.dano}`));
-            if (Number(b.vida)) caixa.append(el('span', 'v', `♥ ${mais}${b.vida}`));
-        }
+        const mais = cl === 'arma' || cl === 'item' ? '+' : '';
+        const atq = emJogo && Motor.ehCriatura(inst) ? Motor.ataqueTotal(inst, null) : b.ataque;
+        const def = emJogo ? inst.defesa : b.defesa;
+        caixa.append(el('span', 'd', `ATQ ${mais}${atq}`), el('span', 'v', `DEF ${mais}${def}`));
         return caixa;
     }
 
-    function miniCarta(inst, zona, dono) {
+    function miniCarta(inst, zona) {
         const b = inst.base;
         const bt = el('button', 'c');
         bt.type = 'button';
         bt.dataset.elemento = idElemento(b.elemento);
         bt.title = b.habilidade ? `${b.nome}: ${b.habilidade}` : b.nome;
         if (selecao === inst.uid) bt.classList.add('selecionada');
-        if (alvo && alvo.cartaValida({ zona, dono, inst })) bt.classList.add('alvo-valido');
 
         const topo = el('div', 'c-topo');
         topo.append(el('span', 'classe', b.classe), el('span', null, b.codigo || `#${b.numero}`));
-        bt.append(topo, criarArte(b), el('p', 'c-nome', b.nome), elementoStats(inst));
+        bt.append(topo, criarArte(b), el('p', 'c-nome', b.nome), elementoStats(inst, zona === 'campo'));
 
         if (inst.equip.length) bt.append(el('p', 'c-equip', `+ ${inst.equip.map((e) => e.base.nome).join(', ')}`));
 
-        if (zona === 'campo' && dono === estado.turno && !cortina) {
-            const dorme = inst.invocadoEm >= estado.numTurno;
-            const texto = dorme ? 'Recém-invocada' : inst.atacou ? 'Já atacou' : 'Pronta';
-            bt.append(el('p', 'c-estado' + (texto === 'Pronta' ? ' pronta' : ''), texto));
-            if (dorme || inst.atacou) bt.classList.add('cansada');
-        }
         if (Motor.temEfeito(b.codigo)) {
             const auto = el('span', 'c-auto', '⚙');
             auto.title = 'Parte da habilidade é aplicada automaticamente';
             bt.append(auto);
         }
 
-        bt.addEventListener('click', () => aoClicarCarta(inst, zona, dono));
+        bt.addEventListener('click', () => aoClicarCarta(inst));
         return bt;
     }
 
-    function fileira(titulo, lista, zona, dono, max, classe) {
+    function fileira(titulo, lista, zona, max, classe) {
         const caixa = el('div', `fileira-wrap ${classe || ''}`);
         caixa.append(el('h4', null, `${titulo} (${lista.length}/${max})`));
         const linha = el('div', 'fileira');
-        lista.forEach((inst) => linha.append(miniCarta(inst, zona, dono)));
+        lista.forEach((inst) => linha.append(miniCarta(inst, zona)));
         for (let i = lista.length; i < max; i++) linha.append(el('div', 'slot-vazio', 'vazio'));
         caixa.append(linha);
         return caixa;
@@ -303,27 +267,20 @@
         raiz.replaceChildren();
 
         const cab = el('div', 'cab');
-        if (alvo && alvo.jogadorValido(indice)) {
-            cab.classList.add('alvo-valido');
-            cab.tabIndex = 0;
-            cab.title = 'Clique para escolher este jogador como alvo';
-            cab.addEventListener('click', () => aoClicarJogador(indice));
-            cab.addEventListener('keydown', (e) => { if (e.key === 'Enter') aoClicarJogador(indice); });
-        }
-
         const quem = el('div', 'quem');
         quem.append(el('strong', null, j.nome));
-        const rep = el('span', 'rep', `· ${j.rep.nome}`);
-        if (j.rep.habilidade) rep.title = j.rep.habilidade;
-        quem.append(rep);
+        if (j.rep) {
+            const rep = el('span', 'rep', `· ${j.rep.nome}`);
+            if (j.rep.habilidade) rep.title = j.rep.habilidade;
+            quem.append(rep);
+        }
         if (ativo) quem.append(el('span', 'selo-vez', 'sua vez'));
 
-        const vida = el('div', 'vida');
-        const barra = el('div', 'barra-vida');
-        const preenchida = document.createElement('i');
-        preenchida.style.width = `${Math.max(0, Math.min(100, (j.vida / j.vidaMax) * 100))}%`;
-        barra.append(preenchida);
-        vida.append(barra, el('span', null, `${Math.max(0, j.vida)}/${j.vidaMax}`));
+        const derrotados = el('div', 'derrotados');
+        derrotados.title = `Campeões de ${j.nome} já derrotados. Com ${R.campeoesParaVencer}, ${j.nome} perde.`;
+        const pips = el('div', 'pips');
+        for (let i = 0; i < R.campeoesParaVencer; i++) pips.append(el('span', 'pip' + (i < j.derrotados ? ' cheio' : '')));
+        derrotados.append(el('span', null, 'Campeões derrotados'), pips, el('strong', null, `${j.derrotados}/${R.campeoesParaVencer}`));
 
         const pilhas = el('div', 'pilhas');
         pilhas.append(
@@ -331,22 +288,22 @@
             el('span', null, `Baralho ${j.baralho.length}`),
             botao(`Descarte ${j.descarte.length}`, () => abrirPilha(indice), { classe: '' })
         );
-        cab.append(quem, vida, pilhas);
+        cab.append(quem, derrotados, pilhas);
         raiz.append(cab);
 
-        raiz.append(fileira('Campo', j.campo, 'campo', indice, R.maxCampo));
-        raiz.append(fileira('Apoio', j.apoio, 'apoio', indice, R.maxApoio, 'apoio'));
+        raiz.append(fileira('Em batalha', j.campo, 'campo', R.maxCampo));
+        raiz.append(fileira('Apoio', j.apoio, 'apoio', R.maxApoio, 'apoio'));
 
         if (ativo) {
             const mao = el('div', 'fileira-wrap');
-            mao.append(el('h4', null, `Mão (${j.mao.length}/${R.maxMao})`));
+            mao.append(el('h4', null, `Mão (${j.mao.length})`));
             if (cortina) {
                 mao.append(el('p', 'mao-escondida', 'Mão escondida.'));
             } else if (!j.mao.length) {
-                mao.append(el('p', 'mao-escondida', 'Sua mão está vazia.'));
+                mao.append(el('p', 'mao-escondida', 'Sua mão está vazia. Use uma ação para comprar.'));
             } else {
                 const linha = el('div', 'fileira');
-                j.mao.forEach((inst) => linha.append(miniCarta(inst, 'mao', indice)));
+                j.mao.forEach((inst) => linha.append(miniCarta(inst, 'mao')));
                 mao.append(linha);
             }
             raiz.append(mao);
@@ -357,60 +314,30 @@
     function acoesDaMao(inst) {
         const acoes = el('div', 'acoes-painel');
         const cl = Motor.classeDe(inst);
-        const semJogada = estado.jogadas <= 0;
-        const dica = semJogada ? 'Você não tem mais jogadas neste turno.' : '';
-        const opt = { desativado: semJogada, dica };
-        const turno = estado.turno;
+        const sem = estado.acoes <= 0;
+        const opt = { desativado: sem, dica: sem ? 'Você não tem mais ações neste turno.' : '' };
 
         if (Motor.ehCriatura(inst)) {
-            acoes.append(botao('Invocar', () => rodar(Motor.invocar(estado, inst.uid)), opt));
+            acoes.append(botao('Colocar em batalha', () => rodar(Motor.invocar(estado, inst.uid)), opt));
         } else if (cl === 'auxiliar') {
             acoes.append(botao('Colocar em apoio', () => rodar(Motor.colocarApoio(estado, inst.uid)), opt));
         } else if (cl === 'arma' || cl === 'item') {
-            acoes.append(botao('Equipar em…', () => iniciarAlvo({
-                texto: `Escolha uma criatura sua para equipar ${inst.base.nome}.`,
-                cartaValida: (l) => l.dono === turno && l.zona === 'campo',
-                jogadorValido: () => false,
-                resolver: (a) => Motor.equipar(estado, inst.uid, a.uid)
-            }), opt));
+            acoes.append(botao('Equipar na criatura em batalha', () => rodar(Motor.equipar(estado, inst.uid)), opt));
         } else if (cl === 'feitico') {
-            if (Number(inst.base.dano) > 0) {
-                acoes.append(botao('Lançar em…', () => iniciarAlvo({
-                    texto: `Escolha o alvo de ${inst.base.nome}: uma criatura do oponente ou o próprio jogador.`,
-                    cartaValida: (l) => l.dono !== turno && l.zona === 'campo',
-                    jogadorValido: (i) => i !== turno,
-                    resolver: (a) => Motor.lancarFeitico(estado, inst.uid, a)
-                }), opt));
-            } else {
-                acoes.append(botao('Lançar', () => rodar(Motor.lancarFeitico(estado, inst.uid, null)), opt));
-            }
+            acoes.append(botao('Lançar', () => rodar(Motor.lancarFeitico(estado, inst.uid)), opt));
         }
-        acoes.append(botao('Descartar', () => rodar(Motor.descartarDaMao(estado, inst.uid))));
+        acoes.append(botao('Descartar', () => rodar(Motor.descartarDaMao(estado, inst.uid)), { dica: 'Ajuste manual: não gasta ação.' }));
+        if (sem) acoes.append(el('p', 'nota', 'Você não tem mais ações neste turno.'));
         return acoes;
     }
 
-    function acoesDoCampo(inst) {
+    function acoesEmJogo(inst, zona) {
         const acoes = el('div', 'acoes-painel');
-        const turno = estado.turno;
-        const oponente = estado.jogadores[1 - turno];
-        const dorme = inst.invocadoEm >= estado.numTurno;
-
-        let motivo = '';
-        if (inst.atacou) motivo = 'Já atacou neste turno.';
-        else if (dorme) motivo = 'Acabou de ser invocada: ataca no próximo turno.';
-        const opt = { desativado: Boolean(motivo), dica: motivo };
-
-        if (!oponente.campo.length) {
-            acoes.append(botao('Atacar o jogador', () => rodar(Motor.atacar(estado, inst.uid, { tipo: 'jogador' })), opt));
-        } else {
-            acoes.append(botao('Atacar…', () => iniciarAlvo({
-                texto: `Escolha uma criatura do oponente para ${inst.base.nome} atacar.`,
-                cartaValida: (l) => l.dono !== turno && l.zona === 'campo',
-                jogadorValido: () => false,
-                resolver: (a) => Motor.atacar(estado, inst.uid, a)
-            }), opt));
-        }
-        if (motivo) acoes.append(el('p', 'nota', motivo));
+        const sem = estado.acoes <= 0;
+        const opt = { desativado: sem, dica: sem ? 'Você não tem mais ações neste turno.' : '' };
+        if (zona === 'campo') acoes.append(botao('Atacar', () => rodar(Motor.atacar(estado)), opt));
+        if (inst.base.habilidade) acoes.append(botao('Usar habilidade', () => rodar(Motor.usarHabilidade(estado, inst.uid)), opt));
+        if (sem) acoes.append(el('p', 'nota', 'Você não tem mais ações neste turno.'));
         return acoes;
     }
 
@@ -422,12 +349,11 @@
 
         const acoes = el('div', 'acoes-painel');
         acoes.append(
-            botao('Vida −1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'vida', -1))),
-            botao('Vida +1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'vida', 1))),
-            botao('Dano −1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'dano', -1))),
-            botao('Dano +1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'dano', 1))),
-            botao('Enviar ao descarte', () => rodar(Motor.descartarCampo(estado, inst.uid))),
-            botao('Voltar à mão', () => rodar(Motor.devolverMao(estado, inst.uid)))
+            botao('Ataque −1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'ataque', -1))),
+            botao('Ataque +1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'ataque', 1))),
+            botao('Defesa −1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'defesa', -1))),
+            botao('Defesa +1', () => rodar(Motor.ajustarCarta(estado, inst.uid, 'defesa', 1))),
+            botao('Enviar ao descarte', () => rodar(Motor.descartarCampo(estado, inst.uid)))
         );
         det.append(acoes);
         return det;
@@ -452,20 +378,20 @@
 
         const chips = el('div', 'chips');
         [b.classe, b.elemento, b.universo, b.origem].filter(Boolean).forEach((v) => chips.append(el('span', 'chip', v)));
-        raiz.append(chips, elementoStats(inst));
+        raiz.append(chips, elementoStats(inst, zona === 'campo' || zona === 'apoio'));
 
-        if (Motor.ehCriatura(inst)) raiz.append(el('p', 'suave', `Vida máxima: ${inst.vidaMax}`));
+        if (zona === 'campo') raiz.append(el('p', 'suave', `Defesa máxima: ${inst.defesaMax}`));
         if (inst.equip.length) raiz.append(el('p', 'suave', `Equipado: ${inst.equip.map((e) => e.base.nome).join(', ')}`));
         if (b.habilidade) {
             raiz.append(el('p', 'titulo-hab', 'Habilidade'), el('p', 'habilidade', b.habilidade));
             raiz.append(el('p', 'nota', Motor.temEfeito(b.codigo)
                 ? '⚙ Parte desta habilidade é aplicada automaticamente. O resto, aplique pelos ajustes.'
-                : 'Habilidade manual: aplique usando os ajustes.'));
+                : 'Habilidade manual: use "Usar habilidade" e aplique o efeito pelos ajustes.'));
         }
 
         if (estado.vencedor === null && dono === estado.turno) {
             if (zona === 'mao') raiz.append(acoesDaMao(inst));
-            if (zona === 'campo') raiz.append(acoesDoCampo(inst));
+            if (zona === 'campo' || zona === 'apoio') raiz.append(acoesEmJogo(inst, zona));
         }
         if (estado.vencedor === null && (zona === 'campo' || zona === 'apoio')) raiz.append(ajustesDaCarta(inst));
     }
@@ -475,11 +401,12 @@
         raiz.replaceChildren();
         estado.jogadores.forEach((j, i) => {
             const linha = el('div', 'manual-linha');
-            linha.append(el('span', null, `Vida de ${j.nome}: ${Math.max(0, j.vida)}`));
-            [-5, -1, 1, 5].forEach((d) => linha.append(
-                botao(d > 0 ? `+${d}` : `−${Math.abs(d)}`, () => rodar(Motor.ajustarJogador(estado, i, d)))
-            ));
-            linha.append(botao('Comprar carta', () => rodar(Motor.comprarManual(estado, i))));
+            linha.append(el('span', null, `Campeões derrotados de ${j.nome}: ${j.derrotados}/${R.campeoesParaVencer}`));
+            linha.append(
+                botao('−1', () => rodar(Motor.ajustarDerrotados(estado, i, -1))),
+                botao('+1', () => rodar(Motor.ajustarDerrotados(estado, i, 1))),
+                botao('Comprar carta', () => rodar(Motor.comprarManual(estado, i)))
+            );
             raiz.append(linha);
         });
     }
@@ -509,7 +436,9 @@
     function verFim() {
         if (!estado || estado.vencedor === null || fimMostrado) return;
         fimMostrado = true;
-        $('fim-texto').textContent = estado.vencedor === -1 ? 'Empate!' : `${estado.jogadores[estado.vencedor].nome} venceu!`;
+        $('fim-texto').textContent = estado.vencedor === -1
+            ? 'Empate!'
+            : `${estado.jogadores[estado.vencedor].nome} venceu!`;
         $('fim').hidden = false;
     }
     $('fim-novo').addEventListener('click', voltarParaConfig);
@@ -521,23 +450,26 @@
         renderLado($('lado-ativo'), estado.turno);
 
         $('turno-texto').textContent = `Turno ${estado.numTurno} · vez de ${estado.jogadores[estado.turno].nome}`;
-        $('jogadas-texto').textContent = `Jogadas restantes: ${estado.jogadas}`;
+        const acoes = $('acoes-texto');
+        acoes.replaceChildren(el('span', null, 'Ações:'));
+        for (let i = 0; i < R.acoesPorTurno; i++) {
+            acoes.append(el('span', 'acao-pip' + (i >= estado.acoes ? ' gasta' : '')));
+        }
+        acoes.append(el('span', null, `${estado.acoes}/${R.acoesPorTurno}`));
 
         const instrucao = $('instrucao');
         if (aviso.texto) {
             instrucao.textContent = aviso.texto;
             instrucao.className = 'instrucao' + (aviso.erro ? ' erro' : '');
-        } else if (alvo) {
-            instrucao.textContent = alvo.texto;
-            instrucao.className = 'instrucao alvo';
         } else {
             instrucao.textContent = estado.vencedor !== null
                 ? 'Partida encerrada.'
-                : 'Clique em uma carta da sua mão ou do seu campo.';
+                : 'Clique em uma carta da sua mão ou do seu campo e escolha a ação.';
             instrucao.className = 'instrucao';
         }
-        $('cancelar').hidden = !alvo;
-        $('encerrar').disabled = cortina || estado.vencedor !== null;
+        const bloqueado = cortina || estado.vencedor !== null;
+        $('comprar').disabled = bloqueado || estado.acoes <= 0;
+        $('encerrar').disabled = bloqueado;
 
         renderPainel();
         renderManual();

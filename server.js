@@ -32,7 +32,7 @@ const OPCOES = {
   universo: ['cyberpunk', 'zumbi', 'mágico', 'normal', 'menção honrosa', 'game', 'void'],
   origem: ['mitologia grega', 'folclore brasileiro', 'folclore japonês', 'mitologia nórdica', 'memes', 'humanidade'],
   classe: ['campeão', 'besta', 'item', 'arma', 'auxiliar', 'feitiço', 'representante'],
-  elemento: ['fogo', 'planta', 'água', 'fantasma', 'metálico', 'sombrio', 'divino', 'sonoro']
+  elemento: ['fogo', 'planta', 'água', 'fantasma', 'metálico', 'vento', 'sonoro', 'sombrio', 'divino']
 };
 
 const UPLOADS = path.join(__dirname, 'uploads');
@@ -118,6 +118,14 @@ app.post('/cartas', exigirSenha, upload.single('imagem'), async (req, res) => {
     return res.status(400).json({ erro: 'Nome e classe são obrigatórios' });
   }
 
+  // toda carta precisa ter ataque e defesa (pode ser 0)
+  const ataque = inteiroOuNull(req.body.ataque);
+  const defesa = inteiroOuNull(req.body.defesa);
+  if (ataque === null || defesa === null || ataque < 0 || defesa < 0) {
+    apagarImagem();
+    return res.status(400).json({ erro: 'Ataque e defesa são obrigatórios (números a partir de 0)' });
+  }
+
   // valida contra as listas fixas (campos vazios são aceitos, exceto classe)
   for (const campo of ['elemento', 'origem', 'universo', 'classe']) {
     const valor = req.body[campo];
@@ -131,7 +139,7 @@ app.post('/cartas', exigirSenha, upload.single('imagem'), async (req, res) => {
 
   try {
     const [resultado] = await pool.query(
-      `INSERT INTO cartas (nome, elemento, origem, universo, classe, dano, vida, habilidade, imagem)
+      `INSERT INTO cartas (nome, elemento, origem, universo, classe, ataque, defesa, habilidade, imagem)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nome.trim(),
@@ -139,8 +147,8 @@ app.post('/cartas', exigirSenha, upload.single('imagem'), async (req, res) => {
         origem || null,
         universo || null,
         classe,
-        inteiroOuNull(req.body.dano),
-        inteiroOuNull(req.body.vida),
+        ataque,
+        defesa,
         habilidade || null,
         imagem
       ]

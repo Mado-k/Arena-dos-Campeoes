@@ -1,6 +1,6 @@
 // Configuração compartilhada por todas as páginas.
 // Define onde está o servidor (Node, porta 3000), mesmo quando a página
-// é aberta pelo Live Server (porta 5500) ou pelo Codespaces.
+// é aberta pelo Live Server (porta 5500), pelo Codespaces ou pelo GitHub Pages.
 (function () {
     // Se a detecção automática errar, escreva o endereço aqui. Ex.: 'http://localhost:3000'
     const API_MANUAL = '';
@@ -27,6 +27,13 @@
         universo: ['cyberpunk', 'zumbi', 'mágico', 'normal', 'menção honrosa', 'game', 'void'],
         origem: ['mitologia grega', 'folclore brasileiro', 'folclore japonês', 'mitologia nórdica', 'memes', 'humanidade'],
         classe: ['campeão', 'besta', 'item', 'arma', 'auxiliar', 'feitiço', 'representante'],
-        elemento: ['fogo', 'planta', 'água', 'fantasma', 'metálico', 'sombrio', 'divino', 'sonoro']
+        elemento: ['fogo', 'planta', 'água', 'fantasma', 'metálico', 'vento', 'sonoro', 'sombrio', 'divino']
+    };
+
+    // Toda carta tem ataque e defesa. Aceita também o formato antigo (dano/vida).
+    window.normalizarCarta = function (c) {
+        const ataque = c.ataque != null ? c.ataque : c.dano;
+        const defesa = c.defesa != null ? c.defesa : c.vida;
+        return Object.assign({}, c, { ataque: Number(ataque) || 0, defesa: Number(defesa) || 0 });
     };
 })();

@@ -1,3 +1,15 @@
-node_modules/
+# Arquivo de variáveis de ambiente (contém senhas e dados do banco)
 .env
-uploads/
+
+# Dependências do Node.js
+node_modules/
+
+# Logs e arquivos do sistema
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+
+# Imagens de upload salvas localmente
+public/uploads/*
+!public/uploads/.gitkeep
