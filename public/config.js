@@ -3,7 +3,7 @@
 // é aberta pelo Live Server (porta 5500), pelo Codespaces ou pelo GitHub Pages.
 (function () {
     // Se a detecção automática errar, escreva o endereço aqui. Ex.: 'http://localhost:3000'
-    const API_MANUAL = '';
+    const API_MANUAL = 'https://arena-dos-campeoes.onrender.com';
 
     const { protocol, hostname, port } = location;
     let base = '';

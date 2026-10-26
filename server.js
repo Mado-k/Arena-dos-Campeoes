@@ -174,6 +174,7 @@ app.use((err, req, res, next) => {
 // salas de multiplayer e co-op
 require('./salas')(io);
 
-servidor.listen(3000, () => {
-  console.log('Arena dos Campeões rodando em http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+servidor.listen(PORT, () => {
+  console.log(`Arena dos Campeões rodando na porta ${PORT}`);
 });
