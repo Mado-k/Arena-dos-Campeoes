@@ -11,7 +11,7 @@ const app = express();
 const servidor = http.createServer(app);
 const io = new Server(servidor, { cors: { origin: '*' } });
 
-// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 3000)
+// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 16171)
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type, x-admin-senha');
@@ -42,7 +42,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'arena_campeoes'
+  database: process.env.DB_NAME || 'defaultdb'
 });
 
 pool.getConnection()
@@ -174,7 +174,7 @@ app.use((err, req, res, next) => {
 // salas de multiplayer e co-op
 require('./salas')(io);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 16171;
 servidor.listen(PORT, () => {
   console.log(`Arena dos Campeões rodando na porta ${PORT}`);
 });
