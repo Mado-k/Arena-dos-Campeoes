@@ -1,4 +1,7 @@
+// Página inicial. Nada é baixado até o jogador clicar em "Ver as cartas".
 const $ = (id) => document.getElementById(id);
+
+const POR_PAGINA = 24;
 
 const grade = $('grade');
 const vazio = $('vazio');
@@ -6,6 +9,7 @@ const contador = $('contador');
 const busca = $('busca');
 const detalhe = $('detalhe');
 const corpo = $('detalhe-corpo');
+const catalogo = $('catalogo');
 
 // campo da carta -> <select> do catálogo
 const filtros = {
@@ -16,6 +20,10 @@ const filtros = {
 };
 
 let cartas = [];
+let fonte = 'servidor';       // 'servidor' ou 'offline'
+let carregado = false;
+let carregando = null;
+let visiveis = POR_PAGINA;
 
 // ---------- utilidades ----------
 function el(tag, classe, texto) {
@@ -31,15 +39,32 @@ const semAcento = (s) =>
 // "água" -> "agua", "metálico" -> "metalico" (combina com o CSS)
 const idElemento = (s) => semAcento(s) || 'neutro';
 
+function carregarScript(src) {
+    return new Promise((ok, falha) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = ok;
+        s.onerror = () => falha(new Error(`Não foi possível carregar ${src}`));
+        document.head.append(s);
+    });
+}
+
+// texto corrigido da habilidade (vem do motor, se já foi carregado)
+function descricaoDe(carta) {
+    if (window.Motor) return Motor.descricao(carta);
+    return { tipo: carta.habilidade ? 'passiva' : 'nenhuma', texto: carta.habilidade || '', detalhe: '' };
+}
+
 function criarArte(carta) {
     const arte = el('div', 'arte');
     const inicial = () => arte.append(el('span', 'inicial', (carta.nome || '?').charAt(0).toUpperCase()));
 
     if (carta.imagem) {
         const img = document.createElement('img');
-        img.src = API + carta.imagem;
+        img.src = fonte === 'servidor' ? API + carta.imagem : '..' + carta.imagem;
         img.alt = '';
         img.loading = 'lazy';
+        img.decoding = 'async';
         img.addEventListener('error', () => { img.remove(); inicial(); });
         arte.append(img);
     } else {
@@ -50,14 +75,9 @@ function criarArte(carta) {
 
 function criarStats(carta) {
     const stats = el('div', 'stats');
-    if (carta.dano !== null && carta.dano !== undefined) {
+    for (const [rotulo, valor] of [['Ataque', carta.ataque], ['Defesa', carta.defesa]]) {
         const s = el('span', 'stat');
-        s.append(el('small', null, 'Dano'), String(carta.dano));
-        stats.append(s);
-    }
-    if (carta.vida !== null && carta.vida !== undefined) {
-        const s = el('span', 'stat');
-        s.append(el('small', null, 'Vida'), String(carta.vida));
+        s.append(el('small', null, rotulo), String(valor));
         stats.append(s);
     }
     return stats;
@@ -73,10 +93,12 @@ function criarCarta(carta) {
     topo.append(el('span', 'codigo', carta.codigo || `#${carta.numero}`), el('span', 'classe', carta.classe));
 
     const meta = [carta.universo, carta.origem].filter(Boolean).join(' · ');
+    const texto = descricaoDe(carta).texto;
 
     botao.append(topo, criarArte(carta), el('h3', 'carta-nome', carta.nome));
     if (meta) botao.append(el('p', 'carta-meta', meta));
     botao.append(criarStats(carta));
+    if (texto) botao.append(el('p', 'carta-desc', texto));
 
     botao.addEventListener('click', () => abrirDetalhe(carta));
     return botao;
@@ -96,8 +118,18 @@ function abrirDetalhe(carta) {
     }
     info.append(chips, criarStats(carta));
 
-    if (carta.habilidade) {
-        info.append(el('p', 'titulo-hab', 'Habilidade'), el('p', 'habilidade', carta.habilidade));
+    const d = descricaoDe(carta);
+    if (d.texto) {
+        const cab = el('div', 'hab-cab');
+        cab.append(el('p', 'titulo-hab', 'Habilidade'));
+        if (d.tipo === 'ativa') cab.append(el('span', 'tipo-hab ativa', '⚡ Ativa · gasta 1 ação'));
+        if (d.tipo === 'passiva') cab.append(el('span', 'tipo-hab passiva', '● Passiva · automática'));
+        info.append(cab, el('p', 'habilidade', d.texto));
+        if (d.detalhe) {
+            const det = el('p', 'hab-detalhe');
+            det.append(el('strong', null, 'Como funciona: '), d.detalhe);
+            info.append(det);
+        }
     }
 
     caixa.append(criarArte(carta), info);
@@ -113,76 +145,129 @@ function aplicar() {
     const termo = semAcento(busca.value.trim());
 
     const lista = cartas.filter((c) => {
-        const bateBusca = !termo || semAcento(c.nome).includes(termo) || semAcento(c.habilidade).includes(termo);
+        const bateBusca = !termo || semAcento(c.nome).includes(termo) || semAcento(descricaoDe(c).texto).includes(termo);
         const bateFiltros = Object.entries(filtros).every(([campo, select]) => !select.value || c[campo] === select.value);
         return bateBusca && bateFiltros;
     });
 
-    grade.replaceChildren(...lista.map(criarCarta));
-    contador.textContent = `${lista.length} de ${cartas.length} cartas`;
+    const mostrar = lista.slice(0, visiveis);
+    grade.replaceChildren(...mostrar.map(criarCarta));
+    let texto = `${lista.length} de ${cartas.length} cartas`;
+    if (fonte === 'offline') texto += ' · cópia offline (servidor indisponível)';
+    contador.textContent = texto;
 
+    $('mais').hidden = lista.length <= visiveis;
     vazio.hidden = lista.length > 0;
     if (!lista.length) vazio.textContent = 'Nenhuma carta encontrada com esses filtros.';
 }
 
-busca.addEventListener('input', aplicar);
-Object.values(filtros).forEach((s) => s.addEventListener('change', aplicar));
+function novaBusca() { visiveis = POR_PAGINA; aplicar(); }
+
+busca.addEventListener('input', novaBusca);
+Object.values(filtros).forEach((s) => s.addEventListener('change', novaBusca));
 
 $('limpar').addEventListener('click', () => {
     busca.value = '';
     Object.values(filtros).forEach((s) => (s.value = ''));
-    aplicar();
+    novaBusca();
 });
 
-// ---------- guia (chips que filtram o catálogo) ----------
-function montarGuia(campo, valores) {
-    const area = $(`guia-${campo}`);
-    for (const valor of valores) {
+$('mais').addEventListener('click', () => { visiveis += POR_PAGINA; aplicar(); });
+
+// ---------- guia de elementos (chips que abrem o catálogo já filtrado) ----------
+function montarGuia() {
+    const area = $('guia-elemento');
+    for (const valor of OPCOES_PADRAO.elemento) {
         const chip = el('button', 'chip', valor);
         chip.type = 'button';
-        if (campo === 'elemento') chip.dataset.elemento = idElemento(valor);
-        chip.addEventListener('click', () => {
-            filtros[campo].value = valor;
-            aplicar();
-            $('cartas').scrollIntoView();
+        chip.dataset.elemento = idElemento(valor);
+        chip.addEventListener('click', async () => {
+            await abrirCatalogo();
+            filtros.elemento.value = valor;
+            novaBusca();
         });
         area.append(chip);
     }
 }
 
-// ---------- início ----------
-async function iniciar() {
+// ---------- catálogo (carregado só quando o jogador pede) ----------
+async function buscarCartas() {
     try {
-        // as opções aparecem mesmo que o servidor esteja fora do ar
-        let opcoes = OPCOES_PADRAO;
-        try {
-            const respOpcoes = await fetch(`${API}/opcoes`);
-            if (respOpcoes.ok) {
-                const recebidas = await respOpcoes.json();
-                // só aceita se vier completo; senão fica com a lista padrão
-                if (recebidas && Object.keys(OPCOES_PADRAO).every((c) => Array.isArray(recebidas[c]))) opcoes = recebidas;
-            }
-        } catch { /* usa a lista padrão do config.js */ }
-
-        for (const campo of Object.keys(filtros)) {
-            for (const valor of opcoes[campo]) filtros[campo].add(new Option(valor, valor));
-            montarGuia(campo, opcoes[campo]);
-        }
-
-        const respCartas = await fetch(`${API}/cartas`);
-        if (!respCartas.ok) throw new Error('O servidor respondeu com erro.');
-        cartas = await respCartas.json();
-
-        $('n-cartas').textContent = cartas.length;
-        $('n-universos').textContent = opcoes.universo.length;
-        $('n-elementos').textContent = opcoes.elemento.length;
-
-        aplicar();
-    } catch (err) {
-        console.error(err);
-        vazio.hidden = false;
-        vazio.textContent = 'Não foi possível carregar as cartas. Confira se o servidor está rodando na porta 3000.';
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 2500);
+        const r = await fetch(`${API}/cartas`, { signal: ctl.signal });
+        clearTimeout(t);
+        if (!r.ok) throw new Error(`status ${r.status}`);
+        const lista = await r.json();
+        if (!Array.isArray(lista) || !lista.length) throw new Error('sem cartas');
+        fonte = 'servidor';
+        return lista;
+    } catch {
+        // sem servidor (ou site publicado no GitHub Pages): usa a cópia que vai junto com o site
+        await carregarScript('cartas-offline.js');
+        fonte = 'offline';
+        return window.CARTAS_OFFLINE || [];
     }
 }
 
-iniciar();
+async function opcoesDoServidor() {
+    try {
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 1500);
+        const r = await fetch(`${API}/opcoes`, { signal: ctl.signal });
+        clearTimeout(t);
+        if (!r.ok) return OPCOES_PADRAO;
+        const recebidas = await r.json();
+        return recebidas && Object.keys(OPCOES_PADRAO).every((c) => Array.isArray(recebidas[c])) ? recebidas : OPCOES_PADRAO;
+    } catch {
+        return OPCOES_PADRAO;
+    }
+}
+
+function carregarCatalogo() {
+    if (carregado) return Promise.resolve();
+    if (carregando) return carregando;
+    contador.textContent = 'Carregando as cartas...';
+    carregando = (async () => {
+        try {
+            const [lista, opcoes] = await Promise.all([
+                buscarCartas(),
+                opcoesDoServidor(),
+                carregarScript('motor.js').catch(() => null)   // textos revisados das habilidades
+            ]);
+            cartas = lista.map(window.normalizarCarta);
+            for (const campo of Object.keys(filtros)) {
+                for (const valor of opcoes[campo]) filtros[campo].add(new Option(valor, valor));
+            }
+            carregado = true;
+            aplicar();
+        } catch (err) {
+            console.error(err);
+            carregando = null;
+            vazio.hidden = false;
+            vazio.textContent = 'Não foi possível carregar as cartas agora. Tente de novo em instantes.';
+            contador.textContent = '';
+        }
+    })();
+    return carregando;
+}
+
+async function abrirCatalogo() {
+    catalogo.hidden = false;
+    $('ver-cartas').setAttribute('aria-expanded', 'true');
+    $('ver-cartas').hidden = true;
+    $('cartas').scrollIntoView();
+    await carregarCatalogo();
+}
+
+function esconderCatalogo() {
+    catalogo.hidden = true;
+    $('ver-cartas').hidden = false;
+    $('ver-cartas').setAttribute('aria-expanded', 'false');
+    $('ver-cartas').focus();
+}
+
+document.querySelectorAll('[data-abrir-cartas]').forEach((b) => b.addEventListener('click', abrirCatalogo));
+$('esconder').addEventListener('click', esconderCatalogo);
+
+montarGuia();
