@@ -159,10 +159,10 @@ test('API: mesma origem, Codespaces, Live Server e hospedagem', () => {
   assert.equal(obter('localhost', '5500', 'http:', 'http://localhost:3000/'), 'http://localhost:3000');
 });
 
-async function ambiente(t, loader = async () => cartas) {
+async function ambiente(t, loader = async () => cartas, opcoes) {
   const servidor = http.createServer();
   const io = new Server(servidor);
-  iniciarSalas(io, loader);
+  iniciarSalas(io, loader, opcoes);
   servidor.listen(0, '127.0.0.1'); await once(servidor, 'listening');
   const clientes = [];
   t.after(async () => { clientes.forEach(c => c.close()); await new Promise(r => io.close(r)); });
@@ -223,4 +223,43 @@ test('falha do banco não deixa a sala presa ao iniciar', { timeout: 12000 }, as
   await pedir(amigo, 'partida:iniciar', {});
   assert((await pedir(host, 'partida:iniciar', {})).erro);
   assert((await pedir(host, 'partida:iniciar', {})).erro);
+});
+
+for (const caso of [
+  { nome: 'banco vazio', loader: async () => [], codigo: 'CARTAS_INSUFICIENTES', mensagem: /0 cartas jogáveis.*seed\.js/ },
+  { nome: 'somente representantes', loader: async () => cartas.filter(c => c.classe === 'representante'), codigo: 'CARTAS_INSUFICIENTES', mensagem: /0 cartas jogáveis/ },
+  { nome: 'certificado Aiven', loader: async () => { throw Object.assign(Error('detalhe privado'), { code: 'HANDSHAKE_SSL_ERROR' }); }, codigo: 'HANDSHAKE_SSL_ERROR', mensagem: /certificado.*Aiven/ }
+]) test('início recusado mostra causa e permite tentar de novo: ' + caso.nome, { timeout: 12000 }, async t => {
+  const a = await ambiente(t, caso.loader);
+  const host = await a.cliente(), amigo = await a.cliente();
+  const r = await pedir(host, 'sala:criar', { modo: 'multiplayer', nome: 'A' });
+  await pedir(amigo, 'sala:entrar', { modo: 'multiplayer', codigo: r.sala.codigo, nome: 'B' });
+  host.emit('sala:pronto', true); amigo.emit('sala:pronto', true);
+  await pedir(amigo, 'partida:iniciar', {});
+  for (let i = 0; i < 2; i++) {
+    const res = await pedir(host, 'partida:iniciar', {});
+    assert.equal(res.codigo, caso.codigo);
+    assert.match(res.erro, caso.mensagem);
+    assert(!res.erro.includes('detalhe privado'));
+  }
+});
+
+test('consulta pendurada expira, permite nova tentativa e ignora o resultado atrasado', { timeout: 12000 }, async t => {
+  let liberar, tentativas = 0;
+  const atrasada = new Promise(resolve => { liberar = resolve; });
+  const a = await ambiente(t, () => ++tentativas === 1 ? atrasada : Promise.resolve(cartas), { tempoCarregamento: 40 });
+  const host = await a.cliente(), amigo = await a.cliente();
+  const r = await pedir(host, 'sala:criar', { modo: 'multiplayer', nome: 'A' });
+  await pedir(amigo, 'sala:entrar', { modo: 'multiplayer', codigo: r.sala.codigo, nome: 'B' });
+  host.emit('sala:pronto', true); amigo.emit('sala:pronto', true);
+  await pedir(amigo, 'partida:iniciar', {});
+  const falhou = await pedir(host, 'partida:iniciar', {});
+  assert.equal(falhou.codigo, 'TEMPO_CARTAS_ESGOTADO');
+  const estado = esperar(host, 'partida:estado');
+  assert((await pedir(host, 'partida:iniciar', {})).ok);
+  const inicial = await estado;
+  liberar(cartas);
+  const sincronizado = esperar(host, 'partida:estado');
+  host.emit('partida:sincronizar');
+  assert.deepEqual(await sincronizado, inicial);
 });

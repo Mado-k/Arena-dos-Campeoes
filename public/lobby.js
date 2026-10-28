@@ -13,6 +13,7 @@
     let socket = null;
     let salaAtual = null;
     let mesa = null;
+    let pedidoInicio = false;
 
     function el(tag, classe, texto) {
         const e = document.createElement(tag);
@@ -77,7 +78,8 @@
             aviso('Não foi possível conectar ao servidor. Confira o endereço da API e se o servidor está acessível.', 'erro');
             return null;
         }
-        return new Promise(resolve => socket.timeout(15000).emit(evento, dados, (err, res) => resolve(err ? { erro: 'O servidor não respondeu. Tente novamente.' } : res)));
+        const prazo = evento === 'partida:iniciar' ? 30000 : 15000;
+        return new Promise(resolve => socket.timeout(prazo).emit(evento, dados, (err, res) => resolve(err ? { erro: 'O servidor não confirmou o pedido a tempo. Atualize a página e tente novamente; se persistir, confira os Logs do Render.' } : res)));
     }
 
     // ---------- entrar / criar ----------
@@ -96,6 +98,7 @@
         if (!resp.ok) { aviso(resp.erro, 'erro'); return; }
 
         aviso('');
+        $('sala-erro').textContent = '';
         mostrarSala(resp.sala);
     }
 
@@ -154,7 +157,7 @@
         else if (prontos === total) texto = 'Todos prontos! O anfitrião pode iniciar a partida.';
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
-        $('iniciar').disabled = sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;
+        $('iniciar').disabled = pedidoInicio || sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;
         $('pronto').disabled = sala.iniciando || sala.emPartida;
     }
 
@@ -167,9 +170,15 @@
     }
 
     $('iniciar').addEventListener('click', async () => {
+        if (pedidoInicio) return;
+        pedidoInicio = true;
         $('iniciar').disabled = true;
+        $('sala-erro').textContent = '';
         const res = await pedir('partida:iniciar', {});
-        if (res && res.erro) $('sala-aviso').textContent = res.erro;
+        pedidoInicio = false;
+        if (res && res.erro) $('sala-erro').textContent = res.erro;
+        else if (!res) $('sala-erro').textContent = 'Não foi possível conectar ao servidor. Confira sua conexão e tente novamente.';
+        if (salaAtual) mostrarSala(salaAtual);
     });
 
     $('pronto').addEventListener('click', () => {

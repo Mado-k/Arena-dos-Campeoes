@@ -88,7 +88,7 @@ app.get('/cartas', async (req, res) => {
     res.json(cartas.map(banco.normalizar));
   } catch (err) {
     console.error('Erro ao buscar cartas:', err);
-    res.status(500).json({ erro: 'Não foi possível buscar as cartas' });
+    res.status(500).json({ erro: 'Não foi possível buscar as cartas', codigo: err.code || 'FALHA_BANCO' });
   }
 });
 

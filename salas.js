@@ -36,7 +36,29 @@ function publico(sala) {
   };
 }
 
-module.exports = function iniciarSalas(io, carregarCartas) {
+function mensagemInicio(err) {
+  if (err.code === 'TEMPO_CARTAS_ESGOTADO') return 'O banco demorou demais para carregar as cartas. Confira a conexão com o Aiven nos Logs do Render e tente novamente.';
+  if (err.code === 'CARTAS_INSUFICIENTES') return err.message;
+  if (['HANDSHAKE_SSL_ERROR', 'SELF_SIGNED_CERT_IN_CHAIN', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'CERT_HAS_EXPIRED'].includes(err.code)) {
+    return 'O servidor não conseguiu validar o certificado do banco. Confira o certificado CA do Aiven nas configurações do Render (DB_CA_CERT ou DB_CA_FILE).';
+  }
+  if (err.code === 'ER_ACCESS_DENIED_ERROR') return 'O banco recusou o acesso do servidor. Confira usuário e senha do banco nas configurações do Render.';
+  if (err.code === 'ER_BAD_DB_ERROR') return 'O banco configurado não existe. Confira DB_NAME no Render.';
+  if (err.code === 'ER_NO_SUCH_TABLE') return 'A tabela de cartas não existe no banco configurado. Prepare a tabela e execute o seed.js nesse banco.';
+  return 'Não foi possível carregar as cartas do banco. Confira os Logs do serviço no Render para identificar a causa.';
+}
+
+async function carregarComPrazo(carregarCartas, prazo) {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(carregarCartas),
+      new Promise((_, rejeitar) => { timer = setTimeout(() => rejeitar(Object.assign(new Error('Tempo de carregamento das cartas esgotado'), { code: 'TEMPO_CARTAS_ESGOTADO' })), prazo); })
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
+module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento = 20000 } = {}) {
   const salas = new Map();
   const publicar = sala => io.to(sala.codigo).emit('sala', publico(sala));
   function atualizarPartida(sala) {
@@ -130,7 +152,7 @@ module.exports = function iniciarSalas(io, carregarCartas) {
       const ids = sala.jogadores.map(j => j.id).join(',');
       publicar(sala);
       try {
-        const cartas = await carregarCartas();
+        const cartas = await carregarComPrazo(carregarCartas, tempoCarregamento);
         if (!sala.iniciando || !salas.has(sala.codigo) || ids !== sala.jogadores.map(j => j.id).join(',')) return responder({ erro: 'Os jogadores da sala mudaram. Tente novamente.' });
         sala.partida = new Partida(sala.jogadores, cartas, sala.modo);
         sala.iniciando = false;
@@ -138,10 +160,11 @@ module.exports = function iniciarSalas(io, carregarCartas) {
         atualizarPartida(sala);
         responder({ ok: true });
       } catch (err) {
+        sala.partida = null;
         sala.iniciando = false;
         publicar(sala);
         console.error('Não foi possível iniciar a partida:', err.code || err.message);
-        responder({ erro: 'Não foi possível carregar as cartas. Confira a conexão do servidor com o banco.' });
+        responder({ erro: mensagemInicio(err), codigo: err.code || 'FALHA_INICIO_PARTIDA' });
       }
     });
 

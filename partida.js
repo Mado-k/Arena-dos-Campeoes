@@ -15,8 +15,9 @@ class Partida {
   constructor(jogadores, cartas, modo = 'multiplayer') {
     this.coop = modo === 'coop';
     if (!this.coop && jogadores.length !== 2) throw new Error('O duelo precisa de dois jogadores.');
-    if (cartas.filter(c => Motor.norm(c.classe) !== 'representante').length < 20) {
-      throw new Error('O banco precisa de pelo menos 20 cartas jogáveis.');
+    const jogaveis = cartas.filter(c => Motor.norm(c.classe) !== 'representante').length;
+    if (jogaveis < 20) {
+      throw Object.assign(new Error(`O banco tem ${jogaveis} cartas jogáveis; a partida precisa de pelo menos 20. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
     }
     this.ids = jogadores.map(j => j.id);
     this.estado = Motor.novoJogo({ nomes: this.coop ? ['Equipe', 'Computador'] : jogadores.map(j => j.nome), tamanhoBaralho: 40, ...(this.coop ? { comeca: 0 } : {}) }, cartas);
