@@ -1,18 +1,17 @@
-.mesa-online { margin-top: 2rem; text-align: left; }
-.mesa-online[hidden] { display: none; }
-.mesa-online > .btn { margin: .3rem; }
-.lados-online { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
-.lado-online, .detalhe-online { background: #171a24; border: 1px solid #857343; border-radius: 12px; padding: 1rem; min-width: 0; }
-.cartas-online { display: flex; gap: .6rem; overflow-x: auto; padding: .5rem 0; }
-.cartas-online > div { flex: 0 0 180px; }
-.carta-online { display: flex; flex-direction: column; gap: .5rem; width: 100%; min-height: 140px; margin-bottom: .5rem; padding: .8rem; color: #f4eee0; background: #242838; border: 1px solid #79715b; border-radius: 8px; text-align: left; cursor: pointer; font: inherit; }
-.carta-online span { font-size: .85rem; }
-.carta-online.selecionada, .carta-online:focus-visible { outline: 3px solid #dfbb63; outline-offset: -3px; }
-.estado-online { color: #ffcf7a; }
-.detalhe-online { margin-top: 1rem; }
-.detalhe-online p { line-height: 1.6; }
-.escolha-online { max-width: min(90vw, 600px); max-height: 80vh; overflow: auto; padding: 1.5rem; background: #171a24; color: #f4eee0; border: 1px solid #dfbb63; border-radius: 12px; }
-.escolha-online .btn { display: block; margin-top: .7rem; }
-.escolha-online::backdrop { background: #000b; }
-.registro-online { max-height: 200px; overflow-y: auto; }
-@media (max-width: 760px) { .lados-online { grid-template-columns: 1fr; } }
+/* A mesa compartilha cartas, painéis e organização com offline.css. */
+.lobby.em-partida { max-width: none; margin: 0 auto; padding: 0 0 24px; }
+.mesa-online[hidden] { display: none !important; }
+.mesa-online .lado, .mesa-online .lateral, .mesa-online .painel { min-width: 0; }
+.mesa-online .c-stats { flex-wrap: wrap; }
+.mesa-online .turno-info small { margin-top: 6px; }
+.mesa-online .nota-equipe { margin: 0; flex: 1 1 100%; color: var(--suave); font-size: .85rem; }
+.mesa-online .c, .mesa-online .painel { overflow-wrap: anywhere; }
+.escolha-online, .descarte-online { max-width: min(90vw, 700px); max-height: 80vh; overflow: auto; padding: 1.5rem; background: var(--painel); color: var(--texto); border: 1px solid var(--ouro); border-radius: 12px; }
+.escolha-online > .btn, .descarte-online > .btn { margin-top: 1rem; }
+.escolha-online::backdrop, .descarte-online::backdrop { background: #000b; }
+@media (max-width: 560px) {
+    .mesa-online .c-wrap, .mesa-online .slot-vazio { width: calc(50% - 4px); }
+    .mesa-online .barra-botoes { flex-wrap: wrap; width: 100%; }
+    .mesa-online .barra-botoes .btn { flex: 1 1 auto; }
+    .mesa-online .lateral { scroll-margin-top: 80px; }
+}

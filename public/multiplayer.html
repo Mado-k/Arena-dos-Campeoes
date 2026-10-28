@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="turnos.css">
+    <link rel="stylesheet" href="offline.css">
     <link rel="stylesheet" href="online.css">
 </head>
 <body data-modo="multiplayer">
@@ -41,6 +43,14 @@
                 <div class="lobby-opcao">
                     <h2>Criar sala</h2>
                     <p>Você vira o anfitrião e recebe um código para compartilhar.</p>
+                    <div class="campo">
+                        <label for="tamanho-baralho">Cartas no total da partida</label>
+                        <select id="tamanho-baralho">
+                            <option value="20">20 cartas · 10 por lado</option>
+                            <option value="30">30 cartas · 15 por lado</option>
+                            <option value="40" selected>40 cartas · 20 por lado</option>
+                        </select>
+                    </div>
                     <button type="button" class="btn primario" id="criar">Criar sala</button>
                 </div>
                 <div class="lobby-opcao">
@@ -66,6 +76,7 @@
                 <button type="button" class="btn pequeno" id="copiar">Copiar convite</button>
             </div>
 
+            <p id="sala-baralho" class="suave"></p>
             <ul id="jogadores" class="jogadores"></ul>
             <p id="sala-aviso" class="suave" aria-live="polite"></p>
             <p id="sala-erro" class="status erro" role="alert"></p>
@@ -85,6 +96,7 @@
 
     <script src="config.js"></script>
     <script src="motor.js"></script>
+    <script src="turnos.js"></script>
     <script src="online.js"></script>
     <script src="lobby.js"></script>
 </body>

@@ -1,4 +1,5 @@
-// Tela online: renderiza somente a visão privada enviada pelo servidor.
+// Mesa online com a mesma organização visual do offline.
+// O servidor continua sendo a única autoridade sobre as ações e as cartas privadas.
 (function () {
     'use strict';
     const el = (tag, texto, classe) => {
@@ -7,135 +8,254 @@
         if (classe) n.className = classe;
         return n;
     };
-    window.criarMesaOnline = function (socket) {
-        const mesa = el('section', undefined, 'mesa-online');
+    window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {} } = {}) {
+        const mesa = el('section', undefined, 'jogo mesa-online');
         mesa.hidden = true;
+        mesa.setAttribute('aria-label', 'Mesa da partida online');
         document.querySelector('main').append(mesa);
         const escolha = document.createElement('dialog');
         escolha.className = 'escolha-online';
-        document.body.append(escolha);
-        let estado = null, ocupado = false, selecionada = null;
-        const aviso = el('p');
+        escolha.setAttribute('aria-label', 'Escolha da habilidade');
+        const descarte = document.createElement('dialog');
+        descarte.className = 'descarte-online';
+        descarte.setAttribute('aria-label', 'Descarte');
+        document.body.append(escolha, descarte);
+        let estado = null, ocupado = false, selecionada = null, sessao = 0;
+        const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
+        const turnos = criarAvisosTurno(() => agir('encerrar'));
 
         function ativo() {
             return estado && estado.turno === estado.voce && estado.vencedor === null && !ocupado;
         }
-        function botao(texto, acao, habilitado = true) {
-            const b = el('button', texto, 'btn pequeno');
+        function botao(texto, acao, habilitado = true, classe = 'btn pequeno') {
+            const b = el('button', texto, classe);
             b.type = 'button'; b.disabled = !habilitado;
             b.addEventListener('click', acao);
             return b;
         }
         function agir(tipo, uid, valor) {
             if (!ativo()) return;
+            const pedidoSessao = sessao;
             ocupado = true;
             escolha.close();
             render();
             socket.timeout(10000).emit('partida:acao', { tipo, uid, escolha: valor, revisao: estado.revisao }, (err, res) => {
+                if (!estado || pedidoSessao !== sessao) return;
                 ocupado = false;
                 aviso.textContent = err ? 'Não foi possível confirmar a ação. Sincronizando a mesa…' : res.erro || '';
                 if (err) socket.emit('partida:sincronizar');
                 render();
                 if (res && res.pergunta) {
                     escolha.replaceChildren(el('h2', res.pergunta.titulo));
-                    for (const o of res.pergunta.opcoes) escolha.append(botao(o.rotulo, () => agir(tipo, uid, o.valor)));
-                    escolha.append(botao('Cancelar', () => escolha.close()));
+                    const opcoes = el('div', undefined, 'escolha-opcoes');
+                    for (const o of res.pergunta.opcoes) opcoes.append(botao(o.rotulo, () => agir(tipo, uid, o.valor)));
+                    escolha.append(opcoes, botao('Cancelar', () => escolha.close()));
                     escolha.showModal();
                 }
             });
         }
-        function detalhe() {
-            if (!selecionada) return null;
-            let encontrada;
+        function selecionar(uid) {
+            selecionada = uid;
+            descarte.close();
+            render();
+            if (window.matchMedia('(max-width: 1000px)').matches) {
+                mesa.querySelector('.detalhe-online').scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+            }
+        }
+        function arte(base) {
+            const caixa = el('div', undefined, 'c-arte');
+            const inicial = () => caixa.append(el('span', (base.nome || '?').charAt(0).toUpperCase(), 'inicial'));
+            if (!base.imagem) { inicial(); return caixa; }
+            const img = document.createElement('img');
+            const origem = typeof API === 'string' && API ? API + '/' : location.origin + '/';
+            try { img.src = new URL(base.imagem, origem).href; }
+            catch { inicial(); return caixa; }
+            img.alt = ''; img.loading = 'lazy';
+            img.addEventListener('error', () => { img.remove(); inicial(); }, { once: true });
+            caixa.append(img);
+            return caixa;
+        }
+        function stats(c, grande = false) {
+            const dono = estado.jogadores.findIndex(j => j.campo.some(x => x.uid === c.uid));
+            const ataque = dono >= 0 ? Motor.ataqueTotal(c, estado.jogadores[1 - dono].campo[0]?.base, estado) : c.base.ataque;
+            const n = el('div', undefined, 'c-stats' + (grande ? ' grande' : ''));
+            n.append(el('span', `ATQ ${ataque}`, 'd'), el('span', `DEF ${c.defesa}`, 'v'));
+            return n;
+        }
+        function selo(d) {
+            return el('span', d.tipo === 'ativa' ? '⚡ Ativa' : d.tipo === 'passiva' ? '● Passiva' : 'Sem habilidade', 'tipo-hab ' + d.tipo);
+        }
+        function etiquetas(c) {
+            const linha = el('div', undefined, 'etqs');
+            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', torcida: 'Torcida ×2', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
+            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['torcida', 'dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
+            if (c.rec) linha.append(el('span', 'Recarga: ' + c.rec, 'etq'));
+            if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
+            return linha;
+        }
+        function localizar() {
             for (let dono = 0; dono < 2; dono++) for (const zona of ['mao', 'campo', 'apoio', 'descarte']) {
                 for (const c of estado.jogadores[dono][zona]) {
-                    if (c.uid === selecionada) encontrada = { c, dono, zona };
-                    for (const eq of c.equip) if (eq.uid === selecionada) encontrada = { c: eq, dono, zona: 'equip' };
+                    if (c.uid === selecionada) return { c, dono, zona };
+                    for (const eq of c.equip) if (eq.uid === selecionada) return { c: eq, dono, zona: 'equip' };
                 }
             }
-            if (!encontrada) return null;
+            return null;
+        }
+        function detalhe() {
+            const painel = el('div', undefined, 'painel detalhe-online');
+            const encontrada = localizar();
+            if (!encontrada) {
+                painel.append(el('p', 'Clique em uma carta para ler a descrição completa e ver o que você pode fazer com ela.', 'painel-vazio'));
+                return painel;
+            }
             const { c, dono, zona } = encontrada, d = Motor.descricao(c.base);
-            const painel = el('aside', undefined, 'detalhe-online');
-            painel.append(el('h2', c.base.nome), el('p', d.texto || 'Sem habilidade adicional.'), el('p', d.detalhe));
+            const lugares = { mao: 'na mão', campo: 'em batalha', apoio: 'em apoio', equip: 'equipada', descarte: 'no descarte' };
+            painel.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
+            painel.append(el('p', `${c.base.codigo || 'Carta #' + c.base.numero} · ${lugares[zona]}${dono !== estado.voce ? ' · do adversário' : ''}`, 'codigo'), el('h3', c.base.nome));
+            const chips = el('div', undefined, 'chips');
+            for (const v of [c.base.classe, c.base.elemento, c.base.universo, c.base.origem].filter(Boolean)) chips.append(el('span', v, 'chip'));
+            painel.append(chips, stats(c, true), etiquetas(c));
+            if (zona === 'campo') painel.append(el('p', `Defesa máxima: ${c.defesaMax}`, 'suave'));
+            if (c.equip.length) painel.append(el('p', 'Equipado: ' + c.equip.map(e => e.base.nome).join(', '), 'nota'));
+            const habilidade = el('div', undefined, 'hab-box ' + d.tipo);
+            const cab = el('div', undefined, 'hab-cab');
+            cab.append(el('span', 'Habilidade', 'titulo-hab'), selo(d));
+            habilidade.append(cab, el('p', d.texto || 'Esta carta não tem habilidade adicional.', 'habilidade'));
+            if (d.detalhe) habilidade.append(el('p', 'Como funciona: ' + d.detalhe, 'hab-detalhe'));
             const sua = dono === estado.voce;
             const pode = ativo() && sua && estado.acoes > 0;
+            if (sua && d.tipo === 'ativa' && zona !== 'descarte') {
+                const h = c.habilidade || {};
+                habilidade.append(botao('⚡ ' + (d.botao || 'Executar habilidade'), () => agir('habilidade', c.uid), pode && h.disponivel, 'btn habilidade-btn'));
+                if (h.motivo) habilidade.append(el('p', h.motivo, 'nota'));
+            } else if (d.tipo === 'passiva') habilidade.append(el('p', c.habilidade?.anulada ? c.habilidade.motivo : d.semEfeito ? 'Já está refletida nos atributos da carta.' : 'Funciona sozinha: o jogo aplica quando for preciso.', 'nota'));
+            painel.append(habilidade);
+            const acoes = el('div', undefined, 'acoes-painel');
             if (sua && zona === 'mao') {
                 const cl = Motor.classeDe(c);
-                if (Motor.ehCriatura(c)) painel.append(botao('Colocar em batalha', () => agir('invocar', c.uid), pode));
-                if (cl === 'auxiliar') painel.append(botao('Colocar em apoio', () => agir('apoio', c.uid), pode));
-                if (['arma', 'item'].includes(cl) && !Motor.consumivel(c)) painel.append(botao('Equipar', () => agir('equipar', c.uid), pode));
+                if (Motor.ehCriatura(c)) acoes.append(botao('Colocar em batalha', () => agir('invocar', c.uid), pode, 'btn primario'));
+                if (cl === 'auxiliar') acoes.append(botao('Colocar em apoio', () => agir('apoio', c.uid), pode, 'btn primario'));
+                if (['arma', 'item'].includes(cl) && !Motor.consumivel(c)) acoes.append(botao('Equipar', () => agir('equipar', c.uid), pode, 'btn primario'));
             }
-            if (sua && zona === 'campo') painel.append(botao('Atacar criatura inimiga', () => agir('atacar'), pode));
-            if (sua && d.tipo === 'ativa') {
-                const h = c.habilidade || {};
-                painel.append(botao('⚡ ' + (d.botao || 'Executar habilidade'), () => agir('habilidade', c.uid), pode && h.disponivel));
-                if (h.motivo) painel.append(el('p', h.motivo));
+            if (sua && zona === 'campo') {
+                const alvo = estado.jogadores[1 - estado.voce].campo[0];
+                const dano = alvo ? Motor.ataqueTotal(c, alvo.base, estado) : null;
+                acoes.append(botao('Atacar criatura inimiga' + (alvo ? ` · ${dano} de dano` : ''), () => agir('atacar'), pode && Boolean(alvo), 'btn primario'));
+                if (!alvo) painel.append(el('p', 'O adversário não tem criatura em batalha para atacar.', 'nota'));
             }
-            if (d.tipo === 'passiva') painel.append(el('p', 'Habilidade passiva: aplicada automaticamente.'));
+            if (acoes.childNodes.length) painel.append(acoes);
+            if (!ativo() && estado.vencedor === null) painel.append(el('p', 'Aguarde seu turno para jogar. Você pode continuar consultando as cartas.', 'nota'));
             return painel;
         }
         function carta(c) {
-            const b = botao('', () => { selecionada = c.uid; render(); });
-            b.className = 'carta-online' + (c.uid === selecionada ? ' selecionada' : '');
+            const b = botao('', () => selecionar(c.uid), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : ''));
+            b.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
+            b.setAttribute('aria-label', c.base.nome);
+            b.setAttribute('aria-pressed', String(c.uid === selecionada));
+            const topo = el('div', undefined, 'c-topo');
+            topo.append(el('span', c.base.classe, 'classe'), el('span', c.base.elemento || ''));
             const d = Motor.descricao(c.base);
-            const dono = estado.jogadores.findIndex(j => j.campo.some(x => x.uid === c.uid));
-            const ataque = dono >= 0 ? Motor.ataqueTotal(c, estado.jogadores[1 - dono].campo[0]?.base, estado) : c.base.ataque;
-            b.append(el('strong', c.base.nome), el('span', c.base.classe + (c.base.elemento ? ' · ' + c.base.elemento : '')),
-                el('span', `ATQ ${ataque} · DEF ${c.defesa}`), el('span', d.texto));
-            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', torcida: 'Torcida ×2', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
-            const etiquetas = Object.keys(efeitos).filter(k => c.st[k]).map(k => efeitos[k]);
-            if (c.rec) etiquetas.push('Recarga: ' + c.rec);
-            if (etiquetas.length) b.append(el('span', etiquetas.join(' · '), 'estado-online'));
+            b.append(topo, arte(c.base), el('p', c.base.nome, 'c-nome'), stats(c), el('p', d.texto, 'c-desc'), selo(d), etiquetas(c));
             return b;
         }
-        function zona(titulo, cartas) {
-            const s = el('section');
-            s.append(el('h3', titulo));
-            const lista = el('div', undefined, 'cartas-online');
-            if (!cartas.length) lista.append(el('p', 'Vazio'));
+        function zona(titulo, cartas, { limite, dica = '', apoio = false } = {}) {
+            const s = el('section', undefined, 'fileira-wrap' + (apoio ? ' apoio' : ''));
+            const h = el('h4', titulo + (limite === undefined ? ` (${cartas.length})` : ` (${cartas.length}/${limite})`));
+            if (dica) h.append(el('span', ' · ' + dica, 'dica-fileira'));
+            s.append(h);
+            const lista = el('div', undefined, 'fileira cartas-online');
             for (const c of cartas) {
-                const grupo = el('div');
+                const grupo = el('div', undefined, 'c-wrap');
                 grupo.append(carta(c));
-                for (const eq of c.equip) grupo.append(carta(eq));
+                if (c.equip.length) {
+                    const equips = el('div', undefined, 'equips');
+                    for (const eq of c.equip) {
+                        const b = botao('+ ' + eq.base.nome, () => selecionar(eq.uid), true, 'equip' + (eq.uid === selecionada ? ' selecionada' : ''));
+                        b.dataset.elemento = Motor.norm(eq.base.elemento) || 'neutro';
+                        equips.append(b);
+                    }
+                    grupo.append(equips);
+                }
                 lista.append(grupo);
             }
+            for (let i = cartas.length; i < (limite || 0); i++) lista.append(el('div', 'vazio', 'slot-vazio'));
+            if (!cartas.length && limite === undefined) lista.append(el('p', 'Nenhuma carta.', 'mao-escondida'));
             s.append(lista);
             return s;
+        }
+        function abrirDescarte(i) {
+            const j = estado.jogadores[i];
+            descarte.replaceChildren(el('h2', `Descarte de ${j.nome}`), zona('Cartas descartadas', j.descarte), botao('Fechar', () => descarte.close()));
+            descarte.showModal();
+        }
+        function lado(i) {
+            const j = estado.jogadores[i], sua = i === estado.voce;
+            const n = el('section', undefined, 'lado lado-online' + (sua ? ' lado-ativo' : ''));
+            n.setAttribute('aria-label', sua ? 'Seu lado da mesa' : 'Lado do adversário');
+            const cab = el('div', undefined, 'cab'), quem = el('div', undefined, 'quem');
+            quem.append(el('strong', j.nome));
+            if (i === estado.turno && estado.vencedor === null) quem.append(el('span', sua ? 'Sua vez' : 'Vez do adversário', 'selo-vez'));
+            const derrotados = el('div', undefined, 'derrotados');
+            const pips = el('div', undefined, 'pips');
+            pips.setAttribute('aria-hidden', 'true');
+            for (let k = 0; k < Motor.REGRAS.campeoesParaVencer; k++) pips.append(el('span', undefined, 'pip' + (k < j.derrotados ? ' cheio' : '')));
+            derrotados.append(el('span', 'Campeões derrotados'), pips, el('strong', `${j.derrotados}/${Motor.REGRAS.campeoesParaVencer}`));
+            const pilhas = el('div', undefined, 'pilhas');
+            pilhas.append(el('span', `Mão: ${j.maoTotal}`), el('span', `Baralho: ${j.baralhoTotal}`), botao(`Descarte: ${j.descarte.length}`, () => abrirDescarte(i), true, ''));
+            cab.append(quem, derrotados, pilhas);
+            n.append(cab, zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta' }), zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true }));
+            if (sua) n.append(zona('Sua mão', j.mao));
+            else n.append(el('p', `Mão do adversário escondida (${j.maoTotal} cartas).`, 'mao-escondida'));
+            return n;
         }
         function render() {
             if (!estado) return;
             mesa.hidden = false;
             const terminou = estado.vencedor !== null;
+            const tabuleiro = el('div', undefined, 'mesa');
+            const barra = el('div', undefined, 'barra');
+            const info = el('div', undefined, 'turno-info');
             const vencedor = estado.vencedor === -1 ? 'Empate!' : terminou ? estado.jogadores[estado.vencedor].nome + ' venceu!' : '';
-            mesa.replaceChildren(el('h2', terminou ? vencedor : `Turno ${estado.numTurno} · ${estado.jogadores[estado.turno].nome}`));
-            mesa.append(el('p', `Ações restantes: ${estado.acoes}. ${ativo() ? 'Sua vez: selecione uma carta ou compre.' : terminou ? 'Saia da sala para preparar outra partida.' : 'Aguarde o adversário.'}`));
-            if (estado.cooperativo) mesa.append(el('p', 'Co-op: sua equipe compartilha a mão, o campo e duas ações por turno. As jogadas de todos são sincronizadas.'));
-            mesa.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0), botao('Encerrar turno', () => agir('encerrar'), ativo()));
-            mesa.append(aviso);
-            const lados = el('div', undefined, 'lados-online');
-            for (const i of [1 - estado.voce, estado.voce]) {
-                const j = estado.jogadores[i], lado = el('section', undefined, 'lado-online');
-                lado.append(el('h2', j.nome + (i === estado.voce ? ' · seu lado' : '')),
-                    el('p', `Campeões derrotados: ${j.derrotados}/3 · Mão: ${j.maoTotal} · Baralho: ${j.baralhoTotal}`),
-                    zona('Em batalha', j.campo), zona('Apoio', j.apoio));
-                if (i === estado.voce) lado.append(zona('Sua mão', j.mao));
-                else lado.append(el('p', 'Mão do adversário escondida.'));
-                const descarte = document.createElement('details');
-                descarte.append(el('summary', `Descarte (${j.descarte.length})`), zona('Cartas descartadas', j.descarte));
-                lado.append(descarte); lados.append(lado);
-            }
-            mesa.append(lados);
-            const painel = detalhe(); if (painel) mesa.append(painel);
-            const registro = el('ol', undefined, 'registro-online');
-            for (const linha of estado.log.slice(-15)) registro.append(el('li', linha));
-            mesa.append(el('h3', 'Registro da partida'), registro);
+            info.append(el('strong', terminou ? vencedor : `Turno ${estado.numTurno} · vez de ${estado.jogadores[estado.turno].nome}`));
+            const acoes = el('span', undefined, 'acoes-texto');
+            acoes.append(el('span', 'Ações:'));
+            for (let i = 0; i < Motor.REGRAS.acoesPorTurno; i++) acoes.append(el('span', undefined, 'acao-pip' + (i >= estado.acoes ? ' gasta' : '')));
+            acoes.append(el('span', `${estado.acoes}/${Motor.REGRAS.acoesPorTurno}`));
+            info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas no total · ${estado.tamanhoBaralho / 2} por lado`, 'suave'));
+            const controles = el('div', undefined, 'barra-botoes');
+            controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn primario' + (ativo() && estado.acoes === 0 ? ' destaque' : '')));
+            const instrucao = aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou sair para preparar outra partida.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
+            aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
+            const dica = el('p', instrucao, aviso.className);
+            dica.setAttribute('role', 'status');
+            barra.append(info, controles, dica);
+            if (estado.pandora) barra.append(el('p', 'Caixa de Pandora: criaturas em batalha sofrem dano por turno.', 'etq ruim'));
+            if (estado.cooperativo) barra.append(el('p', 'Co-op: a equipe compartilha a mão, o campo e as duas ações por turno.', 'nota-equipe'));
+            tabuleiro.append(lado(1 - estado.voce), barra, lado(estado.voce));
+            const lateral = el('aside', undefined, 'lateral');
+            lateral.append(detalhe());
+            const registro = el('ol', undefined, 'log registro-online');
+            for (const linha of estado.log.slice(-40).reverse()) registro.append(el('li', linha));
+            const painelRegistro = el('div', undefined, 'painel');
+            painelRegistro.append(el('h3', 'Registro da partida'), registro);
+            lateral.append(painelRegistro, botao('Sair da partida', () => {
+                if (estado.vencedor !== null || window.confirm('Sair encerra a partida para todos. Deseja continuar?')) aoSair();
+            }, true, 'btn pequeno'));
+            mesa.replaceChildren(tabuleiro, lateral);
+            turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
         }
         socket.on('partida:estado', proximo => {
-            if (estado && proximo.revisao !== estado.revisao) escolha.close();
+            if (estado && proximo.numTurno > estado.numTurno) {
+                const nome = estado.jogadores[estado.turno].nome;
+                turnos.notificar(`${nome} encerrou o turno. Agora é a vez de ${proximo.jogadores[proximo.turno].nome}.`);
+            }
+            if (estado && proximo.revisao !== estado.revisao) { escolha.close(); descarte.close(); }
             estado = proximo;
+            aoMostrar();
             render();
         });
-        return { limpar() { estado = null; ocupado = false; selecionada = null; mesa.hidden = true; escolha.close(); aviso.textContent = ''; } };
+        return { limpar() { sessao++; estado = null; ocupado = false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

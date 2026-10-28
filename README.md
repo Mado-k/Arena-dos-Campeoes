@@ -54,11 +54,23 @@ O servidor precisa estar acessível aos convidados; não compartilhe a porta do 
 
 ## Partidas online
 
-1. Abra Multiplayer ou Co-op, informe o apelido e crie a sala.
+1. Abra Multiplayer ou Co-op, informe o apelido, escolha o total de cartas e crie a sala.
 2. Compartilhe o convite e aguarde os amigos entrarem.
 3. Todos devem clicar em **Estou pronto**; o anfitrião clica em **Iniciar partida**.
 4. Selecione uma carta para ler sua habilidade e ver suas ações. Use **Comprar carta**
    ou **Encerrar turno** nos controles da mesa.
+
+O total é dividido igualmente, sem repetir cartas entre os lados: 40 = 20 para cada
+lado; 30 = 15; 20 = 10. As três cartas da mão inicial já fazem parte dessa metade.
+Essa distribuição vale também no offline. Uma partida só começa se houver cartas
+jogáveis distintas suficientes para o tamanho escolhido.
+
+Ao começar, o lobby fica com `hidden` e a mesa ocupa seu lugar na mesma página.
+Use **Sair da partida** para retornar à entrada; sair encerra a partida para os demais.
+Depois da segunda ação, uma janela central avisa que as ações acabaram e oferece
+**Encerrar turno**. Ao confirmar, os dois lados recebem um aviso central de quem
+encerrou e de quem joga em seguida. No offline, a cortina de troca também mostra
+essa informação.
 
 O duelo tem dois jogadores. No co-op, de dois a quatro humanos compartilham uma
 equipe (mão, campo, descarte e duas ações por turno) contra o computador. Todos os
@@ -67,9 +79,20 @@ escondidas. A IA usa as ações e habilidades do mesmo motor; é um adversário 
 sem níveis de dificuldade ou balanceamento específico de co-op.
 
 O servidor valida turno, dono da carta, ações restantes e versão da mesa. O cliente
-não pode alterar atributos nem usar as correções manuais do offline. Pedidos de
+não oferece ajustes manuais de atributos, descartes ou ações extras. Pedidos de
 escolha de habilidade são enviados somente a quem executa a ação. O registro público
 resume as ações para evitar revelar cartas compradas ou escolhidas no baralho.
+Nos combates, o registro mostra os danos do ataque e do contra-ataque e a defesa
+restante das duas criaturas. Se uma criatura for derrotada, mostra zero de defesa;
+se não houver contra-ataque, mostra dano zero e o motivo. O detalhamento aparece
+para ambos os jogadores, no offline e também nos ataques do computador.
+
+A mesa online usa a mesma apresentação do offline: adversário acima, barra de
+ações ao centro, seu campo e sua mão abaixo, e painel lateral com a carta selecionada
+e o registro. As cartas mostram arte (ou inicial), atributos e habilidade, com a
+descrição completa no painel. O layout se reorganiza em uma coluna no celular.
+Os ajustes manuais foram removidos também do offline; as alterações de jogo passam
+somente pelas regras e habilidades automáticas.
 
 Salas e partidas ficam em memória: reiniciar o servidor encerra as partidas.
 Se alguém sair ou perder a conexão, a partida é encerrada sem atribuir vitória;
@@ -101,6 +124,10 @@ A suíte inclui os testes fornecidos no ZIP: 51 verificações de habilidades e 
 partidas aleatórias, além de testes de autoridade, privacidade, co-op/IA, configuração
 de portas/TLS e conexões reais Socket.IO. Os testes Socket.IO abrem portas locais
 temporárias e não usam o banco Aiven.
+Os testes de distribuição verificam os três tamanhos, unicidade entre jogadores,
+tratamento de duplicatas no catálogo e conservação das cartas durante as jogadas.
+Os testes de combate cobrem dano com bônus, imunidade, derrota no ataque e no
+contra-ataque, defesa restaurada no descarte e registro compartilhado entre os jogadores.
 
 O site estático já tem publicação da pasta `public/` no workflow do GitHub Pages.
 Para usar as partidas no site publicado, atualize também o backend no Render: o

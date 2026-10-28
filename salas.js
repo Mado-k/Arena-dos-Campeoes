@@ -27,6 +27,7 @@ function publico(sala) {
   return {
     codigo: sala.codigo,
     modo: sala.modo,
+    tamanhoBaralho: sala.tamanhoBaralho,
     max: sala.max,
     min: sala.min,
     anfitriao: sala.anfitriao,
@@ -105,9 +106,11 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
       const nome = limparNome(dados && dados.nome);
       if (!modo) return responder({ ok: false, erro: 'Modo de jogo inválido.' });
       if (!nome) return responder({ ok: false, erro: 'Escolha um apelido.' });
+      const tamanhoBaralho = dados.tamanhoBaralho ?? 40;
+      if (![20, 30, 40].includes(tamanhoBaralho)) return responder({ ok: false, erro: 'Escolha 20, 30 ou 40 cartas no total.' });
 
       sair();
-      const sala = { codigo: novoCodigo(salas), modo: dados.modo, max: modo.max, min: modo.min, anfitriao: socket.id, jogadores: [] };
+      const sala = { codigo: novoCodigo(salas), modo: dados.modo, tamanhoBaralho, max: modo.max, min: modo.min, anfitriao: socket.id, jogadores: [] };
       salas.set(sala.codigo, sala);
       entrar(sala, nome);
       responder({ ok: true, sala: publico(sala) });
@@ -154,7 +157,7 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
       try {
         const cartas = await carregarComPrazo(carregarCartas, tempoCarregamento);
         if (!sala.iniciando || !salas.has(sala.codigo) || ids !== sala.jogadores.map(j => j.id).join(',')) return responder({ erro: 'Os jogadores da sala mudaram. Tente novamente.' });
-        sala.partida = new Partida(sala.jogadores, cartas, sala.modo);
+        sala.partida = new Partida(sala.jogadores, cartas, sala.modo, sala.tamanhoBaralho);
         sala.iniciando = false;
         publicar(sala);
         atualizarPartida(sala);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Modo offline · Arena dos Campeões</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="turnos.css">
     <link rel="stylesheet" href="offline.css">
 </head>
 <body class="offline">
@@ -51,11 +52,11 @@
 
                 <div class="config-opcoes">
                     <div>
-                        <label for="baralho">Cartas no baralho</label>
+                        <label for="baralho">Cartas no total da partida</label>
                         <select id="baralho">
-                            <option value="20">20 cartas</option>
-                            <option value="30" selected>30 cartas</option>
-                            <option value="40">40 cartas</option>
+                            <option value="20">20 cartas · 10 por jogador</option>
+                            <option value="30" selected>30 cartas · 15 por jogador</option>
+                            <option value="40">40 cartas · 20 por jogador</option>
                         </select>
                     </div>
                     <div>
@@ -69,6 +70,7 @@
                 </div>
 
                 <p id="fonte" class="suave"></p>
+                <p id="config-erro" class="status erro" role="alert"></p>
                 <button type="button" class="btn primario" id="comecar">Começar partida</button>
             </div>
 
@@ -103,11 +105,6 @@
             <aside class="lateral">
                 <div id="painel-carta" class="painel"></div>
 
-                <details class="painel">
-                    <summary>Correções manuais (só se algo der errado)</summary>
-                    <p class="suave">As habilidades são automáticas. Use estas opções apenas para consertar um engano. Não gastam ações.</p>
-                    <div id="manual"></div>
-                </details>
 
                 <div class="painel">
                     <h3>Registro</h3>
@@ -163,6 +160,7 @@
     <script src="config.js"></script>
     <script src="cartas-offline.js"></script>
     <script src="motor.js"></script>
+    <script src="turnos.js"></script>
     <script src="offline.js"></script>
 </body>
 </html>

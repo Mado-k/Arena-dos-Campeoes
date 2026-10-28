@@ -13,7 +13,7 @@ function conferir(e, tam) {
   e.jogadores.forEach((j) => {
     const ids = todas(j);
     assert.equal(new Set(ids).size, ids.length, 'duplicada');
-    assert.equal(ids.length, tam, 'sumiu/apareceu carta');
+    assert.equal(ids.length, tam / 2, 'sumiu/apareceu carta');
     assert.ok(j.campo.length <= R.maxCampo && j.apoio.length <= R.maxApoio);
     j.campo.forEach((c) => {
       assert.ok(c.defesa > 0, 'criatura em batalha sem defesa');
@@ -21,6 +21,8 @@ function conferir(e, tam) {
       if (camp) assert.ok(armas <= 1 && itens <= 1); else { assert.equal(armas, 0); assert.ok(itens <= 3); }
     });
   });
+  const cartas = e.jogadores.flatMap(j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]));
+  assert.equal(new Set(cartas.map(c => c.base.codigo)).size, tam, 'carta repetida entre jogadores');
   assert.ok(e.acoes >= 0 && e.acoes <= R.acoesPorTurno);
 }
 let fins = 0, turnos = 0; const usadas = {}; const erros = {};

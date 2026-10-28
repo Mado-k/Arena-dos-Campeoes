@@ -9,6 +9,7 @@
     const status = $('status');
     const painelEntrada = $('entrada');
     const painelSala = $('sala');
+    const cabeca = document.querySelector('.lobby-cabeca');
 
     let socket = null;
     let salaAtual = null;
@@ -54,7 +55,18 @@
         await carregarScript(`${API}/socket.io/socket.io.js`);
         socket = io(API || location.origin);
 
-        mesa = criarMesaOnline(socket);
+        mesa = criarMesaOnline(socket, {
+            aoMostrar() {
+                painelEntrada.hidden = true;
+                painelSala.hidden = true;
+                cabeca.hidden = true;
+                document.querySelector('main').classList.add('em-partida');
+            },
+            aoSair() {
+                socket.emit('sala:sair');
+                voltarParaEntrada('Você saiu da partida.');
+            }
+        });
         socket.on('sala', mostrarSala);
         socket.on('partida:encerrada', dados => { mesa.limpar(); aviso(dados.motivo, 'erro'); $('sala-aviso').textContent = dados.motivo; });
         socket.on('disconnect', () => {
@@ -102,7 +114,7 @@
         mostrarSala(resp.sala);
     }
 
-    $('criar').addEventListener('click', () => abrirSala('sala:criar', {}));
+    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value) }));
 
     function tentarEntrar() {
         const c = limpar(codigo.value);
@@ -121,8 +133,11 @@
     function mostrarSala(sala) {
         salaAtual = sala;
         painelEntrada.hidden = true;
-        painelSala.hidden = false;
+        painelSala.hidden = Boolean(sala.emPartida);
+        cabeca.hidden = Boolean(sala.emPartida);
+        document.querySelector('main').classList.toggle('em-partida', Boolean(sala.emPartida));
         $('sala-codigo').textContent = sala.codigo;
+        $('sala-baralho').textContent = `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por ${modo === 'coop' ? 'lado (equipe/computador)' : 'jogador'} · sem repetição`;
 
         const lista = $('jogadores');
         lista.replaceChildren();
@@ -166,6 +181,8 @@
         if (mesa) mesa.limpar();
         painelSala.hidden = true;
         painelEntrada.hidden = false;
+        cabeca.hidden = false;
+        document.querySelector('main').classList.remove('em-partida');
         aviso(texto || '', tipo);
     }
 

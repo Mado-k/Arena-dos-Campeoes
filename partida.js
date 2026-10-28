@@ -12,15 +12,11 @@ const ACOES = {
 };
 
 class Partida {
-  constructor(jogadores, cartas, modo = 'multiplayer') {
+  constructor(jogadores, cartas, modo = 'multiplayer', tamanhoBaralho = 40) {
     this.coop = modo === 'coop';
     if (!this.coop && jogadores.length !== 2) throw new Error('O duelo precisa de dois jogadores.');
-    const jogaveis = cartas.filter(c => Motor.norm(c.classe) !== 'representante').length;
-    if (jogaveis < 20) {
-      throw Object.assign(new Error(`O banco tem ${jogaveis} cartas jogáveis; a partida precisa de pelo menos 20. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
-    }
     this.ids = jogadores.map(j => j.id);
-    this.estado = Motor.novoJogo({ nomes: this.coop ? ['Equipe', 'Computador'] : jogadores.map(j => j.nome), tamanhoBaralho: 40, ...(this.coop ? { comeca: 0 } : {}) }, cartas);
+    this.estado = Motor.novoJogo({ nomes: this.coop ? ['Equipe', 'Computador'] : jogadores.map(j => j.nome), tamanhoBaralho, ...(this.coop ? { comeca: 0 } : {}) }, cartas);
     this.revisao = 0;
     this.log = ['Partida iniciada. Cada jogador recebe três cartas e tem duas ações por turno.'];
   }
@@ -48,7 +44,7 @@ class Partida {
     // Logs internos de habilidades podem citar cartas compradas/escolhidas no baralho.
     // O registro público descreve a ação, sem revelar essas informações privadas.
     const rotulos = { comprar: 'comprou uma carta', encerrar: 'encerrou o turno', invocar: 'colocou uma criatura em batalha', apoio: 'colocou um auxiliar em apoio', equipar: 'equipou uma carta', atacar: 'atacou', habilidade: 'executou uma habilidade' };
-    this.log.push(`${this.estado.jogadores[indice].nome} ${rotulos[dados.tipo]}.`);
+    this.log.push(resposta.registroCombate || `${this.estado.jogadores[indice].nome} ${rotulos[dados.tipo]}.`);
     this.log = this.log.slice(-100);
     return { ok: true };
   }
@@ -79,7 +75,7 @@ class Partida {
         if (res && res.ok) {
           this.estado = copia;
           this.revisao++;
-          this.log.push('O computador executou uma ação: ' + tipo + '.');
+          this.log.push(res.registroCombate || 'O computador executou uma ação: ' + tipo + '.');
           executou = true;
           break;
         }
@@ -101,7 +97,7 @@ class Partida {
     const e = this.estado;
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
-      voce, cooperativo: this.coop, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
+      voce, cooperativo: this.coop, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
       acoes: e.acoes, vencedor: e.vencedor, pandora: e.pandora, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
         nome: j.nome, derrotados: j.derrotados,

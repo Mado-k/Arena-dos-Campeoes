@@ -372,8 +372,26 @@
 
     function novoJogo(config, cartas) {
         const lista = cartas.map(normalizarCarta);
-        const pool = lista.filter((c) => norm(c.classe) !== 'representante');
+        const vistas = new Set();
+        const pool = lista.filter((c) => {
+            if (norm(c.classe) === 'representante') return false;
+            const codigo = String(c.codigo || '').trim().toLowerCase();
+            const chave = codigo ? `codigo:${codigo}` : c.numero != null ? `numero:${c.numero}` : `nome:${norm(c.nome)}`;
+            if (vistas.has(chave)) return false;
+            vistas.add(chave);
+            return true;
+        });
+        // O tamanho é o total da partida, dividido igualmente entre os dois lados.
+        const total = config.tamanhoBaralho === undefined ? 40 : config.tamanhoBaralho;
+        if (![20, 30, 40].includes(total)) {
+            throw Object.assign(new Error('Escolha uma partida com 20, 30 ou 40 cartas no total.'), { code: 'TAMANHO_BARALHO_INVALIDO' });
+        }
+        if (pool.length < total) {
+            throw Object.assign(new Error(`O banco tem ${pool.length} cartas jogáveis distintas; esta partida precisa de ${total}. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
+        }
+        const distribuicao = embaralhar(pool).slice(0, total);
         const estado = {
+            tamanhoBaralho: total,
             jogadores: [0, 1].map((i) => ({
                 nome: config.nomes[i],
                 rep: (config.reps && config.reps[i]) || null,
@@ -390,7 +408,7 @@
             proxUid: 1
         };
         estado.jogadores.forEach((j, i) => {
-            j.baralho = embaralhar(pool).slice(0, config.tamanhoBaralho).map((c) => nova(estado, c));
+            j.baralho = distribuicao.slice(i * total / 2, (i + 1) * total / 2).map((c) => nova(estado, c));
             comprar(estado, i, REGRAS.maoInicial);
         });
         log(estado, `${estado.jogadores[estado.turno].nome} começa. Cada jogador recebeu ${REGRAS.maoInicial} cartas.`);
@@ -553,9 +571,15 @@
         estado.acoes--;
         let texto = `${a.base.nome} atacou ${t.base.nome}: ${d} de dano.`;
         contato(estado, a, t);
+        const registrar = () => {
+            // Registrar antes de morrer(): o descarte restaura os atributos da carta.
+            texto += ` Defesa restante: ${a.base.nome} (${j.nome}) ${Math.max(0, a.defesa)}; ${t.base.nome} (${o.nome}) ${Math.max(0, t.defesa)}.`;
+            log(estado, texto);
+        };
 
         if (t.defesa <= 0) {
-            log(estado, texto);
+            texto += ` Contra-ataque: 0 de dano (${t.base.nome} foi derrotado antes de revidar).`;
+            registrar();
             morrer(estado, 1 - estado.turno, t);
         } else {
             const f2 = ferivel(estado, estado.turno, a, t.base);
@@ -564,12 +588,14 @@
                 a.defesa -= d2;
                 texto += ` Contra-ataque: ${d2} de dano.`;
                 contato(estado, t, a);
+            } else {
+                texto += ` Contra-ataque: 0 de dano (${f2.motivo}).`;
             }
-            log(estado, texto);
+            registrar();
             if (a.defesa <= 0) morrer(estado, estado.turno, a);
         }
         verificarFim(estado);
-        return { ok: true };
+        return { ok: true, registroCombate: texto };
     }
 
     // ---------- habilidades ----------
@@ -1001,70 +1027,12 @@
         return executarHabilidade(estado, uid, escolha);
     }
 
-    // ---------- correções manuais (não gastam ações; só para consertar um engano) ----------
-    function descartarDaMao(estado, uid) {
-        const e = fim(estado); if (e) return e;
-        const { j, i, inst } = cartaDaMao(estado, uid);
-        if (!inst) return erro('Essa carta não está na sua mão.');
-        j.mao.splice(i, 1);
-        paraDescarte(j, inst);
-        log(estado, `${j.nome} descartou ${inst.base.nome}.`);
-        return { ok: true };
-    }
-
-    function ajustarCarta(estado, uid, campo, delta) {
-        const e = fim(estado); if (e) return e;
-        const loc = localizar(estado, uid);
-        if (!loc || !['campo', 'apoio'].includes(loc.zona)) return erro('Carta não encontrada em batalha.');
-        const c = loc.inst;
-        const sinal = delta > 0 ? '+' : '';
-        if (campo === 'defesa') {
-            c.defesa += delta;
-            if (c.defesa > c.defesaMax) c.defesaMax = c.defesa;
-            log(estado, `Correção manual: ${c.base.nome} ${sinal}${delta} de defesa.`);
-            if (c.defesa <= 0 && loc.zona === 'campo') { morrer(estado, loc.dono, c); verificarFim(estado); }
-        } else if (campo === 'ataque') {
-            c.ataqueAjuste += delta;
-            log(estado, `Correção manual: ${c.base.nome} ${sinal}${delta} de ataque.`);
-        }
-        return { ok: true };
-    }
-
-    // envia ao descarte sem contar como campeão derrotado (use "ajustar derrotados" se contar)
-    function descartarCampo(estado, uid) {
-        const e = fim(estado); if (e) return e;
-        const loc = localizar(estado, uid);
-        if (!loc || !['campo', 'apoio'].includes(loc.zona)) return erro('Carta não encontrada em batalha.');
-        const j = estado.jogadores[loc.dono];
-        j[loc.zona].splice(j[loc.zona].indexOf(loc.inst), 1);
-        paraDescarte(j, loc.inst);
-        log(estado, `${loc.inst.base.nome} (${j.nome}) foi para o descarte.`);
-        return { ok: true };
-    }
-
-    function ajustarDerrotados(estado, indice, delta) {
-        const e = fim(estado); if (e) return e;
-        const j = estado.jogadores[indice];
-        j.derrotados = Math.max(0, j.derrotados + delta);
-        log(estado, `Correção manual: campeões derrotados de ${j.nome}: ${j.derrotados}/${REGRAS.campeoesParaVencer}.`);
-        verificarFim(estado);
-        return { ok: true };
-    }
-
-    function comprarManual(estado, indice) {
-        const e = fim(estado); if (e) return e;
-        if (!comprar(estado, indice, 1)) return erro('Não há cartas para comprar.');
-        log(estado, `${estado.jogadores[indice].nome} comprou uma carta (correção manual).`);
-        return { ok: true };
-    }
-
     const Motor = {
         REGRAS, EFEITOS, HAB, TEXTOS, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,
-        executarHabilidade, usarHabilidade: executarHabilidade,
-        descartarDaMao, ajustarCarta, descartarCampo, ajustarDerrotados, comprarManual
+        executarHabilidade, usarHabilidade: executarHabilidade
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = Motor;

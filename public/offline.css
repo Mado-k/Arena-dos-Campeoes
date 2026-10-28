@@ -306,11 +306,6 @@
 .painel .nota { margin: 8px 0 0; font-size: 0.78rem; color: var(--suave); }
 .painel .c-stats { font-size: 0.95rem; margin: 6px 0; }
 .acoes-painel { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.manual-carta { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--borda); }
-.manual-carta summary { cursor: pointer; font-size: 0.85rem; color: var(--suave); }
-.manual-carta .acoes-painel { margin-top: 8px; }
-.manual-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
-.manual-linha span { flex: 1 1 100%; font-size: 0.85rem; }
 
 .log {
     list-style: none;

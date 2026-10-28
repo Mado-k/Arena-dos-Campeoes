@@ -54,9 +54,9 @@ test('equipamentos recebem estado de habilidade; perguntas não gastam ações',
   const j = p.estado.jogadores[0];
   const motor = require('../public/motor');
   const selecionar = codigo => {
-    const todas = [...j.mao, ...j.baralho];
+    const todas = p.estado.jogadores.flatMap(j => [...j.mao, ...j.baralho]);
     const c = todas.find(c => c.base.codigo === codigo);
-    j.mao = j.mao.filter(x => x !== c); j.baralho = j.baralho.filter(x => x !== c);
+    for (const dono of p.estado.jogadores) { dono.mao = dono.mao.filter(x => x !== c); dono.baralho = dono.baralho.filter(x => x !== c); }
     return c;
   };
   const campeao = selecionar('n013'), arma = selecionar('n006');
@@ -89,8 +89,9 @@ test('co-op compartilha o lado da equipe e a IA devolve o turno', () => {
 
 test('partidas online completas mantêm cartas, limites e bloqueiam ações após a vitória', () => {
   const Motor = require('../public/motor');
+  const campeoes = Array.from({ length: 40 }, (_, i) => ({ codigo: 'teste' + i, nome: 'Campeão ' + i, classe: 'campeão', ataque: 10, defesa: 1 }));
   for (const modo of ['multiplayer', 'coop']) {
-    const p = new Partida(jogadores, cartas, modo);
+    const p = new Partida(jogadores, campeoes, modo);
     for (let turno = 0; turno < 600 && p.estado.vencedor === null; turno++) {
       for (let passo = 0; passo < 2 && p.estado.vencedor === null; passo++) {
         const j = p.estado.jogadores[p.estado.turno];
@@ -117,7 +118,7 @@ test('partidas online completas mantêm cartas, limites e bloqueiam ações apó
       for (const j of p.estado.jogadores) {
         const todas = [...j.mao, ...j.baralho, ...j.campo, ...j.apoio, ...j.descarte];
         const ids = todas.flatMap(c => [c.uid, ...c.equip.map(e => e.uid)]);
-        assert.equal(ids.length, 40); assert.equal(new Set(ids).size, 40);
+        assert.equal(ids.length, 20); assert.equal(new Set(ids).size, 20);
         assert(j.campo.length <= 1 && j.apoio.length <= 2);
       }
     }
@@ -182,7 +183,10 @@ function esperar(c, evento) { return new Promise((resolve, reject) => {
 for (const modo of ['multiplayer', 'coop']) test('Socket.IO real: ' + modo, { timeout: 12000 }, async t => {
   const a = await ambiente(t), host = await a.cliente(), convidados = [];
   const total = modo === 'coop' ? 4 : 2;
-  const criado = await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião' });
+  assert((await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião', tamanhoBaralho: 80 })).erro);
+  const tamanhoBaralho = modo === 'coop' ? 20 : 30;
+  const criado = await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião', tamanhoBaralho });
+  assert.equal(criado.sala.tamanhoBaralho, tamanhoBaralho);
   for (let i = 1; i < total; i++) {
     const c = await a.cliente(); convidados.push(c);
     assert((await pedir(c, 'sala:entrar', { modo, codigo: criado.sala.codigo, nome: 'Amigo ' + i })).ok);
@@ -198,6 +202,10 @@ for (const modo of ['multiplayer', 'coop']) test('Socket.IO real: ' + modo, { ti
   const estados = todos.map(c => esperar(c, 'partida:estado'));
   assert((await pedir(host, 'partida:iniciar', {})).ok);
   const visoes = await Promise.all(estados);
+  for (const v of visoes) {
+    assert.equal(v.tamanhoBaralho, tamanhoBaralho);
+    for (const j of v.jogadores) assert.equal(j.maoTotal + j.baralhoTotal, tamanhoBaralho / 2);
+  }
   assert.equal(visoes[0].jogadores[1 - visoes[0].voce].mao.length, 0);
   assert.equal(visoes.at(-1).jogadores[visoes.at(-1).voce].mao.length, 3);
   const ativo = modo === 'coop' ? 0 : visoes[0].turno;

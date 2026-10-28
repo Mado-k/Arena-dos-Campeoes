@@ -14,7 +14,7 @@
     let cortina = false;    // tela de troca de jogador
     let fimMostrado = false;
     let aviso = { texto: '', tipo: '' };   // tipo: '', 'erro' ou 'ok'
-    let manualCartaAberto = false;
+    const turnos = criarAvisosTurno(encerrarTurno);
 
     // ---------- utilidades ----------
     function el(tag, classe, texto) {
@@ -96,7 +96,7 @@
     function montarRegras() {
         const itens = [
             `Objetivo: vença ${R.campeoesParaVencer} campeões do adversário, usando suas cartas. Bestas derrotadas não contam.`,
-            `Início: cada jogador recebe ${R.maoInicial} cartas.`,
+            `As cartas são divididas sem repetição: 40 no total = 20 por jogador; 30 = 15; 20 = 10. Cada jogador começa com ${R.maoInicial} dessas cartas na mão.`,
             `Em cada turno você tem ${R.acoesPorTurno} ações. Cada uma pode ser: atacar, comprar uma carta, usar a habilidade de uma carta ou jogar uma carta.`,
             `Em batalha só pode haver ${R.maxCampo} campeão ou besta por jogador, e ele não volta para a mão depois de jogado. Só pode haver ${R.maxApoio} auxiliares na batalha.`,
             `Armas: só em campeões, e cada campeão carrega uma única arma. Itens: um por campeão, e até ${R.maxItensBesta} por besta.`,
@@ -133,6 +133,7 @@
     }
 
     function voltarParaConfig() {
+        turnos.limpar();
         estado = null;
         selecao = null;
         cortina = false;
@@ -152,7 +153,13 @@
         });
         const comeca = $('comeca').value === 'sorteio' ? undefined : Number($('comeca').value);
 
-        estado = Motor.novoJogo({ nomes, reps, tamanhoBaralho: Number($('baralho').value), comeca }, cartas);
+        $('config-erro').textContent = '';
+        try {
+            estado = Motor.novoJogo({ nomes, reps, tamanhoBaralho: Number($('baralho').value), comeca }, cartas);
+        } catch (err) {
+            $('config-erro').textContent = err.message;
+            return;
+        }
 
         selecao = null;
         fimMostrado = false;
@@ -164,11 +171,11 @@
     });
 
     // ---------- troca de jogador ----------
-    function abrirCortina() {
+    function abrirCortina(encerramento = '') {
         cortina = true;
         const j = estado.jogadores[estado.turno];
         $('cortina-nome').textContent = j.nome;
-        $('cortina-info').textContent = `Turno ${estado.numTurno}. Passe o computador para ${j.nome} e confirme quando só ele(a) estiver olhando.`;
+        $('cortina-info').textContent = `${encerramento ? encerramento + ' ' : ''}Turno ${estado.numTurno}. Passe o computador para ${j.nome} e confirme quando só ele(a) estiver olhando.`;
         $('cortina').hidden = false;
         render();
         $('cortina-ok').focus();
@@ -180,16 +187,20 @@
         render();
     });
 
-    $('encerrar').addEventListener('click', () => {
+    function encerrarTurno() {
         if (!estado || cortina || estado.vencedor !== null) return;
+        const nome = estado.jogadores[estado.turno].nome;
         const antes = estado.log.length;
         Motor.encerrarTurno(estado);
         selecao = null;
         const novos = estado.log.slice(antes).filter((t) => !/^Turno \d+: vez de/.test(t));
         setAviso(novos.join(' '), novos.length ? 'ok' : '');
-        abrirCortina();
+        const encerramento = `${nome} encerrou o turno. Agora é a vez de ${estado.jogadores[estado.turno].nome}.`;
+        abrirCortina(encerramento);
+        turnos.notificar(encerramento);
         // o que aconteceu no início do turno (dano por turno, confusão...) aparece depois da cortina
-    });
+    }
+    $('encerrar').addEventListener('click', encerrarTurno);
 
     $('comprar').addEventListener('click', () => {
         if (!estado || cortina) return;
@@ -438,27 +449,6 @@
         return caixa;
     }
 
-    function ajustesDaCarta(inst, zona) {
-        const det = el('details', 'manual-carta');
-        det.open = manualCartaAberto;
-        det.addEventListener('toggle', () => { manualCartaAberto = det.open; });
-        det.append(el('summary', null, 'Correções manuais desta carta'));
-        const acoes = el('div', 'acoes-painel');
-        if (zona === 'mao') {
-            acoes.append(botao('Descartar', () => rodar(() => Motor.descartarDaMao(estado, inst.uid)), { dica: 'Não gasta ação.' }));
-        } else if (zona === 'campo' || zona === 'apoio') {
-            acoes.append(
-                botao('Ataque −1', () => rodar(() => Motor.ajustarCarta(estado, inst.uid, 'ataque', -1))),
-                botao('Ataque +1', () => rodar(() => Motor.ajustarCarta(estado, inst.uid, 'ataque', 1))),
-                botao('Defesa −1', () => rodar(() => Motor.ajustarCarta(estado, inst.uid, 'defesa', -1))),
-                botao('Defesa +1', () => rodar(() => Motor.ajustarCarta(estado, inst.uid, 'defesa', 1))),
-                botao('Enviar ao descarte', () => rodar(() => Motor.descartarCampo(estado, inst.uid)))
-            );
-        }
-        det.append(acoes);
-        return det;
-    }
-
     function renderPainel() {
         const raiz = $('painel-carta');
         raiz.replaceChildren();
@@ -523,22 +513,6 @@
             if (acoes.childNodes.length) raiz.append(acoes);
             if (estado.acoes <= 0) raiz.append(el('p', 'nota', 'Você não tem mais ações neste turno. Clique em "Encerrar turno".'));
         }
-        if (estado.vencedor === null && dono === estado.turno && ['mao', 'campo', 'apoio'].includes(zona)) raiz.append(ajustesDaCarta(inst, zona));
-    }
-
-    function renderManual() {
-        const raiz = $('manual');
-        raiz.replaceChildren();
-        estado.jogadores.forEach((j, i) => {
-            const linha = el('div', 'manual-linha');
-            linha.append(el('span', null, `Campeões derrotados de ${j.nome}: ${j.derrotados}/${R.campeoesParaVencer}`));
-            linha.append(
-                botao('−1', () => rodar(() => Motor.ajustarDerrotados(estado, i, -1))),
-                botao('+1', () => rodar(() => Motor.ajustarDerrotados(estado, i, 1))),
-                botao('Comprar carta grátis', () => rodar(() => Motor.comprarManual(estado, i)))
-            );
-            raiz.append(linha);
-        });
     }
 
     function renderLog() {
@@ -597,6 +571,7 @@
 
     function render() {
         if (!estado) return;
+        turnos.atualizar({ acoes: estado.acoes, suaVez: !cortina, numTurno: estado.numTurno, vencedor: estado.vencedor });
         renderLado($('lado-op'), 1 - estado.turno);
         renderLado($('lado-ativo'), estado.turno);
 
@@ -628,7 +603,6 @@
         $('encerrar').classList.toggle('destaque', !bloqueado && estado.acoes <= 0);
 
         renderPainel();
-        renderManual();
         renderLog();
         verFim();
     }
