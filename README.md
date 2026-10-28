@@ -33,22 +33,23 @@ O seed ignora códigos já cadastrados. As portas são independentes:
 
 | Variável | Uso |
 | --- | --- |
-| `PORT` | Porta HTTP do Node; padrão `16171` |
+| `PORT` | Porta HTTP do Node; padrão `3000` |
 | `DB_PORT` | Porta MySQL informada pelo Aiven; padrão local `3306` |
 | `DB_SSL` | Use `true` para habilitar TLS no banco |
 | `DB_SSL_CA` | Caminho do certificado CA, quando exigido pelo serviço |
 
 Para o Aiven, use `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` e `DB_NAME` do
-serviço, com `DB_SSL=true`. A validação do certificado fica ativa. Não execute o
+serviço, com `DB_SSL=true`. As variáveis `DB_CA_FILE` e `DB_CA_CERT` já usadas no Render também são aceitas.
+A validação do certificado fica ativa. Não execute o
 SQL de criação de banco local sobre o serviço remoto: use o banco já provisionado.
 Esta alteração foi validada com MariaDB local; o acesso ao seu Aiven depende das
 credenciais e permissões configuradas no seu Codespace.
 
 Sirva o site pelo próprio Node para usar a mesma origem. Se usar Live Server na
-porta `5500`, `public/config.js` aponta para a porta Node `16171`, inclusive nos
+porta `5500` ou `5501`, `public/config.js` aponta para a porta Node `3000`, inclusive nos
 endereços encaminhados do Codespaces. Se você mudar essa porta, ajuste `PORTA_NODE`
 nesse arquivo, ou defina `window.ARENA_API` antes de carregar `config.js`. No GitHub
-Pages, o endereço da API hospedada continua sendo o Render já configurado.
+Pages, preencha `API_HOSPEDADA` em `public/config.js` com o endereço do backend no Render.
 O servidor precisa estar acessível aos convidados; não compartilhe a porta do banco.
 
 ## Partidas online

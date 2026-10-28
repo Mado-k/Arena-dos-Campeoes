@@ -2,6 +2,7 @@
 // Uso: node --env-file=.env seed.js
 // Pode rodar mais de uma vez: cartas com o mesmo código são ignoradas.
 const banco = require('./banco');
+const { garantirTabela } = require('./db');
 
 // [codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade]
 const cartas = [
@@ -108,6 +109,7 @@ const cartas = [
 
 (async () => {
   const pool = banco.criarPool();
+  await garantirTabela(pool);
 
   const [colAtaque, colDefesa] = await banco.colunasAtributos(pool);
   let inseridas = 0;

@@ -8,11 +8,15 @@ function configuracao(env = process.env) {
   const opcoes = {
     host: env.DB_HOST || 'localhost', port,
     user: env.DB_USER || 'root', password: env.DB_PASSWORD || '',
-    database: env.DB_NAME || 'defaultdb', connectTimeout: 10000
+    database: env.DB_NAME || 'arena_campeoes', connectTimeout: 15000,
+    waitForConnections: true, connectionLimit: 5
   };
-  if (env.DB_SSL === 'true' || env.DB_SSL_CA) {
+  const caArquivo = env.DB_SSL_CA || env.DB_CA_FILE;
+  const nuvem = /(?:^|\.)aivencloud\.com$/i.test(opcoes.host);
+  if (env.DB_SSL === 'true' || caArquivo || env.DB_CA_CERT || (nuvem && env.DB_SSL !== 'false')) {
     opcoes.ssl = { rejectUnauthorized: true };
-    if (env.DB_SSL_CA) opcoes.ssl.ca = fs.readFileSync(env.DB_SSL_CA, 'utf8');
+    if (caArquivo) opcoes.ssl.ca = fs.readFileSync(caArquivo, 'utf8');
+    else if (env.DB_CA_CERT) opcoes.ssl.ca = env.DB_CA_CERT.replace(/\\n/g, '\n');
   }
   return opcoes;
 }

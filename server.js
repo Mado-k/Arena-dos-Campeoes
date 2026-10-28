@@ -1,5 +1,6 @@
 const express = require('express');
 const banco = require('./banco');
+const { garantirTabela } = require('./db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -11,7 +12,7 @@ const app = express();
 const servidor = http.createServer(app);
 const io = new Server(servidor, { cors: { origin: '*' }, maxHttpBufferSize: 16384 });
 
-// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 16171)
+// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 3000)
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type, x-admin-senha');
@@ -41,11 +42,12 @@ fs.mkdirSync(UPLOADS, { recursive: true });
 const pool = banco.criarPool();
 
 pool.getConnection()
-  .then((conn) => {
-    console.log('Conectado ao banco MySQL');
+  .then(async (conn) => {
     conn.release();
+    await garantirTabela(pool);
+    console.log('Conectado ao banco MySQL (tabela cartas pronta)');
   })
-  .catch((err) => console.error('Erro ao conectar ao banco:', err));
+  .catch((err) => console.error('Erro ao conectar ao banco:', err.code || '', err.message));
 
 // ---------- upload de imagem ----------
 const upload = multer({
@@ -173,7 +175,7 @@ require('./salas')(io, async () => {
   return cartas.map(banco.normalizar);
 });
 
-const PORT = process.env.PORT || 16171;
-servidor.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 3000;
+servidor.listen(PORT, '0.0.0.0', () => {
   console.log(`Arena dos Campeões rodando na porta ${PORT}`);
 });

@@ -130,6 +130,9 @@ test('Aiven: porta do banco independente, TLS verificado e compatibilidade de co
   const config = banco.configuracao({ DB_PORT: '16171', DB_SSL: 'true', PORT: '3000' });
   assert.equal(config.port, 16171);
   assert.equal(config.ssl.rejectUnauthorized, true);
+  assert.equal(banco.configuracao({ DB_HOST: 'jogo.aivencloud.com' }).ssl.rejectUnauthorized, true);
+  assert.equal(banco.configuracao({ DB_CA_CERT: 'CA\\nCERT' }).ssl.ca, 'CA\nCERT');
+  assert.deepEqual(require('../db').configBanco().ssl, banco.configuracao().ssl);
   assert.equal(banco.configuracao({}).port, 3306);
   assert.throws(() => banco.configuracao({ DB_PORT: 'errada' }));
   for (const cols of [['ataque', 'defesa'], ['dano', 'vida']]) {
@@ -146,11 +149,13 @@ test('API: mesma origem, Codespaces, Live Server e hospedagem', () => {
     if (manual !== undefined) c.window.ARENA_API = manual;
     vm.runInNewContext(fonte, c); return c.window.API;
   };
-  assert.equal(obter('localhost', '16171'), '');
-  assert.equal(obter('localhost', '5500'), 'http://localhost:16171');
-  assert.equal(obter('arena-5500.app.github.dev', '', 'https:'), 'https://arena-16171.app.github.dev');
-  assert.equal(obter('arena-16171.app.github.dev', '', 'https:'), '');
-  assert.equal(obter('mado-k.github.io', '', 'https:'), 'https://arena-dos-campeoes.onrender.com');
+  assert.equal(obter('localhost', '3000'), '');
+  assert.equal(obter('localhost', '5500'), 'http://localhost:3000');
+  assert.equal(obter('localhost', '5501'), 'http://localhost:3000');
+  assert.equal(obter('arena-5501.app.github.dev', '', 'https:'), 'https://arena-3000.app.github.dev');
+  assert.equal(obter('arena-5500.app.github.dev', '', 'https:'), 'https://arena-3000.app.github.dev');
+  assert.equal(obter('arena-3000.app.github.dev', '', 'https:'), '');
+  assert.equal(obter('mado-k.github.io', '', 'https:'), '');
   assert.equal(obter('localhost', '5500', 'http:', 'http://localhost:3000/'), 'http://localhost:3000');
 });
 
