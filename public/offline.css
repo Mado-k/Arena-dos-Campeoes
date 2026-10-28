@@ -281,6 +281,18 @@
 .instrucao.erro { color: #ff6b6b; font-weight: 600; }
 .instrucao.alvo { color: var(--ouro-claro); font-weight: 600; }
 .barra-botoes { display: flex; gap: 8px; }
+.barra-botoes .acao-compra {
+    padding: 12px 20px;
+    min-height: 44px;
+    font-weight: 800;
+    font-size: .95rem;
+    border-width: 2px;
+}
+.barra-botoes .acao-compra:enabled {
+    box-shadow: 0 0 0 3px rgba(232, 176, 74, .18), 0 6px 18px rgba(232, 176, 74, .14);
+}
+.barra-botoes .acao-compra:focus-visible { outline: 3px solid var(--ouro-claro); outline-offset: 3px; }
+.barra-botoes .acao-compra:disabled { background: var(--painel-2); color: var(--suave); border-color: var(--borda); box-shadow: none; }
 
 /* ============ Lateral ============ */
 .lateral { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 70px; max-height: calc(100vh - 86px); overflow-y: auto; }

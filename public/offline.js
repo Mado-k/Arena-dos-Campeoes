@@ -100,6 +100,7 @@
             `Em cada turno você tem ${R.acoesPorTurno} ações. Cada uma pode ser: atacar, comprar uma carta, usar a habilidade de uma carta ou jogar uma carta.`,
             `Em batalha só pode haver ${R.maxCampo} campeão ou besta por jogador, e ele não volta para a mão depois de jogado. Só pode haver ${R.maxApoio} auxiliares na batalha.`,
             `Armas: só em campeões, e cada campeão carrega uma única arma. Itens: um por campeão, e até ${R.maxItensBesta} por besta.`,
+            'Quando um campeão é derrotado, todos os auxiliares do mesmo jogador também são derrotados e vão para o descarte.',
             'Toda carta tem ataque (ATQ) e defesa (DEF). Atacar tira defesa da criatura do adversário; se ela sobreviver, contra-ataca. Sem defesa, a criatura é derrotada.',
             'Habilidades são automáticas. Selecione a carta e clique em "Executar habilidade" (gasta 1 ação). Habilidades passivas funcionam sozinhas, sem gastar ação.',
             `Representante (opcional): dá +${R.bonusRepresentante} de defesa às criaturas do universo dele.`
@@ -600,6 +601,7 @@
         const bloqueado = cortina || estado.vencedor !== null;
         $('comprar').disabled = bloqueado || estado.acoes <= 0;
         $('encerrar').disabled = bloqueado;
+        $('encerrar').classList.toggle('primario', !bloqueado && estado.acoes <= 0);
         $('encerrar').classList.toggle('destaque', !bloqueado && estado.acoes <= 0);
 
         renderPainel();

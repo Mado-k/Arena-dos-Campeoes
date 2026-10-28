@@ -118,11 +118,17 @@ Se alguém sair ou perder a conexão, a partida é encerrada sem atribuir vitór
 os restantes podem preparar uma nova partida. Não há retomada após desconexão.
 Não entram novos jogadores numa partida em andamento.
 
+As decisões que ainda precisam de confirmação e a lista de verificações estão em
+[PENDENCIAS.md](PENDENCIAS.md).
+
 ## Regras mantidas e decisões pendentes
 
 - Ataque e defesa zero em feitiços, auxiliares e equipamentos são válidos; não são
   valores faltantes que precisem ser preenchidos automaticamente.
 - Mantidas as interpretações atuais das habilidades, inclusive `sonoro` e `feitiço`.
+- Quando um campeão morre, seus auxiliares também vão para o descarte, qualquer
+  que seja a causa da derrota. No co-op, os auxiliares dos aliados permanecem.
+  Essa consequência ainda não foi estendida às bestas.
 - Apoios não ganham novo ataque direto ou duração padrão. O motor continua atacando
   apenas a criatura em batalha, e efeitos específicos existentes continuam valendo.
   Luciano e os demais desenvolvedores ainda decidirão sobre dano direto e duração.

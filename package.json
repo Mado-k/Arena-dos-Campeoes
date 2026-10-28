@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "test": "node testes/teste-habilidades.js && node testes/teste-partidas-aleatorias.js && node --test testes/online.test.js testes/distribuicao.test.js testes/combate.test.js testes/coop.test.js"
+    "test": "node testes/teste-habilidades.js && node testes/teste-partidas-aleatorias.js && node --test testes/online.test.js testes/distribuicao.test.js testes/combate.test.js testes/coop.test.js testes/auxiliares.test.js"
   },
   "repository": {
     "type": "git",

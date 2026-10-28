@@ -233,7 +233,7 @@
             acoes.append(el('span', `${estado.acoes}/${estado.acoesPorTurno}`));
             info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · ${estado.tamanhoBaralho / 2} por ${estado.cooperativo ? 'equipe, divididas entre os integrantes' : 'lado'}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
-            controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn primario' + (ativo() && estado.acoes === 0 ? ' destaque' : '')));
+            controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn primario acao-compra'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
             const instrucao = aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou sair para preparar outra partida.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);

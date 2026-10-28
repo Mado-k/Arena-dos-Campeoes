@@ -291,6 +291,9 @@
         if (campeao) {
             j.derrotados++;
             log(estado, `${nome} (${j.nome}) foi derrotado! Campeões derrotados de ${j.nome}: ${j.derrotados}/${REGRAS.campeoesParaVencer}.`);
+            const auxiliares = j.apoio.splice(0);
+            for (const auxiliar of auxiliares) paraDescarte(j, auxiliar);
+            if (auxiliares.length) log(estado, `Os auxiliares de ${j.nome} também foram derrotados com ${nome}: ${auxiliares.map(c => c.base.nome).join(', ')}. Todos foram para o descarte.`);
         } else {
             log(estado, `${nome} (${j.nome}) foi derrotada.`);
         }
