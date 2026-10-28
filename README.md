@@ -126,12 +126,12 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
 - Ataque e defesa zero em feitiços, auxiliares e equipamentos são válidos; não são
   valores faltantes que precisem ser preenchidos automaticamente.
 - Mantidas as interpretações atuais das habilidades, inclusive `sonoro` e `feitiço`.
-- Quando um campeão morre, seus auxiliares também vão para o descarte, qualquer
+- Cartas de apoio e cartas auxiliares são a mesma categoria.
+  Quando um campeão morre, seus auxiliares também vão para o descarte, qualquer
   que seja a causa da derrota. No co-op, os auxiliares dos aliados permanecem.
   Essa consequência ainda não foi estendida às bestas.
 - Apoios não ganham novo ataque direto ou duração padrão. O motor continua atacando
   apenas a criatura em batalha, e efeitos específicos existentes continuam valendo.
-  Luciano e os demais desenvolvedores ainda decidirão sobre dano direto e duração.
 - D007 (Rei da Arena dos Campeões) conserva defesa 400 e não recebe nova habilidade.
   Os representantes não voltam a funcionar como vida dos jogadores. A condição de
   vitória permanece derrotar três campeões adversários.

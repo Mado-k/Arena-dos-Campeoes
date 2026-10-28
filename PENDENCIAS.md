@@ -4,15 +4,20 @@ Esta lista separa as regras que Luciano ainda vai confirmar com os demais
 desenvolvedores das verificações práticas do jogo. As interpretações atuais continuam
 valendo até uma decisão nova; não é necessário inventar valores para cartas de apoio.
 
+## Regra confirmada dos auxiliares
+
+Cartas de apoio e cartas auxiliares são a mesma categoria. Quando o campeão morre,
+todos os auxiliares do mesmo jogador vão para o descarte, independentemente da
+causa da derrota. No co-op, os auxiliares dos aliados permanecem em jogo.
+Essa regra já está implementada no offline, no multiplayer e no co-op.
+Não há ataque direto aos auxiliares nem duração padrão por turnos; os efeitos
+específicos de cada carta continuam valendo.
+
 ## Decisões de regras
 
 - [ ] **Bestas e auxiliares:** a morte de uma besta também deve eliminar os auxiliares?
   A regra confirmada e implementada por enquanto vale para o campeão e para os
   auxiliares do mesmo dono. Os auxiliares dos aliados no co-op permanecem em jogo.
-- [ ] **Ataque direto aos apoios ou duração:** decidir se auxiliares podem receber
-  ataques de campeões/bestas ou se terão limite de turnos. Hoje não são alvos de
-  ataques normais, não têm uma duração padrão e saem se o campeão morrer. Efeitos
-  específicos das cartas continuam podendo removê-los antes disso.
 - [ ] **Nova habilidade do D007:** ainda em avaliação. Hoje tem defesa 400, sem
   habilidade adicional; isso não restaura a vida dos jogadores do sistema antigo.
 - [ ] **Interpretações das habilidades:** aprovar ou corrigir os casos abaixo e os
