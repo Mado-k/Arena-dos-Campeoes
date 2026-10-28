@@ -17,3 +17,6 @@ public/uploads/*
 
 # O servidor grava as imagens nesta pasta, fora de public.
 /uploads/
+
+# Dossiês de contexto são arquivos locais e não devem ir para o GitHub.
+*[Dd][Oo][Ss][Ss][Ii][EeÊê]*
