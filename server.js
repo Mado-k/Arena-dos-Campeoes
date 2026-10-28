@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const banco = require('./banco');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -9,7 +9,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 const servidor = http.createServer(app);
-const io = new Server(servidor, { cors: { origin: '*' } });
+const io = new Server(servidor, { cors: { origin: '*' }, maxHttpBufferSize: 16384 });
 
 // CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 16171)
 app.use((req, res, next) => {
@@ -38,12 +38,7 @@ const OPCOES = {
 const UPLOADS = path.join(__dirname, 'uploads');
 fs.mkdirSync(UPLOADS, { recursive: true });
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'defaultdb'
-});
+const pool = banco.criarPool();
 
 pool.getConnection()
   .then((conn) => {
@@ -88,7 +83,7 @@ app.get('/opcoes', (req, res) => res.json(OPCOES));
 app.get('/cartas', async (req, res) => {
   try {
     const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
-    res.json(cartas);
+    res.json(cartas.map(banco.normalizar));
   } catch (err) {
     console.error('Erro ao buscar cartas:', err);
     res.status(500).json({ erro: 'Não foi possível buscar as cartas' });
@@ -99,7 +94,7 @@ app.get('/cartas/:numero', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM cartas WHERE numero = ?', [req.params.numero]);
     if (rows.length === 0) return res.status(404).json({ erro: 'Carta não encontrada' });
-    res.json(rows[0]);
+    res.json(banco.normalizar(rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro no servidor' });
@@ -138,8 +133,9 @@ app.post('/cartas', exigirSenha, upload.single('imagem'), async (req, res) => {
   const imagem = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
+    const [colAtaque, colDefesa] = await banco.colunasAtributos(pool);
     const [resultado] = await pool.query(
-      `INSERT INTO cartas (nome, elemento, origem, universo, classe, ataque, defesa, habilidade, imagem)
+      `INSERT INTO cartas (nome, elemento, origem, universo, classe, ${colAtaque}, ${colDefesa}, habilidade, imagem)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nome.trim(),
@@ -172,7 +168,10 @@ app.use((err, req, res, next) => {
 });
 
 // salas de multiplayer e co-op
-require('./salas')(io);
+require('./salas')(io, async () => {
+  const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
+  return cartas.map(banco.normalizar);
+});
 
 const PORT = process.env.PORT || 16171;
 servidor.listen(PORT, () => {

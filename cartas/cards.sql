@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS cartas (
     classe     VARCHAR(30) NOT NULL,
     universo   VARCHAR(30),
     origem     VARCHAR(30),
-    dano       INT NULL,
-    vida       INT NULL,
+    ataque     INT NOT NULL DEFAULT 0,
+    defesa     INT NOT NULL DEFAULT 0,
     habilidade TEXT,
     imagem     VARCHAR(255)
 );

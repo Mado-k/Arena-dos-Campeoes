@@ -1,5 +1,6 @@
 # Arquivo de variáveis de ambiente (contém senhas e dados do banco)
 .env
+*.env
 
 # Dependências do Node.js
 node_modules/
@@ -13,3 +14,6 @@ yarn-error.log*
 # Imagens de upload salvas localmente
 public/uploads/*
 !public/uploads/.gitkeep
+
+# O servidor grava as imagens nesta pasta, fora de public.
+/uploads/

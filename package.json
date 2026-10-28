@@ -2,9 +2,10 @@
   "name": "arena-dos-campeoes",
   "version": "1.0.0",
   "description": "Arena dos Campeões é um jogo de cartas, desenvolvido por um grupo movido por mim e mais 2 amigos do Ensino Médio. Arena dos Campeões is a card game, made by me and a group of more 2 friends of mine at highschool.",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node testes/teste-habilidades.js && node testes/teste-partidas-aleatorias.js && node --test testes/online.test.js"
   },
   "repository": {
     "type": "git",
@@ -24,5 +25,8 @@
     "multer": "^2.4.0",
     "mysql2": "^3.24.6",
     "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
   }
 }

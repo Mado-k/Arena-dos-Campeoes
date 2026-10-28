@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="online.css">
 </head>
 <body data-modo="coop">
 
@@ -24,7 +25,7 @@
         <div class="lobby-cabeca">
             <p class="selo">Modo de jogo</p>
             <h1>Co-op</h1>
-            <p class="lead">Reúna seus amigos e enfrentem a arena lado a lado.</p>
+            <p class="lead">De dois a quatro amigos contra o computador. A equipe compartilha mão, campo e ações.</p>
         </div>
 
         <!-- ENTRADA -->
@@ -68,6 +69,7 @@
 
             <div class="acoes sala-acoes">
                 <button type="button" class="btn primario" id="pronto">Estou pronto</button>
+                <button type="button" class="btn primario" id="iniciar" disabled>Iniciar partida</button>
                 <button type="button" class="btn" id="sair">Sair da sala</button>
             </div>
         </section>
@@ -79,6 +81,8 @@
     </footer>
 
     <script src="config.js"></script>
+    <script src="motor.js"></script>
+    <script src="online.js"></script>
     <script src="lobby.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // Importa as cartas já criadas (n001-n040 e D001-D007).
 // Uso: node --env-file=.env seed.js
 // Pode rodar mais de uma vez: cartas com o mesmo código são ignoradas.
-const mysql = require('mysql2/promise');
+const banco = require('./banco');
 
 // [codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade]
 const cartas = [
@@ -107,20 +107,16 @@ const cartas = [
 ];
 
 (async () => {
-  const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'defaultdb'
-  });
+  const pool = banco.criarPool();
 
+  const [colAtaque, colDefesa] = await banco.colunasAtributos(pool);
   let inseridas = 0;
   for (const c of cartas) {
     const [r] = await pool.query(
       `INSERT IGNORE INTO cartas
-         (codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade)
+         (codigo, nome, elemento, classe, universo, origem, ${colAtaque}, ${colDefesa}, habilidade)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      c
+      c.map((v, i) => (i === 6 || i === 7) ? (v ?? 0) : i === 8 ? banco.normalizar({ codigo: c[0], habilidade: v }).habilidade : v)
     );
     inseridas += r.affectedRows;
   }

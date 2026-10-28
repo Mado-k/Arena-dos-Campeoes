@@ -2,21 +2,22 @@
 // Define onde está o servidor (Node, porta 3000), mesmo quando a página
 // é aberta pelo Live Server (porta 5500), pelo Codespaces ou pelo GitHub Pages.
 (function () {
-    // Se a detecção automática errar, escreva o endereço aqui. Ex.: 'http://localhost:3000'
-    const API_MANUAL = 'https://arena-dos-campeoes.onrender.com';
-
+    // A porta HTTP do Node não é a porta MySQL do Aiven.
+    // Para outra porta no Live Server, defina window.ARENA_API antes deste script.
+    const API_HOSPEDADA = 'https://arena-dos-campeoes.onrender.com';
+    const PORTA_NODE = '16171';
     const { protocol, hostname, port } = location;
     let base = '';
-
-    if (API_MANUAL) {
-        base = API_MANUAL.replace(/\/$/, '');
+    if (typeof window.ARENA_API === 'string') {
+        base = window.ARENA_API.replace(/\/$/, '');
     } else if (protocol === 'file:') {
-        base = 'http://localhost:3000';
-    } else if (/-\d+\.app\.github\.dev$/.test(hostname)) {
-        // GitHub Codespaces: troca a porta no endereço (…-5500.app.github.dev -> …-3000.app.github.dev)
-        base = `${protocol}//${hostname.replace(/-\d+\.app\.github\.dev$/, '-3000.app.github.dev')}`;
-    } else if (port && port !== '3000') {
-        base = `${protocol}//${hostname}:3000`;
+        base = 'http://localhost:' + PORTA_NODE;
+    } else if (/-5500\.app\.github\.dev$/.test(hostname)) {
+        base = `${protocol}//${hostname.replace(/-5500\.app\.github\.dev$/, '-' + PORTA_NODE + '.app.github.dev')}`;
+    } else if (['localhost', '127.0.0.1', '[::1]'].includes(hostname) && port === '5500') {
+        base = `${protocol}//${hostname}:${PORTA_NODE}`;
+    } else if (hostname.endsWith('.github.io')) {
+        base = API_HOSPEDADA;
     }
 
     window.API = base;

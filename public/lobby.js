@@ -12,6 +12,7 @@
 
     let socket = null;
     let salaAtual = null;
+    let mesa = null;
 
     function el(tag, classe, texto) {
         const e = document.createElement(tag);
@@ -52,7 +53,9 @@
         await carregarScript(`${API}/socket.io/socket.io.js`);
         socket = io(API || location.origin);
 
+        mesa = criarMesaOnline(socket);
         socket.on('sala', mostrarSala);
+        socket.on('partida:encerrada', dados => { mesa.limpar(); aviso(dados.motivo, 'erro'); $('sala-aviso').textContent = dados.motivo; });
         socket.on('disconnect', () => {
             if (salaAtual) voltarParaEntrada('A conexão com o servidor caiu. Entre em uma sala de novo.', 'erro');
         });
@@ -71,10 +74,10 @@
         } catch (err) {
             console.error(err);
             if (socket) { socket.close(); socket = null; }
-            aviso('Não foi possível conectar ao servidor. Confira se ele está rodando na porta 3000.', 'erro');
+            aviso('Não foi possível conectar ao servidor. Confira o endereço da API e se o servidor está acessível.', 'erro');
             return null;
         }
-        return new Promise((resolve) => socket.emit(evento, dados, resolve));
+        return new Promise(resolve => socket.timeout(15000).emit(evento, dados, (err, res) => resolve(err ? { erro: 'O servidor não respondeu. Tente novamente.' } : res)));
     }
 
     // ---------- entrar / criar ----------
@@ -146,17 +149,28 @@
         const prontos = sala.jogadores.filter((j) => j.pronto).length;
         let texto;
         if (total < sala.min) texto = `Aguardando jogadores (${total} de ${sala.min} no mínimo).`;
-        else if (prontos === total) texto = 'Todos prontos! A partida será liberada em breve.';
+        else if (sala.emPartida) texto = 'Partida em andamento. A mesa está abaixo.';
+        else if (sala.iniciando) texto = 'Carregando as cartas…';
+        else if (prontos === total) texto = 'Todos prontos! O anfitrião pode iniciar a partida.';
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
+        $('iniciar').disabled = sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;
+        $('pronto').disabled = sala.iniciando || sala.emPartida;
     }
 
     function voltarParaEntrada(texto, tipo) {
         salaAtual = null;
+        if (mesa) mesa.limpar();
         painelSala.hidden = true;
         painelEntrada.hidden = false;
         aviso(texto || '', tipo);
     }
+
+    $('iniciar').addEventListener('click', async () => {
+        $('iniciar').disabled = true;
+        const res = await pedir('partida:iniciar', {});
+        if (res && res.erro) $('sala-aviso').textContent = res.erro;
+    });
 
     $('pronto').addEventListener('click', () => {
         if (!salaAtual) return;

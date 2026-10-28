@@ -1,0 +1,18 @@
+.mesa-online { margin-top: 2rem; text-align: left; }
+.mesa-online[hidden] { display: none; }
+.mesa-online > .btn { margin: .3rem; }
+.lados-online { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.lado-online, .detalhe-online { background: #171a24; border: 1px solid #857343; border-radius: 12px; padding: 1rem; min-width: 0; }
+.cartas-online { display: flex; gap: .6rem; overflow-x: auto; padding: .5rem 0; }
+.cartas-online > div { flex: 0 0 180px; }
+.carta-online { display: flex; flex-direction: column; gap: .5rem; width: 100%; min-height: 140px; margin-bottom: .5rem; padding: .8rem; color: #f4eee0; background: #242838; border: 1px solid #79715b; border-radius: 8px; text-align: left; cursor: pointer; font: inherit; }
+.carta-online span { font-size: .85rem; }
+.carta-online.selecionada, .carta-online:focus-visible { outline: 3px solid #dfbb63; outline-offset: -3px; }
+.estado-online { color: #ffcf7a; }
+.detalhe-online { margin-top: 1rem; }
+.detalhe-online p { line-height: 1.6; }
+.escolha-online { max-width: min(90vw, 600px); max-height: 80vh; overflow: auto; padding: 1.5rem; background: #171a24; color: #f4eee0; border: 1px solid #dfbb63; border-radius: 12px; }
+.escolha-online .btn { display: block; margin-top: .7rem; }
+.escolha-online::backdrop { background: #000b; }
+.registro-online { max-height: 200px; overflow-y: auto; }
+@media (max-width: 760px) { .lados-online { grid-template-columns: 1fr; } }

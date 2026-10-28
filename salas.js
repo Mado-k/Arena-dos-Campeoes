@@ -1,6 +1,7 @@
 // Salas de multiplayer e co-op (tempo real, via Socket.IO).
 // Ficam só na memória: quando o servidor reinicia, as salas somem.
 const { randomInt } = require('crypto');
+const Partida = require('./partida');
 
 // Ajuste aqui o tamanho das salas
 const MODOS = {
@@ -9,9 +10,8 @@ const MODOS = {
 };
 
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I, para não confundir
-const salas = new Map();
 
-function novoCodigo() {
+function novoCodigo(salas) {
   let codigo;
   do {
     codigo = Array.from({ length: 5 }, () => ALFABETO[randomInt(ALFABETO.length)]).join('');
@@ -30,11 +30,18 @@ function publico(sala) {
     max: sala.max,
     min: sala.min,
     anfitriao: sala.anfitriao,
+    iniciando: Boolean(sala.iniciando),
+    emPartida: Boolean(sala.partida),
     jogadores: sala.jogadores.map((j) => ({ id: j.id, nome: j.nome, pronto: j.pronto }))
   };
 }
 
-module.exports = function iniciarSalas(io) {
+module.exports = function iniciarSalas(io, carregarCartas) {
+  const salas = new Map();
+  const publicar = sala => io.to(sala.codigo).emit('sala', publico(sala));
+  function atualizarPartida(sala) {
+    for (const j of sala.jogadores) io.to(j.id).emit('partida:estado', sala.partida.visao(j.id));
+  }
   io.on('connection', (socket) => {
     const resposta = (cb) => (typeof cb === 'function' ? cb : () => {});
 
@@ -46,6 +53,12 @@ module.exports = function iniciarSalas(io) {
 
       const sala = salas.get(codigo);
       if (!sala) return;
+
+      if (sala.partida || sala.iniciando) {
+        sala.partida = null;
+        sala.iniciando = false;
+        io.to(codigo).emit('partida:encerrada', { motivo: 'Um jogador saiu ou perdeu a conexão. A partida foi encerrada; prepare uma nova sala.' });
+      }
 
       sala.jogadores = sala.jogadores.filter((j) => j.id !== socket.id);
       if (sala.jogadores.length === 0) {
@@ -72,7 +85,7 @@ module.exports = function iniciarSalas(io) {
       if (!nome) return responder({ ok: false, erro: 'Escolha um apelido.' });
 
       sair();
-      const sala = { codigo: novoCodigo(), modo: dados.modo, max: modo.max, min: modo.min, anfitriao: socket.id, jogadores: [] };
+      const sala = { codigo: novoCodigo(salas), modo: dados.modo, max: modo.max, min: modo.min, anfitriao: socket.id, jogadores: [] };
       salas.set(sala.codigo, sala);
       entrar(sala, nome);
       responder({ ok: true, sala: publico(sala) });
@@ -86,6 +99,7 @@ module.exports = function iniciarSalas(io) {
 
       const sala = salas.get(codigo);
       if (!sala) return responder({ ok: false, erro: 'Sala não encontrada. Confira o código.' });
+      if (sala.partida || sala.iniciando) return responder({ ok: false, erro: 'Essa sala já está em partida.' });
       if (sala.modo !== dados.modo) return responder({ ok: false, erro: 'Essa sala é de outro modo de jogo.' });
       if (sala.jogadores.some((j) => j.id === socket.id)) return responder({ ok: true, sala: publico(sala) });
       if (sala.jogadores.length >= sala.max) return responder({ ok: false, erro: 'A sala está cheia.' });
@@ -99,10 +113,59 @@ module.exports = function iniciarSalas(io) {
     socket.on('sala:pronto', (valor) => {
       const sala = salas.get(socket.data.sala);
       if (!sala) return;
+      if (sala.partida || sala.iniciando) return;
       const jogador = sala.jogadores.find((j) => j.id === socket.id);
       if (!jogador) return;
       jogador.pronto = Boolean(valor);
       io.to(sala.codigo).emit('sala', publico(sala));
+    });
+
+    socket.on('partida:iniciar', async (_, cb) => {
+      const responder = resposta(cb);
+      const sala = salas.get(socket.data.sala);
+      if (!sala || sala.anfitriao !== socket.id) return responder({ erro: 'Só o anfitrião pode iniciar.' });
+      if (sala.partida || sala.iniciando) return responder({ erro: 'A partida já está iniciando ou em andamento.' });
+      if (sala.jogadores.length < sala.min || !sala.jogadores.every(j => j.pronto)) return responder({ erro: 'Aguarde todos os jogadores ficarem prontos.' });
+      sala.iniciando = true;
+      const ids = sala.jogadores.map(j => j.id).join(',');
+      publicar(sala);
+      try {
+        const cartas = await carregarCartas();
+        if (!sala.iniciando || !salas.has(sala.codigo) || ids !== sala.jogadores.map(j => j.id).join(',')) return responder({ erro: 'Os jogadores da sala mudaram. Tente novamente.' });
+        sala.partida = new Partida(sala.jogadores, cartas, sala.modo);
+        sala.iniciando = false;
+        publicar(sala);
+        atualizarPartida(sala);
+        responder({ ok: true });
+      } catch (err) {
+        sala.iniciando = false;
+        publicar(sala);
+        console.error('Não foi possível iniciar a partida:', err.code || err.message);
+        responder({ erro: 'Não foi possível carregar as cartas. Confira a conexão do servidor com o banco.' });
+      }
+    });
+
+    let janela = 0, quantidade = 0;
+    socket.on('partida:sincronizar', () => {
+      const sala = salas.get(socket.data.sala);
+      if (sala && sala.partida) socket.emit('partida:estado', sala.partida.visao(socket.id));
+    });
+    socket.on('partida:acao', (dados, cb) => {
+      const responder = resposta(cb);
+      const agora = Date.now();
+      if (agora - janela > 1000) { janela = agora; quantidade = 0; }
+      if (++quantidade > 30) return responder({ erro: 'Muitas ações. Aguarde um instante.' });
+      const sala = salas.get(socket.data.sala);
+      if (!sala || !sala.partida) return responder({ erro: 'Não há partida em andamento.' });
+      try {
+        const res = sala.partida.agir(socket.id, dados);
+        if (res.ok) sala.partida.jogarComputador();
+        if (!res.pergunta) atualizarPartida(sala);
+        responder(res);
+      } catch (err) {
+        console.error('Erro na ação:', err.code || err.message);
+        responder({ erro: 'Não foi possível executar a ação.' });
+      }
     });
 
     socket.on('sala:sair', sair);
