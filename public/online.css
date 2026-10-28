@@ -15,3 +15,20 @@
     .mesa-online .barra-botoes .btn { flex: 1 1 auto; }
     .mesa-online .lateral { scroll-margin-top: 80px; }
 }
+
+/* Co-op: campos individuais e uma visão comum da equipe. */
+.maquinas-online { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.aliados-online { display: grid; gap: 8px; }
+.aliados-online > details { border: 1px solid var(--borda); border-radius: var(--raio); background: var(--painel); padding: 10px; }
+.aliados-online summary { cursor: pointer; color: var(--ouro-claro); font-size: .9rem; }
+.aliados-online details > .lado { margin-top: 10px; }
+.lado-eliminado { opacity: .65; }
+.lado-publico .slot-vazio { min-height: 44px; }
+.lado-publico .mao-escondida { padding: 10px; }
+.lado-alvo { border-color: var(--ouro); }
+.alvo-selecionado { color: var(--ouro-claro); border-color: var(--ouro); }
+.alvo-coop { flex: 1 1 100%; }
+.alvo-coop label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ouro-claro); }
+.alvo-coop select { color: var(--texto); background: var(--bg); border: 1px solid var(--ouro); border-radius: 8px; padding: 8px; font: inherit; }
+.ordem-turnos ol { padding-left: 20px; color: var(--suave); font-size: .85rem; line-height: 1.8; }
+.ordem-turnos .turno-atual { color: var(--ouro-claro); font-weight: 700; }

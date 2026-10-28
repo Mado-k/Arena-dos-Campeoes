@@ -28,8 +28,8 @@
         <div class="lobby-cabeca">
             <p class="selo">Modo de jogo</p>
             <h1>Co-op</h1>
-            <p class="lead">De dois a quatro amigos contra o computador. A equipe compartilha mão, campo e ações.</p>
-            <p class="suave dica-regras">Objetivo: derrote 3 campeões do adversário. A equipe começa com 3 cartas e tem 2 ações por turno. <a href="index.html#como-jogar">Ver todas as regras</a></p>
+            <p class="lead">Dois jogadores contra uma máquina ou quatro contra duas. Cada pessoa joga com sua própria mão e seu próprio campo.</p>
+            <p class="suave dica-regras">Cada humano recebe 3 cartas e tem 2 ações por turno. Derrotem 3 campeões de cada máquina para vencer em equipe. <a href="index.html#como-jogar">Ver todas as regras</a></p>
         </div>
 
         <!-- ENTRADA -->
@@ -44,11 +44,19 @@
                     <h2>Criar equipe</h2>
                     <p>Você vira o anfitrião e recebe um código para chamar o time.</p>
                     <div class="campo">
+                        <label for="formato-coop">Formato da equipe</label>
+                        <select id="formato-coop">
+                            <option value="2">2 jogadores × 1 máquina</option>
+                            <option value="4">4 jogadores × 2 máquinas</option>
+                        </select>
+                        <p class="suave">Mãos e campos individuais. As máquinas têm 4 ações por turno.</p>
+                    </div>
+                    <div class="campo">
                         <label for="tamanho-baralho">Cartas no total da partida</label>
                         <select id="tamanho-baralho">
-                            <option value="20">20 cartas · 10 por lado</option>
-                            <option value="30">30 cartas · 15 por lado</option>
-                            <option value="40" selected>40 cartas · 20 por lado</option>
+                            <option value="20">20 cartas · 10 para cada equipe</option>
+                            <option value="30">30 cartas · 15 para cada equipe</option>
+                            <option value="40" selected>40 cartas · 20 para cada equipe</option>
                         </select>
                     </div>
                     <button type="button" class="btn primario" id="criar">Criar sala</button>

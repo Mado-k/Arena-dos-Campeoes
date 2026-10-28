@@ -52,7 +52,7 @@ for (const modo of ['multiplayer', 'coop']) for (const total of [20, 30, 40]) te
   for (const j of jogadores) {
     const v = p.visao(j.id);
     assert.equal(v.tamanhoBaralho, total);
-    for (const lado of v.jogadores) assert.equal(lado.maoTotal + lado.baralhoTotal, total / 2);
-    assert.equal(v.jogadores[1 - v.voce].mao.length, 0);
+    for (const time of [0, 1]) assert.equal(v.jogadores.filter(l => l.equipe === time).reduce((n, l) => n + l.maoTotal + l.baralhoTotal, 0), total / 2);
+    for (let i = 0; i < v.jogadores.length; i++) assert.equal(v.jogadores[i].mao.length, i === v.voce ? 3 : 0);
   }
 });

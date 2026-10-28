@@ -3,11 +3,8 @@
 const { randomInt } = require('crypto');
 const Partida = require('./partida');
 
-// Ajuste aqui o tamanho das salas
-const MODOS = {
-  multiplayer: { max: 2, min: 2 },
-  coop: { max: 4, min: 2 }
-};
+// O formato do co-op define se a sala precisa de dois ou quatro humanos.
+const MODOS = new Set(['multiplayer', 'coop']);
 
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I, para não confundir
 
@@ -28,6 +25,7 @@ function publico(sala) {
     codigo: sala.codigo,
     modo: sala.modo,
     tamanhoBaralho: sala.tamanhoBaralho,
+    maquinas: sala.modo === 'coop' ? sala.max / 2 : 0,
     max: sala.max,
     min: sala.min,
     anfitriao: sala.anfitriao,
@@ -102,15 +100,18 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
 
     socket.on('sala:criar', (dados, cb) => {
       const responder = resposta(cb);
-      const modo = MODOS[dados && dados.modo];
+      const modo = MODOS.has(dados && dados.modo);
       const nome = limparNome(dados && dados.nome);
       if (!modo) return responder({ ok: false, erro: 'Modo de jogo inválido.' });
       if (!nome) return responder({ ok: false, erro: 'Escolha um apelido.' });
       const tamanhoBaralho = dados.tamanhoBaralho ?? 40;
       if (![20, 30, 40].includes(tamanhoBaralho)) return responder({ ok: false, erro: 'Escolha 20, 30 ou 40 cartas no total.' });
 
+      const humanos = dados.modo === 'coop' ? (dados.quantidadeJogadores ?? 2) : 2;
+      if (![2, 4].includes(humanos)) return responder({ ok: false, erro: 'Escolha dois ou quatro jogadores para o co-op.' });
+      if (humanos === 4 && tamanhoBaralho === 20) return responder({ ok: false, erro: 'Quatro jogadores precisam de 30 ou 40 cartas.' });
       sair();
-      const sala = { codigo: novoCodigo(salas), modo: dados.modo, tamanhoBaralho, max: modo.max, min: modo.min, anfitriao: socket.id, jogadores: [] };
+      const sala = { codigo: novoCodigo(salas), modo: dados.modo, tamanhoBaralho, max: humanos, min: humanos, anfitriao: socket.id, jogadores: [] };
       salas.set(sala.codigo, sala);
       entrar(sala, nome);
       responder({ ok: true, sala: publico(sala) });

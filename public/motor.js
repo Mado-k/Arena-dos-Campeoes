@@ -88,7 +88,17 @@
     }
 
     const atual = (estado) => estado.jogadores[estado.turno];
-    const outro = (estado) => estado.jogadores[1 - estado.turno];
+    function adversarios(estado, dono = estado.turno) {
+        const equipe = estado.equipes ? estado.equipes[dono] : dono;
+        return estado.jogadores.map((j, i) => i).filter(i =>
+            (estado.equipes ? estado.equipes[i] : i) !== equipe && !estado.jogadores[i].eliminado);
+    }
+    function indiceOponente(estado, dono = estado.turno) {
+        const opcoes = adversarios(estado, dono);
+        if (dono === estado.turno && opcoes.includes(estado.alvo)) return estado.alvo;
+        return opcoes.find(i => estado.jogadores[i].campo.length) ?? opcoes[0] ?? -1;
+    }
+    const outro = (estado) => estado.jogadores[indiceOponente(estado)];
     const fim = (estado) => (estado.vencedor !== null ? { erro: 'A partida já terminou.' } : null);
     const erro = (texto) => ({ erro: texto });
     const pedir = (titulo, opcoes) => ({ pergunta: { titulo, opcoes } });
@@ -123,7 +133,7 @@
 
     // ---------- localizar cartas ----------
     function localizar(estado, uid) {
-        for (let dono = 0; dono < 2; dono++) {
+        for (let dono = 0; dono < estado.jogadores.length; dono++) {
             const j = estado.jogadores[dono];
             for (const zona of ['mao', 'campo', 'apoio', 'descarte']) {
                 const inst = j[zona].find((c) => c.uid === uid);
@@ -150,15 +160,17 @@
     function silenciada(estado, inst) {
         const loc = localizar(estado, inst.uid);
         if (!loc) return null;
-        const oc = estado.jogadores[1 - loc.dono].campo[0];
-        if (!oc) return null;
-        const efo = efeitosBrutos(oc);
-        if (efo.anulaUniverso && efo.anulaUniverso.some((v) => norm(v) === norm(inst.base.universo))) {
-            return `${oc.base.nome} anula as habilidades de cartas do universo ${inst.base.universo}.`;
-        }
-        if (loc.zona === 'apoio') {
-            const arma = oc.equip.find((e) => efeitosBrutos(e).silenciaAux && !silenciada(estado, e));
-            if (arma) return `${arma.base.nome} transformou os auxiliares em peixes: eles não podem usar habilidades.`;
+        for (const indice of adversarios(estado, loc.dono)) {
+            const oc = estado.jogadores[indice].campo[0];
+            if (!oc) continue;
+            const efo = efeitosBrutos(oc);
+            if (efo.anulaUniverso && efo.anulaUniverso.some(v => norm(v) === norm(inst.base.universo))) {
+                return `${oc.base.nome} anula as habilidades de cartas do universo ${inst.base.universo}.`;
+            }
+            if (loc.zona === 'apoio') {
+                const arma = oc.equip.find(e => efeitosBrutos(e).silenciaAux && !silenciada(estado, e));
+                if (arma) return `${arma.base.nome} transformou os auxiliares em peixes: eles não podem usar habilidades.`;
+            }
         }
         return null;
     }
@@ -249,14 +261,21 @@
 
     function verificarFim(estado) {
         if (estado.vencedor !== null) return;
-        const perdeu = estado.jogadores.map((j) => j.derrotados >= REGRAS.campeoesParaVencer);
+        if (estado.cooperativo) {
+            estado.jogadores.forEach(j => { j.eliminado = j.derrotados >= REGRAS.campeoesParaVencer; });
+            const perdeuEquipe = [0, 1].map(time => estado.jogadores.filter((j, i) => estado.equipes[i] === time).every(j => j.eliminado));
+            if (perdeuEquipe[0] && perdeuEquipe[1]) estado.vencedor = -1;
+            else if (perdeuEquipe[0]) estado.vencedor = 1;
+            else if (perdeuEquipe[1]) estado.vencedor = 0;
+            if (estado.vencedor !== null) log(estado, estado.vencedor === -1 ? 'A partida terminou empatada.' : estado.vencedor === 0 ? 'A equipe venceu: todas as máquinas foram derrotadas!' : 'As máquinas venceram: todos os jogadores foram eliminados.');
+            return;
+        }
+        const perdeu = estado.jogadores.map(j => j.derrotados >= REGRAS.campeoesParaVencer);
         if (perdeu[0] && perdeu[1]) estado.vencedor = -1;
         else if (perdeu[0]) estado.vencedor = 1;
         else if (perdeu[1]) estado.vencedor = 0;
         if (estado.vencedor !== null) {
-            log(estado, estado.vencedor === -1
-                ? 'A partida terminou empatada.'
-                : `${estado.jogadores[estado.vencedor].nome} venceu: derrotou ${REGRAS.campeoesParaVencer} campeões do adversário!`);
+            log(estado, estado.vencedor === -1 ? 'A partida terminou empatada.' : `${estado.jogadores[estado.vencedor].nome} venceu: derrotou ${REGRAS.campeoesParaVencer} campeões do adversário!`);
         }
     }
 
@@ -295,12 +314,12 @@
 
     // gatilhos que dependem de duas criaturas frente a frente (lobisomem)
     function verificarPresenca(estado) {
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < estado.jogadores.length; i++) {
             const c = estado.jogadores[i].campo[0];
             if (!c) continue;
             const ef = efeitosDe(estado, c);
             if (!ef.x10Se || c.st.x10) continue;
-            const op = estado.jogadores[1 - i].campo[0];
+            const op = adversarios(estado, i).map(k => estado.jogadores[k].campo[0]).find(op => op && ef.x10Se.some(v => norm(v) === norm(op.base.elemento)));
             if (op && ef.x10Se.some((v) => norm(v) === norm(op.base.elemento))) {
                 c.defesa *= 10;
                 c.defesaMax *= 10;
@@ -330,8 +349,8 @@
 
     // efeitos de início de turno: recargas, Hércules, dano por turno e confusão
     function iniciarTurno(estado) {
-        estado.acoes = REGRAS.acoesPorTurno;
         const j = atual(estado);
+        estado.acoes = j.acoesPorTurno || REGRAS.acoesPorTurno;
         log(estado, `Turno ${estado.numTurno}: vez de ${j.nome}.`);
 
         const todas = [...j.mao, ...j.campo, ...j.apoio];
@@ -390,16 +409,43 @@
             throw Object.assign(new Error(`O banco tem ${pool.length} cartas jogáveis distintas; esta partida precisa de ${total}. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
         }
         const distribuicao = embaralhar(pool).slice(0, total);
+        const equipes = config.equipes || [0, 1];
+        const cooperativo = Boolean(config.equipes);
+        const participantes = config.nomes.map((_, i) => i);
+        const baralhos = participantes.map(() => []);
+        if (cooperativo) {
+            // Cada participante começa com um campeão, evitando mãos sem como entrar em batalha.
+            const campeoes = distribuicao.filter(c => norm(c.classe) === 'campeao');
+            // Em conjuntos menores, procurar também entre as cartas que não entraram no sorteio.
+            for (const c of embaralhar(pool)) if (norm(c.classe) === 'campeao' && !campeoes.includes(c)) campeoes.push(c);
+            if (campeoes.length < participantes.length) throw Object.assign(new Error(`O co-op precisa de pelo menos ${participantes.length} campeões distintos.`), { code: 'CARTAS_INSUFICIENTES' });
+            const reservas = campeoes.slice(0, participantes.length);
+            const restantes = embaralhar(pool.filter(c => !reservas.includes(c))).slice(0, total - participantes.length);
+            let cursor = 0;
+            participantes.forEach(i => baralhos[i].push(reservas[i]));
+            for (const time of [0, 1]) {
+                const membros = participantes.filter(i => equipes[i] === time);
+                for (let i = 0; i < total / 2 - membros.length; i++) baralhos[membros[i % membros.length]].push(restantes[cursor++]);
+            }
+        } else for (const time of [0, 1]) {
+            const membros = participantes.filter(i => equipes[i] === time);
+            if (!membros.length) throw new Error('As duas equipes precisam de participantes.');
+            distribuicao.slice(time * total / 2, (time + 1) * total / 2).forEach((c, i) => baralhos[membros[i % membros.length]].push(c));
+        }
+        if (baralhos.some(b => b.length < REGRAS.maoInicial)) throw Object.assign(new Error('Este formato precisa de pelo menos 30 cartas para que todos comecem com três cartas.'), { code: 'CARTAS_INSUFICIENTES' });
         const estado = {
             tamanhoBaralho: total,
-            jogadores: [0, 1].map((i) => ({
+            cooperativo, equipes, ordemTurnos: config.ordemTurnos || participantes,
+            jogadores: participantes.map((i) => ({
                 nome: config.nomes[i],
+                equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
+                eliminado: false, acoesPorTurno: config.maquinas && config.maquinas[i] ? 4 : REGRAS.acoesPorTurno,
                 rep: (config.reps && config.reps[i]) || null,
                 baralho: [], mao: [], campo: [], apoio: [], descarte: [],
                 derrotados: 0,
                 bonusCampeao: 0
             })),
-            turno: config.comeca === 0 || config.comeca === 1 ? config.comeca : Math.floor(Math.random() * 2),
+            turno: participantes.includes(config.comeca) ? config.comeca : Math.floor(Math.random() * participantes.length),
             numTurno: 1,
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
@@ -408,8 +454,9 @@
             proxUid: 1
         };
         estado.jogadores.forEach((j, i) => {
-            j.baralho = distribuicao.slice(i * total / 2, (i + 1) * total / 2).map((c) => nova(estado, c));
-            comprar(estado, i, REGRAS.maoInicial);
+            j.baralho = baralhos[i].map(c => nova(estado, c));
+            if (cooperativo) j.mao.push(j.baralho.shift());
+            comprar(estado, i, REGRAS.maoInicial - j.mao.length);
         });
         log(estado, `${estado.jogadores[estado.turno].nome} começa. Cada jogador recebeu ${REGRAS.maoInicial} cartas.`);
         iniciarTurno(estado);
@@ -435,9 +482,16 @@
                 }
             }
         }
-        estado.turno = 1 - estado.turno;
-        estado.numTurno++;
-        iniciarTurno(estado);
+        // Pula eliminados, inclusive quando o dano do início do turno elimina alguém.
+        do {
+            const ordem = estado.ordemTurnos || [0, 1];
+            let pos = ordem.indexOf(estado.turno);
+            do { pos = (pos + 1) % ordem.length; } while (estado.jogadores[ordem[pos]].eliminado);
+            estado.turno = ordem[pos];
+            estado.alvo = undefined;
+            estado.numTurno++;
+            iniciarTurno(estado);
+        } while (estado.vencedor === null && atual(estado).eliminado);
         return { ok: true };
     }
 
@@ -563,7 +617,7 @@
         if (!t) return erro('O adversário não tem criatura em batalha para ser atacada.');
         if (a.st.paralisia > 0) return erro(`${a.base.nome} está paralisada e não pode atacar neste turno.`);
 
-        const f = ferivel(estado, 1 - estado.turno, t, a.base);
+        const f = ferivel(estado, indiceOponente(estado), t, a.base);
         if (!f.ok) return erro(f.motivo);
 
         const d = ataqueTotal(a, t.base, estado);
@@ -580,7 +634,7 @@
         if (t.defesa <= 0) {
             texto += ` Contra-ataque: 0 de dano (${t.base.nome} foi derrotado antes de revidar).`;
             registrar();
-            morrer(estado, 1 - estado.turno, t);
+            morrer(estado, indiceOponente(estado), t);
         } else {
             const f2 = ferivel(estado, estado.turno, a, t.base);
             if (f2.ok) {
@@ -981,7 +1035,7 @@
         const j = atual(estado);
         const o = outro(estado);
         const c = {
-            estado, dono: estado.turno, idxOp: 1 - estado.turno, j, o,
+            estado, dono: estado.turno, idxOp: indiceOponente(estado), j, o,
             inst, escolha, chave: inst.base.codigo, origem: inst.base
         };
 
@@ -992,7 +1046,7 @@
         if (danoBase > 0) {
             alvoDano = o.campo[0];
             if (!alvoDano) return erro('O adversário não tem criatura em batalha para receber o feitiço.');
-            const f = ferivel(estado, 1 - estado.turno, alvoDano, inst.base);
+            const f = ferivel(estado, indiceOponente(estado), alvoDano, inst.base);
             if (!f.ok) return erro(f.motivo);
         }
 
@@ -1012,7 +1066,7 @@
             }
             log(estado, texto);
             paraDescarte(j, inst);
-            if (alvoDano && alvoDano.defesa <= 0 && o.campo.includes(alvoDano)) morrer(estado, 1 - estado.turno, alvoDano);
+            if (alvoDano && alvoDano.defesa <= 0 && o.campo.includes(alvoDano)) morrer(estado, indiceOponente(estado), alvoDano);
         } else {
             log(estado, texto);
         }
@@ -1028,7 +1082,7 @@
     }
 
     const Motor = {
-        REGRAS, EFEITOS, HAB, TEXTOS, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel,
+        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,

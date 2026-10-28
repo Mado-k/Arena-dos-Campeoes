@@ -114,7 +114,12 @@
         mostrarSala(resp.sala);
     }
 
-    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value) }));
+    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value), ...(modo === 'coop' ? { quantidadeJogadores: Number($('formato-coop').value) } : {}) }));
+    if (modo === 'coop') $('formato-coop').addEventListener('change', () => {
+        const quatro = $('formato-coop').value === '4';
+        $('tamanho-baralho').querySelector('option[value="20"]').disabled = quatro;
+        if (quatro && $('tamanho-baralho').value === '20') $('tamanho-baralho').value = '40';
+    });
 
     function tentarEntrar() {
         const c = limpar(codigo.value);
@@ -137,7 +142,9 @@
         cabeca.hidden = Boolean(sala.emPartida);
         document.querySelector('main').classList.toggle('em-partida', Boolean(sala.emPartida));
         $('sala-codigo').textContent = sala.codigo;
-        $('sala-baralho').textContent = `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por ${modo === 'coop' ? 'lado (equipe/computador)' : 'jogador'} · sem repetição`;
+        $('sala-baralho').textContent = modo === 'coop'
+            ? `${sala.max} jogadores × ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe, divididas entre seus integrantes · mãos privadas`
+            : `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por jogador · sem repetição`;
 
         const lista = $('jogadores');
         lista.replaceChildren();

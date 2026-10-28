@@ -16,7 +16,7 @@ function mesa({ ataqueA = 7, defesaA = 20, ataqueB = 4, defesaB = 18, modo = 'mu
     j.campo = [c];
     return c;
   });
-  return { p, a: criaturas[0], b: criaturas[1] };
+  return { p, a: criaturas[0], b: criaturas[modo === 'coop' ? 2 : 1] };
 }
 
 test('registro inclui ataque, contra-ataque e defesa restante para ambos os jogadores', () => {
@@ -73,11 +73,11 @@ test('motor offline e ataques do computador têm o mesmo detalhamento', () => {
   assert(p.estado.log.includes(res.registroCombate));
   assert.match(res.registroCombate, /7 de dano.*Contra-ataque: 4 de dano.*Defesa restante/);
   const { p: coop } = mesa({ modo: 'coop', defesaA: 100, defesaB: 100 });
-  coop.estado.turno = 1;
-  const computador = coop.estado.jogadores[1];
+  coop.estado.turno = 2; coop.estado.acoes = 4;
+  const computador = coop.estado.jogadores[2];
   computador.descarte.push(...computador.mao); computador.mao = [];
   coop.jogarComputador();
   const ataques = coop.log.filter(l => l.includes('atacou'));
-  assert.equal(ataques.length, 2);
+  assert.equal(ataques.length, 4);
   assert(ataques.every(l => l.includes('Contra-ataque:') && l.includes('Defesa restante:')));
 });

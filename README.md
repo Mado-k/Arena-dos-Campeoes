@@ -72,11 +72,30 @@ Depois da segunda ação, uma janela central avisa que as ações acabaram e ofe
 encerrou e de quem joga em seguida. No offline, a cortina de troca também mostra
 essa informação.
 
-O duelo tem dois jogadores. No co-op, de dois a quatro humanos compartilham uma
-equipe (mão, campo, descarte e duas ações por turno) contra o computador. Todos os
-integrantes veem a mão da equipe; a mão e a ordem do baralho do computador ficam
-escondidas. A IA usa as ações e habilidades do mesmo motor; é um adversário básico,
-sem níveis de dificuldade ou balanceamento específico de co-op.
+O duelo tem dois jogadores. O co-op oferece **2 humanos × 1 máquina** ou
+**4 humanos × 2 máquinas**, selecionados ao criar a sala. Todos os integrantes
+precisam entrar e ficar prontos. Cada participante tem mão, campo, auxiliares,
+equipamentos, descarte e baralho individuais. Mesmo os aliados não veem sua mão.
+
+Os humanos têm duas ações por turno; cada máquina tem quatro, equilibrando a
+quantidade de ações por equipe. A ordem é dois humanos, uma máquina; no grupo de
+quatro, seguem os outros dois humanos e a segunda máquina. A ordem aparece na mesa.
+Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
+As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
+presença consideram os inimigos em jogo, e Pandora vale para todos. Equipamentos,
+auxiliares e recuperações continuam pertencendo ao dono da carta.
+
+Metade das cartas únicas pertence a cada equipe, dividida entre seus integrantes.
+Com 40 cartas: no formato 2 × 1, são 10 para cada humano e 20 para a máquina;
+no 4 × 2, são 5 para cada humano e 10 para cada máquina. No formato 4 × 2, só há
+30 ou 40 cartas para garantir a mão inicial de três a todos. No co-op, a mão inicial
+sempre inclui um campeão, evitando começar sem uma criatura com que jogar.
+
+Cada participante é eliminado ao perder três campeões. Seu turno passa a ser
+pulado, mas ele pode acompanhar a equipe. A vitória exige eliminar todas as máquinas;
+a derrota só ocorre quando todos os humanos são eliminados. A IA considera seus
+próprios recursos e os campos públicos, sem consultar mãos ou baralhos humanos.
+A dificuldade é inicial e poderá ser ajustada com testes de balanceamento.
 
 O servidor valida turno, dono da carta, ações restantes e versão da mesa. O cliente
 não oferece ajustes manuais de atributos, descartes ou ações extras. Pedidos de
@@ -126,6 +145,8 @@ de portas/TLS e conexões reais Socket.IO. Os testes Socket.IO abrem portas loca
 temporárias e não usam o banco Aiven.
 Os testes de distribuição verificam os três tamanhos, unicidade entre jogadores,
 tratamento de duplicatas no catálogo e conservação das cartas durante as jogadas.
+Os testes de co-op cobrem três ou seis participantes, mãos privadas, turnos, alvos,
+eliminações, vitória em equipe e simulações completas com as cartas reais.
 Os testes de combate cobrem dano com bônus, imunidade, derrota no ataque e no
 contra-ataque, defesa restaurada no descarte e registro compartilhado entre os jogadores.
 
