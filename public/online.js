@@ -19,7 +19,23 @@
         const descarte = document.createElement('dialog');
         descarte.className = 'descarte-online';
         descarte.setAttribute('aria-label', 'Descarte');
-        document.body.append(escolha, descarte);
+        const empate = document.createElement('dialog');
+        empate.className = 'escolha-online';
+        empate.setAttribute('aria-label', 'Partida empatada');
+        const votosEmpate = el('p', '', 'suave');
+        let respondeuEmpate = false;
+        function responderEmpate(aceitar) {
+            if (respondeuEmpate) return;
+            respondeuEmpate = true;
+            socket.timeout(10000).emit('partida:revanche', aceitar, (err, res) => {
+                if (err || res?.erro) { respondeuEmpate = false; votosEmpate.textContent = res?.erro || 'O servidor não confirmou. Tente novamente.'; }
+            });
+            votosEmpate.textContent = aceitar ? 'Aguardando a decisão dos demais jogadores…' : 'Encerrando a partida…';
+        }
+        empate.append(el('h2', 'Empate!'), el('p', 'Desejam jogar novamente ou encerrar a partida?'), votosEmpate,
+            botao('Jogar novamente', () => responderEmpate(true)), botao('Encerrar partida', () => responderEmpate(false)));
+        document.body.append(escolha, descarte, empate);
+        socket.on('partida:revanche', dados => { votosEmpate.textContent = `${dados.votos} de ${dados.total} jogadores querem jogar novamente.`; });
         let estado = null, ocupado = false, selecionada = null, sessao = 0, alvoSelecionado = null;
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
@@ -89,8 +105,9 @@
         }
         function etiquetas(c) {
             const linha = el('div', undefined, 'etqs');
-            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', torcida: 'Torcida ×2', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
-            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['torcida', 'dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
+            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
+            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
+            if (Motor.fatorHabilidade(estado,c) === 2) linha.append(el('span','Efeitos ×2','etq bom'));
             if (c.rec) linha.append(el('span', 'Recarga: ' + c.rec, 'etq'));
             if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
             return linha;
@@ -205,6 +222,7 @@
             n.setAttribute('aria-label', sua ? 'Seu lado da mesa' : (aliada ? 'Campo aliado: ' : 'Campo adversário: ') + j.nome);
             const cab = el('div', undefined, 'cab'), quem = el('div', undefined, 'quem');
             quem.append(el('strong', j.nome));
+            if (j.rep) quem.append(el('span', '· ' + j.rep.nome, 'rep'));
             if (j.eliminado) quem.append(el('span', 'Eliminado', 'etq ruim'));
             else if (j.maquina) quem.append(el('span', '4 ações', 'etq'));
             if (estado.cooperativo && !aliada && i === alvoSelecionado && !j.eliminado) quem.append(el('span', 'Alvo selecionado', 'etq alvo-selecionado'));
@@ -240,7 +258,7 @@
             acoes.append(el('span', 'Ações:'));
             for (let i = 0; i < estado.acoesPorTurno; i++) acoes.append(el('span', undefined, 'acao-pip' + (i >= estado.acoes ? ' gasta' : '')));
             acoes.append(el('span', `${estado.acoes}/${estado.acoesPorTurno}`));
-            info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · ${estado.tamanhoBaralho / 2} por ${estado.cooperativo ? 'equipe, divididas entre os integrantes' : 'lado'}`, 'suave'));
+            info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.tamanhoBaralho / 2} por ${estado.cooperativo ? 'equipe, divididas entre os integrantes' : 'lado'}${estado.reservaCentralTotal ? ' · 1 carta reservada no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
             controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn primario acao-compra'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
             const instrucao = aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou sair para preparar outra partida.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
@@ -302,6 +320,7 @@
             }, true, 'btn pequeno'));
             mesa.replaceChildren(tabuleiro, lateral);
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
+            if (estado.vencedor === -1 && !empate.open) empate.showModal();
         }
         socket.on('partida:estado', proximo => {
             if (estado && proximo.numTurno > estado.numTurno) {
@@ -316,6 +335,6 @@
             aoMostrar();
             render();
         });
-        return { limpar() { sessao++; alvoSelecionado = null; estado = null; ocupado = false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); turnos.limpar(); aviso.textContent = ''; } };
+        return { limpar() { sessao++; alvoSelecionado = null; estado = null; ocupado = false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); empate.close(); respondeuEmpate = false; votosEmpate.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

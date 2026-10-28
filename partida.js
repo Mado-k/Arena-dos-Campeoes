@@ -22,6 +22,12 @@ class Partida {
     const maquinas = this.coop ? jogadores.length / 2 : 0;
     const nomes = [...jogadores.map(j => j.nome), ...Array.from({ length: maquinas }, (_, i) => `Máquina ${i + 1}`)];
     const config = { nomes, tamanhoBaralho };
+    config.reps = jogadores.map(j => {
+      if (!j.representante) return null;
+      const rep = cartas.find(c => c.codigo === j.representante && Motor.norm(c.classe) === 'representante');
+      if (!rep) throw Object.assign(new Error('O representante escolhido não está disponível. Volte à sala e escolha novamente.'), { code: 'REPRESENTANTE_INVALIDO' });
+      return Motor.normalizarCarta(rep);
+    });
     if (this.coop) {
       config.equipes = nomes.map((_, i) => i < jogadores.length ? 0 : 1);
       config.maquinas = nomes.map((_, i) => i >= jogadores.length);
@@ -56,11 +62,13 @@ class Partida {
     }
     const resposta = ACOES[dados.tipo](proximo, dados);
     if (!resposta || !resposta.ok) return resposta || { erro: 'Não foi possível executar a ação.' };
+    const redistribuiu = (proximo.redistribuicoes || 0) !== (this.estado.redistribuicoes || 0);
     this.estado = proximo;
     this.revisao++;
     // Logs internos de habilidades podem citar cartas compradas/escolhidas no baralho.
     // O registro público descreve a ação, sem revelar essas informações privadas.
     this.log.push(resposta.registroCombate || `${this.estado.jogadores[indice].nome} ${ROTULOS[dados.tipo]}.`);
+    if (redistribuiu) this.log.push(this.estado.log.findLast(l => l.startsWith('Os dois baralhos acabaram.')));
     if (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].eliminado) Motor.encerrarTurno(this.estado);
     this.log = this.log.slice(-100);
     return { ok: true };
@@ -92,9 +100,10 @@ class Partida {
           let copia = structuredClone(this.estado);
           copia.alvo = alvo;
           let res = ACOES[tipo](copia, { uid });
-          if (res && res.pergunta && res.pergunta.opcoes.length) {
+          for (let pergunta = 0; res?.pergunta?.opcoes.length && pergunta < 8; pergunta++) {
+            const escolha = res.pergunta.opcoes[0].valor;
             copia = structuredClone(this.estado); copia.alvo = alvo;
-            res = ACOES[tipo](copia, { uid, escolha: res.pergunta.opcoes[0].valor });
+            res = ACOES[tipo](copia, { uid, escolha });
           }
           if (!res || !res.ok) continue;
           const antes = this.estado.jogadores[alvo], depois = copia.jogadores[alvo];
@@ -127,9 +136,9 @@ class Partida {
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
       voce, cooperativo: this.coop, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
-      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, pandora: e.pandora, log: this.log.slice(),
+      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, pandora: e.pandora, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
-        nome: j.nome, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado,
+        nome: j.nome, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado,
         maoTotal: j.mao.length, baralhoTotal: j.baralho.length,
         mao: i === voce ? j.mao.map(carta) : [],
         campo: j.campo.map(carta), apoio: j.apoio.map(carta), descarte: j.descarte.map(carta)

@@ -55,11 +55,12 @@ for (const causa of ['ataque', 'contra-ataque', 'habilidade', 'veneno', 'queimad
   assert(e.log.some(t => t.includes('auxiliares') && t.includes('descarte')));
 });
 
-test('derrota de besta mantém seus auxiliares, enquanto essa extensão da regra não for confirmada', () => {
+test('derrota de besta também descarta seus auxiliares sem contar como campeão derrotado', () => {
   const { e, dono } = preparar();
   dono.campo[0].base.classe = 'besta'; dono.campo[0].defesa = 1;
   assert(Motor.atacar(e).ok);
-  assert.equal(dono.apoio.length, 2); assert.equal(dono.derrotados, 0);
+  assert.equal(dono.apoio.length, 0); assert.equal(dono.derrotados, 0);
+  assert.equal(dono.descarte.length, 3);
 });
 
 test('campeão que sobrevive mantém os auxiliares', () => {

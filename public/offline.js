@@ -100,7 +100,7 @@
             `Em cada turno você tem ${R.acoesPorTurno} ações. Cada uma pode ser: atacar, comprar uma carta, usar a habilidade de uma carta ou jogar uma carta.`,
             `Em batalha só pode haver ${R.maxCampo} campeão ou besta por jogador, e ele não volta para a mão depois de jogado. Só pode haver ${R.maxApoio} auxiliares na batalha.`,
             `Armas: só em campeões, e cada campeão carrega uma única arma. Itens: um por campeão, e até ${R.maxItensBesta} por besta.`,
-            'Quando um campeão é derrotado, todos os auxiliares do mesmo jogador também são derrotados e vão para o descarte.',
+            'Quando um campeão ou uma besta é derrotado, os auxiliares vinculados a ele também vão para o descarte. Auxiliares não recebem ataques diretos.',
             'Toda carta tem ataque (ATQ) e defesa (DEF). Atacar tira defesa da criatura do adversário; se ela sobreviver, contra-ataca. Sem defesa, a criatura é derrotada.',
             'Habilidades são automáticas. Selecione a carta e clique em "Executar habilidade" (gasta 1 ação). Habilidades passivas funcionam sozinhas, sem gastar ação.',
             `Representante (opcional): dá +${R.bonusRepresentante} de defesa às criaturas do universo dele.`
@@ -264,7 +264,7 @@
         if (st.paralisia > 0) lista.push(['Paralisada', 'ruim', 'Não ataca nem usa habilidades no próximo turno do dono.']);
         if (st.confusao) lista.push(['Confusa', 'ruim', 'Vai atacar a si mesma no início do próximo turno do dono.']);
         if (st.zumbi) lista.push(['Zumbi', 'ruim', 'Defesa reduzida pela metade.']);
-        if (st.torcida) lista.push(['Torcida ×2', 'bom', 'Ataque dobrado até o fim do turno.']);
+        if (Motor.fatorHabilidade(estado,inst) === 2) lista.push(['Efeitos ×2', 'bom', 'Fuleco duplica os valores dos efeitos desta carta.']);
         if (st.copia) lista.push(['Copiou habilidade', 'bom', Motor.TEXTOS[st.copia] || '']);
         if (st.dino > 0) lista.push([`Corre: ${st.dino} turno(s)`, 'bom', 'Dá +4 de ataque à sua criatura e some quando acabar.']);
         if (inst.rec > 0) lista.push([`Recarga: ${inst.rec}`, '', 'Turnos seus até poder usar a habilidade de novo.']);
@@ -550,8 +550,10 @@
         if (!estado || estado.vencedor === null || fimMostrado) return;
         fimMostrado = true;
         $('fim-texto').textContent = estado.vencedor === -1
-            ? 'Empate!'
+            ? 'Empate! Desejam reiniciar a partida ou encerrá-la?'
             : `${estado.jogadores[estado.vencedor].nome} venceu!`;
+        $('fim-novo').textContent = estado.vencedor === -1 ? 'Reiniciar partida' : 'Nova partida';
+        $('fim-ver').textContent = estado.vencedor === -1 ? 'Encerrar e ver o tabuleiro' : 'Ver tabuleiro';
         $('fim').hidden = false;
     }
     $('fim-novo').addEventListener('click', voltarParaConfig);
@@ -603,7 +605,8 @@
 
         const efeitos = $('efeitos');
         efeitos.replaceChildren();
-        if (estado.pandora) efeitos.append(el('span', 'etq ruim', '☠ Caixa de Pandora aberta: toda criatura em batalha sofre 10 de dano por turno'));
+        if (estado.pandora) efeitos.append(el('span', 'etq ruim', `☠ Caixa de Pandora aberta: toda criatura em batalha sofre ${estado.danoPandora || 10} de dano por turno`));
+        if (estado.reservaCentral?.length) efeitos.append(el('span', 'etq', '1 carta reservada no centro para a próxima redistribuição'));
         efeitos.hidden = !efeitos.childNodes.length;
 
         const bloqueado = cortina || estado.vencedor !== null;

@@ -28,6 +28,7 @@
         <div class="lobby-cabeca">
             <p class="selo">Modo de jogo</p>
             <h1>Co-op</h1>
+            <p class="suave">Modo em avaliação: as regras específicas do co-op serão definidas em uma próxima etapa.</p>
             <p class="lead">Dois jogadores contra uma máquina ou quatro contra duas. Cada pessoa joga com sua própria mão e seu próprio campo.</p>
             <p class="suave dica-regras">Cada humano recebe 3 cartas e tem 2 ações por turno. Derrotem 3 campeões de cada máquina para vencer em equipe. <a href="index.html#como-jogar">Ver todas as regras</a></p>
         </div>
@@ -85,6 +86,11 @@
             </div>
 
             <p id="sala-baralho" class="suave"></p>
+            <div class="campo escolha-representante">
+                <label for="representante">Seu representante</label>
+                <select id="representante"><option value="">Sem representante</option></select>
+                <p id="representante-descricao" class="suave">Escolha antes de confirmar que está pronto.</p>
+            </div>
             <ul id="jogadores" class="jogadores"></ul>
             <p id="sala-aviso" class="suave" aria-live="polite"></p>
             <p id="sala-erro" class="status erro" role="alert"></p>

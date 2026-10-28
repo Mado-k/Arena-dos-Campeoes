@@ -3,6 +3,10 @@
 .mesa-online[hidden] { display: none !important; }
 .mesa-online .lado, .mesa-online .lateral, .mesa-online .painel { min-width: 0; }
 .mesa-online .c-stats { flex-wrap: wrap; }
+.escolha-representante { margin-bottom: 16px; }
+.escolha-representante select { width: 100%; padding: 10px 12px; color: var(--texto); background: var(--painel-2); border: 1px solid var(--borda); border-radius: 8px; font: inherit; }
+.escolha-representante select:focus-visible { outline: 2px solid var(--ouro); outline-offset: 2px; }
+.escolha-representante p { margin: 8px 0; }
 .mesa-online .turno-info small { margin-top: 6px; }
 .mesa-online .nota-equipe { margin: 0; flex: 1 1 100%; color: var(--suave); font-size: .85rem; }
 .mesa-online .c, .mesa-online .painel { overflow-wrap: anywhere; }

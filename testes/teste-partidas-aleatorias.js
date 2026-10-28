@@ -13,7 +13,6 @@ function conferir(e, tam) {
   e.jogadores.forEach((j) => {
     const ids = todas(j);
     assert.equal(new Set(ids).size, ids.length, 'duplicada');
-    assert.equal(ids.length, tam / 2, 'sumiu/apareceu carta');
     assert.ok(j.campo.length <= R.maxCampo && j.apoio.length <= R.maxApoio);
     j.campo.forEach((c) => {
       assert.ok(c.defesa > 0, 'criatura em batalha sem defesa');
@@ -21,7 +20,9 @@ function conferir(e, tam) {
       if (camp) assert.ok(armas <= 1 && itens <= 1); else { assert.equal(armas, 0); assert.ok(itens <= 3); }
     });
   });
-  const cartas = e.jogadores.flatMap(j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]));
+  const cartas = [...(e.reservaCentral || []), ...e.jogadores.flatMap(j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]))];
+  assert.equal(cartas.length,tam,'sumiu/apareceu carta');
+  assert.equal(new Set(cartas.map(c => c.uid)).size,tam,'instância repetida entre jogadores/centro');
   assert.equal(new Set(cartas.map(c => c.base.codigo)).size, tam, 'carta repetida entre jogadores');
   assert.ok(e.acoes >= 0 && e.acoes <= R.acoesPorTurno);
 }
@@ -29,7 +30,8 @@ let fins = 0, turnos = 0; const usadas = {}; const erros = {};
 const reg = (r) => { if (r && r.erro) erros[r.erro] = (erros[r.erro] || 0) + 1; return r; };
 function habilidade(e, uid) {
   let r = M.executarHabilidade(e, uid);
-  if (r.pergunta) { assert.ok(r.pergunta.opcoes.length > 1); r = M.executarHabilidade(e, uid, pick(r.pergunta.opcoes).valor); assert.ok(!r.pergunta, 'pergunta repetida'); }
+  for(let i=0;r.pergunta && i<8;i++) {assert.ok(r.pergunta.opcoes.length>0);r=M.executarHabilidade(e,uid,pick(r.pergunta.opcoes).valor);}
+  assert.ok(!r.pergunta,'pergunta repetida sem fim');
   return r;
 }
 for (let p = 0; p < 600; p++) {

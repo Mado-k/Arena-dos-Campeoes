@@ -21,6 +21,8 @@
         n003: { maisContra: { quando: { origem: ['humanidade'] }, bonus: 2 } },
         n004: { silenciaAux: true },
         n007: { bonusCondicional: { elemento: ['fantasma', 'sombrio'] } },
+        n008: { capturaNormal: true },
+        n009: { amplifica: true },
         n010: { imuneA: { classe: ['campeão'] } },
         n011: { dobraContra: { elemento: ['metálico'] } },
         n012: { anulaUniverso: ['game'] },
@@ -120,6 +122,8 @@
         inst.defesa = inst.base.defesa;
         inst.defesaMax = inst.base.defesa;
         inst.st = {};
+        delete inst.vinculo;
+        delete inst.bonusDefesa;
     }
 
     // manda uma carta (e o que estava equipado nela) para o descarte do dono
@@ -175,9 +179,20 @@
         return null;
     }
 
+    function fatorHabilidade(estado, fonte) {
+        if (!estado) return 1;
+        const dono = typeof fonte === 'number' ? fonte : localizar(estado, fonte.uid)?.dono;
+        if (dono == null) return 1;
+        return estado.jogadores[dono].apoio.some(a => a !== fonte && efeitosBrutos(a).amplifica && !silenciada(estado, a)) ? 2 : 1;
+    }
+
     function efeitosDe(estado, inst) {
         if (estado && silenciada(estado, inst)) return {};
-        return efeitosBrutos(inst);
+        const ef = { ...efeitosBrutos(inst) }, fator = fatorHabilidade(estado, inst);
+        if (ef.maisContra) ef.maisContra = { ...ef.maisContra, bonus: ef.maisContra.bonus * fator };
+        for (const chave of ['dino', 'fenrir', 'queimaContato']) if (ef[chave]) ef[chave] *= fator;
+        ef.fator = fator;
+        return ef;
     }
 
     // proteções do jogador-alvo contra cartas de certos elementos
@@ -213,13 +228,13 @@
             const bonus = Number(e.base.ataque) || 0;
             if (classeDe(e) === 'arma') temArma = true;
             if (efe.bonusCondicional) {
-                if (alvoBase && casa(efe.bonusCondicional, alvoBase)) d += bonus;
+                if (alvoBase && casa(efe.bonusCondicional, alvoBase)) d += bonus * efe.fator;
             } else {
                 d += bonus;
             }
         }
 
-        if (ef.dobraBaseComArma && temArma) d += proprio;
+        if (ef.dobraBaseComArma && temArma) d += proprio * (2 * ef.fator - 1);
 
         // dino do google (auxiliar em apoio do mesmo jogador)
         if (estado) {
@@ -233,15 +248,15 @@
         }
 
         if (alvoBase && ef.maisContra && casa(ef.maisContra.quando, alvoBase)) d += ef.maisContra.bonus;
-        if (alvoBase && ef.dobraContra && casa(ef.dobraContra, alvoBase)) d *= 2;
-        if (atacante.st.torcida) d *= 2;
+        if (alvoBase && ef.dobraContra && casa(ef.dobraContra, alvoBase)) d *= 2 * ef.fator;
         return Math.max(0, d);
     }
 
-    function ataqueFeitico(feitico, alvoBase) {
+    function ataqueFeitico(feitico, alvoBase, estado) {
         const ef = efeitosBrutos(feitico);
-        let d = Number(feitico.base.ataque) || 0;
-        if (alvoBase && ef.dobraContra && casa(ef.dobraContra, alvoBase)) d *= 2;
+        const fator = fatorHabilidade(estado, feitico);
+        let d = (Number(feitico.base.ataque) || 0) * fator;
+        if (alvoBase && ef.dobraContra && casa(ef.dobraContra, alvoBase)) d *= 2 * fator;
         return d;
     }
 
@@ -291,12 +306,13 @@
         if (campeao) {
             j.derrotados++;
             log(estado, `${nome} (${j.nome}) foi derrotado! Campeões derrotados de ${j.nome}: ${j.derrotados}/${REGRAS.campeoesParaVencer}.`);
-            const auxiliares = j.apoio.splice(0);
-            for (const auxiliar of auxiliares) paraDescarte(j, auxiliar);
-            if (auxiliares.length) log(estado, `Os auxiliares de ${j.nome} também foram derrotados com ${nome}: ${auxiliares.map(c => c.base.nome).join(', ')}. Todos foram para o descarte.`);
         } else {
             log(estado, `${nome} (${j.nome}) foi derrotada.`);
         }
+        const auxiliares = j.apoio.filter(a => a.vinculo == null || a.vinculo === inst.uid);
+        j.apoio = j.apoio.filter(a => !auxiliares.includes(a));
+        for (const auxiliar of auxiliares) paraDescarte(j, auxiliar);
+        if (auxiliares.length) log(estado, `Os auxiliares de ${j.nome} também foram derrotados com ${nome}: ${auxiliares.map(c => c.base.nome).join(', ')}. Todos foram para o descarte.`);
         if (ef.fenrir) {
             j.bonusCampeao += ef.fenrir;
             log(estado, `${nome} deixou uma herança: o próximo campeão de ${j.nome} entra com +${ef.fenrir} de defesa.`);
@@ -307,7 +323,7 @@
     function removerEquip(estado, donoIdx, portador, eq) {
         const j = estado.jogadores[donoIdx];
         portador.equip.splice(portador.equip.indexOf(eq), 1);
-        const d = Number(eq.base.defesa) || 0;
+        const d = eq.bonusDefesa ?? (Number(eq.base.defesa) || 0);
         portador.defesaMax = Math.max(1, portador.defesaMax - d);
         portador.defesa = Math.min(portador.defesaMax, Math.max(1, portador.defesa - d));
         eq.equip = [];
@@ -317,6 +333,7 @@
 
     // gatilhos que dependem de duas criaturas frente a frente (lobisomem)
     function verificarPresenca(estado) {
+        capturarNormais(estado);
         for (let i = 0; i < estado.jogadores.length; i++) {
             const c = estado.jogadores[i].campo[0];
             if (!c) continue;
@@ -324,28 +341,97 @@
             if (!ef.x10Se || c.st.x10) continue;
             const op = adversarios(estado, i).map(k => estado.jogadores[k].campo[0]).find(op => op && ef.x10Se.some(v => norm(v) === norm(op.base.elemento)));
             if (op && ef.x10Se.some((v) => norm(v) === norm(op.base.elemento))) {
-                c.defesa *= 10;
-                c.defesaMax *= 10;
+                const multiplicador = 10 * ef.fator;
+                c.defesa *= multiplicador;
+                c.defesaMax *= multiplicador;
                 c.st.x10 = true;
-                log(estado, `${c.base.nome} enfrentou ${op.base.nome} (${op.base.elemento}): sua defesa foi multiplicada por 10!`);
+                log(estado, `${c.base.nome} enfrentou ${op.base.nome} (${op.base.elemento}): sua defesa foi multiplicada por ${multiplicador}!`);
             }
         }
     }
 
+    // Heimdall captura somente cartas públicas em jogo. Anexos de outros universos
+    // voltam à mão do dono anterior; os usos únicos da carta são preservados.
+    function capturarNormais(estado) {
+        const ordem = [estado.turno, ...estado.jogadores.map((_,i) => i).filter(i => i !== estado.turno)];
+        const fontes = ordem.flatMap(dono => [...estado.jogadores[dono].campo, ...estado.jogadores[dono].apoio].flatMap(c => [c, ...c.equip]).filter(c => efeitosDe(estado,c).capturaNormal).map(inst => ({dono, inst})));
+        for (const {dono,inst} of fontes) {
+            const loc = localizar(estado, inst.uid);
+            if (!loc || loc.dono !== dono || !['campo','apoio','equip'].includes(loc.zona) || !efeitosDe(estado,inst).capturaNormal) continue;
+            const destino = estado.jogadores[dono];
+            const tomadas = [];
+            for (const rival of adversarios(estado,dono)) {
+                const j = estado.jogadores[rival];
+                function transferir(c, zona, portador) {
+                    if (protecao(estado,rival,portador || c,inst.base,true)) return;
+                    if (zona === 'equip') {
+                        portador.equip.splice(portador.equip.indexOf(c),1);
+                        const bonus = c.bonusDefesa ?? (Number(c.base.defesa) || 0);
+                        portador.defesaMax = Math.max(1,portador.defesaMax-bonus);
+                        portador.defesa = Math.min(portador.defesaMax,Math.max(1,portador.defesa-bonus));
+                    } else j[zona].splice(j[zona].indexOf(c),1);
+                    const anexos = c.equip.splice(0);
+                    if (zona === 'campo') {
+                        const apoios = j.apoio.filter(a => a.vinculo == null || a.vinculo === c.uid);
+                        j.apoio = j.apoio.filter(a => !apoios.includes(a));
+                        anexos.push(...apoios);
+                    }
+                    for (const anexo of anexos) {
+                        reiniciar(anexo);
+                        if (norm(anexo.base.universo) === 'normal') { destino.mao.push(anexo); tomadas.push(anexo.base.nome); }
+                        else j.mao.push(anexo);
+                    }
+                    reiniciar(c); destino.mao.push(c); tomadas.push(c.base.nome);
+                }
+                // Apoios primeiro: uma proteção que permanecer ativa ainda bloqueia a captura.
+                for (const a of j.apoio.slice()) if (norm(a.base.universo) === 'normal') transferir(a,'apoio');
+                for (const c of j.campo.slice()) {
+                    if (norm(c.base.universo) === 'normal') transferir(c,'campo');
+                    else for (const eq of c.equip.slice()) if (norm(eq.base.universo) === 'normal') transferir(eq,'equip',c);
+                }
+            }
+            if (tomadas.length) log(estado, `${inst.base.nome} transferiu para a mão de ${destino.nome}: ${tomadas.join(', ')}. Anexos de outros universos voltaram à mão do dono anterior.`);
+        }
+    }
+
     // ---------- baralho e turnos ----------
+    function redistribuirDescartes(estado) {
+        if (estado.cooperativo || estado.jogadores.some(j => j.baralho.length)) return false;
+        const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(j => j.descarte)];
+        if (cartas.length < 2) return false;
+        const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / 2);
+        estado.jogadores.forEach((j, i) => {
+            j.baralho = mistura.slice(i * metade, (i + 1) * metade);
+            j.descarte = [];
+        });
+        estado.reservaCentral = mistura.slice(2 * metade);
+        estado.redistribuicoes = (estado.redistribuicoes || 0) + 1;
+        log(estado, `Os dois baralhos acabaram. Os descartes foram reunidos e redistribuídos: ${metade} carta(s) por jogador${estado.reservaCentral.length ? '; 1 carta ficou no centro para a próxima redistribuição' : ''}.`);
+        return true;
+    }
+
+    function podeComprar(estado, dono = estado.turno) {
+        const j = estado.jogadores[dono];
+        if (j.baralho.length) return true;
+        if (estado.cooperativo) return j.descarte.length > 0;
+        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length) >= 2;
+    }
+
     // compra até n cartas; devolve quantas foram compradas
     function comprar(estado, indice, n) {
         const j = estado.jogadores[indice];
         let compradas = 0;
         for (let k = 0; k < n; k++) {
+            redistribuirDescartes(estado);
             if (!j.baralho.length) {
-                if (!j.descarte.length) break;
+                if (!estado.cooperativo || !j.descarte.length) break;
                 j.baralho = embaralhar(j.descarte);
                 j.descarte = [];
                 log(estado, `${j.nome} reembaralhou o descarte no baralho.`);
             }
             j.mao.push(j.baralho.pop());
             compradas++;
+            redistribuirDescartes(estado);
         }
         return compradas;
     }
@@ -362,17 +448,22 @@
 
         let c = j.campo[0];
         if (c) {
+            if (j.rep && norm(j.rep.codigo) === 'd007' && c.defesa < c.defesaMax) {
+                const recuperada = Math.min(c.defesaMax - c.defesa, fatorHabilidade(estado, estado.turno));
+                c.defesa += recuperada;
+                log(estado, `${j.rep.nome} recuperou ${recuperada} ponto(s) de defesa de ${c.base.nome}: ${c.defesa}/${c.defesaMax}.`);
+            }
             const ef = efeitosDe(estado, c);
             if (ef.dobraACada3) {
                 c.st.turnos = (c.st.turnos || 0) + 1;
                 if (c.st.turnos % 3 === 0) {
-                    c.ataqueBase *= 2;
-                    log(estado, `${c.base.nome} está há ${c.st.turnos} turnos em batalha: o ataque dobrou para ${c.ataqueBase}!`);
+                    c.ataqueBase *= 2 * ef.fator;
+                    log(estado, `${c.base.nome} está há ${c.st.turnos} turnos em batalha: o ataque foi multiplicado para ${c.ataqueBase}!`);
                 }
             }
 
             const danos = [];
-            if (estado.pandora) danos.push(['A Caixa de Pandora', 10]);
+            if (estado.pandora) danos.push(['A Caixa de Pandora', estado.danoPandora || 10]);
             if (c.st.veneno) danos.push(['O veneno', c.st.veneno]);
             if (c.st.queimadura) danos.push(['A queimadura', c.st.queimadura]);
             for (const [origem, valor] of danos) {
@@ -383,12 +474,14 @@
         }
 
         if (c && c.st.confusao) {
-            delete c.st.confusao;
+            c.st.confusao = Number(c.st.confusao) - 1;
+            if (!c.st.confusao) delete c.st.confusao;
             const d = ataqueTotal(c, c.base, estado);
             c.defesa -= d;
             log(estado, `${c.base.nome} está confusa e atacou a si mesma: ${d} de dano.`);
             if (c.defesa <= 0) morrer(estado, estado.turno, c);
         }
+        verificarPresenca(estado);
         verificarFim(estado);
     }
 
@@ -453,6 +546,7 @@
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
             pandora: false,
+            reservaCentral: [],
             log: [],
             proxUid: 1
         };
@@ -471,7 +565,6 @@
         const j = atual(estado);
         const c = j.campo[0];
         if (c) {
-            delete c.st.torcida;
             if (c.st.paralisia > 0) c.st.paralisia--;
         }
         for (const aux of j.apoio.slice()) {
@@ -485,6 +578,7 @@
                 }
             }
         }
+        redistribuirDescartes(estado);
         // Pula eliminados, inclusive quando o dano do início do turno elimina alguém.
         do {
             const ordem = estado.ordemTurnos || [0, 1];
@@ -507,7 +601,7 @@
     function comprarAcao(estado) {
         const e = fim(estado) || semAcoes(estado); if (e) return e;
         const j = atual(estado);
-        if (!j.baralho.length && !j.descarte.length) return erro('Não há cartas para comprar.');
+        if (!podeComprar(estado)) return erro(!estado.cooperativo && estado.jogadores.some(j => j.baralho.length) ? 'Seu baralho acabou. A redistribuição ocorrerá quando os dois baralhos acabarem.' : 'Não há cartas para comprar.');
         comprar(estado, estado.turno, 1);
         estado.acoes--;
         log(estado, `${j.nome} comprou uma carta.`);
@@ -533,9 +627,10 @@
         j.mao.splice(i, 1);
         const rep = j.rep;
         if (rep && rep.universo && norm(rep.universo) === norm(inst.base.universo)) {
-            inst.defesa += REGRAS.bonusRepresentante;
-            inst.defesaMax += REGRAS.bonusRepresentante;
-            log(estado, `${rep.nome} deu +${REGRAS.bonusRepresentante} de defesa para ${inst.base.nome}.`);
+            const bonus = REGRAS.bonusRepresentante * fatorHabilidade(estado, estado.turno);
+            inst.defesa += bonus;
+            inst.defesaMax += bonus;
+            log(estado, `${rep.nome} deu +${bonus} de defesa para ${inst.base.nome}.`);
         }
         if (ehCampeao(inst) && j.bonusCampeao > 0) {
             inst.defesa += j.bonusCampeao;
@@ -544,6 +639,7 @@
             j.bonusCampeao = 0;
         }
         j.campo.push(inst);
+        for (const aux of j.apoio) if (aux.vinculo == null) aux.vinculo = inst.uid;
         estado.acoes--;
         log(estado, `${j.nome} colocou ${inst.base.nome} em batalha.`);
         verificarPresenca(estado);
@@ -558,10 +654,12 @@
         if (j.apoio.length >= REGRAS.maxApoio) return erro(`Só pode haver ${REGRAS.maxApoio} auxiliares na batalha.`);
 
         j.mao.splice(i, 1);
+        inst.vinculo = j.campo[0]?.uid ?? null;
         j.apoio.push(inst);
-        if (efeitosBrutos(inst).dino) inst.st.dino = 3;
+        if (efeitosBrutos(inst).dino) inst.st.dino = 3 * fatorHabilidade(estado, inst);
         estado.acoes--;
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
+        verificarPresenca(estado);
         return { ok: true };
     }
 
@@ -589,13 +687,15 @@
             return erro(`Uma besta aceita no máximo ${REGRAS.maxItensBesta} itens.`);
         }
 
+        const defesa = (Number(inst.base.defesa) || 0) * fatorHabilidade(estado, inst);
         j.mao.splice(i, 1);
-        const defesa = Number(inst.base.defesa) || 0;
+        inst.bonusDefesa = defesa;
         alvo.defesa += defesa;
         alvo.defesaMax += defesa;
         alvo.equip.push(inst);
         estado.acoes--;
         log(estado, `${j.nome} equipou ${inst.base.nome} em ${alvo.base.nome}.`);
+        verificarPresenca(estado);
         return { ok: true };
     }
 
@@ -651,7 +751,9 @@
             registrar();
             if (a.defesa <= 0) morrer(estado, estado.turno, a);
         }
+        verificarPresenca(estado);
         verificarFim(estado);
+        redistribuirDescartes(estado);
         return { ok: true, registroCombate: texto };
     }
 
@@ -666,22 +768,29 @@
     const bloqueio = (c, t) => protecao(c.estado, c.idxOp, t, c.origem, true);
     const passiva = (texto, detalhe, extra) => Object.assign({ tipo: 'passiva', texto, detalhe: detalhe || '' }, extra);
 
+    function escolherCartas(c, lista, titulo) {
+        const limite = Math.min(c.potencia, lista.length);
+        const escolhidos = c.escolha == null ? [] : String(c.escolha).split(',').map(Number);
+        if (escolhidos.some((uid,i) => !lista.some(x => x.uid === uid) || escolhidos.indexOf(uid) !== i) || escolhidos.length > limite) return erro('Escolha cartas válidas e diferentes.');
+        if (lista.length === 1 && !escolhidos.length) escolhidos.push(lista[0].uid);
+        if (escolhidos.length < limite) return pedir(`${titulo} (${escolhidos.length + 1}/${limite})`, lista.filter(x => !escolhidos.includes(x.uid)).map(x => ({ valor: [...escolhidos, x.uid].join(','), rotulo: `${x.base.nome} (${x.base.classe} · ATQ ${x.base.ataque} · DEF ${x.base.defesa})` })));
+        return { alvos: lista.filter(x => escolhidos.includes(x.uid)) };
+    }
+
     const HAB = {
         n001: {
-            tipo: 'ativa', local: ['apoio'], botao: 'Comprar e filtrar',
-            texto: 'Compre uma carta do baralho. Se ela for do tipo metálico, fica na sua mão; caso contrário, vai para a pilha de descarte.',
-            detalhe: 'Gasta 1 ação.',
+            tipo: 'ativa', local: ['apoio'], botao: 'Buscar carta metálica',
+            texto: 'Retire a primeira carta do tipo metálico encontrada no baralho e coloque-a em sua mão.',
+            detalhe: 'Busca a partir do topo do baralho, sem descartar as demais cartas nem mudar sua ordem. Gasta 1 ação.',
             exec(c) {
-                const { j, estado } = c;
-                if (!j.baralho.length && !j.descarte.length) return erro('Não há cartas para comprar.');
-                comprar(estado, c.dono, 1);
-                const carta = j.mao[j.mao.length - 1];
-                if (norm(carta.base.elemento) === 'metalico') {
-                    return { ok: true, texto: 'comprou uma carta metálica, que ficou na mão.' };
+                let n = 0;
+                for (let k = 0; k < c.potencia; k++) {
+                    const i = c.j.baralho.findLastIndex(x => norm(x.base.elemento) === 'metalico');
+                    if (i < 0) break;
+                    c.j.mao.push(c.j.baralho.splice(i, 1)[0]);
+                    n++;
                 }
-                j.mao.pop();
-                paraDescarte(j, carta);
-                return { ok: true, texto: `comprou ${carta.base.nome}, que não é metálica e foi para o descarte.` };
+                return n ? { ok: true, texto: `buscou ${n} carta(s) metálica(s) a partir do topo do baralho e colocou na mão.` } : erro('Não há cartas metálicas no seu baralho.');
             }
         },
         n002: {
@@ -691,7 +800,8 @@
             exec(c) {
                 if (c.estado.pandora) return erro('A Caixa de Pandora já foi aberta nesta partida.');
                 c.estado.pandora = true;
-                return { ok: true, texto: 'abriu a Caixa de Pandora! Toda criatura em batalha sofre 10 de dano no início do turno do seu dono.' };
+                c.estado.danoPandora = 10 * c.potencia;
+                return { ok: true, texto: `abriu a Caixa de Pandora! Toda criatura em batalha sofre ${c.estado.danoPandora} de dano no início do turno do seu dono.` };
             }
         },
         n003: passiva('Causa 2 de dano a mais em cartas da origem humanidade.'),
@@ -704,11 +814,11 @@
             exec(c) {
                 const lista = c.j.descarte.filter((x) => norm(x.base.universo) === 'zumbi');
                 if (!lista.length) return erro('Você não tem cartas do universo zumbi no seu descarte.');
-                const alvo = lista.length === 1 ? lista[0] : lista.find((x) => x.uid === c.escolha);
-                if (!alvo) return pedir('Qual carta zumbi volta para a sua mão?', lista.map((x) => ({ valor: x.uid, rotulo: `${x.base.nome} (${x.base.classe})` })));
-                c.j.descarte.splice(c.j.descarte.indexOf(alvo), 1);
-                c.j.mao.push(alvo);
-                return { ok: true, texto: `trouxe ${alvo.base.nome} do descarte para a mão.` };
+                const r = escolherCartas(c,lista,'Qual carta zumbi volta para a sua mão?');
+                if (!r.alvos) return r;
+                c.j.descarte = c.j.descarte.filter(x => !r.alvos.includes(x));
+                c.j.mao.push(...r.alvos);
+                return { ok: true, texto: `trouxe ${r.alvos.map(x => x.base.nome).join(', ')} do descarte para a mão.` };
             }
         },
         n006: {
@@ -719,42 +829,19 @@
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const t = r.t;
                 if (!t.equip.length) return erro(`${t.base.nome} não tem itens nem armas equipados.`);
-                const alvo = t.equip.length === 1 ? t.equip[0] : t.equip.find((x) => x.uid === c.escolha);
-                if (!alvo) return pedir('Qual equipamento será arremessado?', t.equip.map((x) => ({ valor: x.uid, rotulo: `${x.base.nome} (${x.base.classe})` })));
                 const b = bloqueio(c, t); if (b) return erro(b);
-                removerEquip(c.estado, c.idxOp, t, alvo);
-                return { ok: true, texto: `arremessou ${alvo.base.nome} para longe: o equipamento foi para o descarte do adversário.` };
+                const escolhidos = escolherCartas(c,t.equip,'Qual equipamento será arremessado?');
+                if (!escolhidos.alvos) return escolhidos;
+                for (const alvo of escolhidos.alvos) removerEquip(c.estado, c.idxOp, t, alvo);
+                return { ok: true, texto: `arremessou ${escolhidos.alvos.map(x => x.base.nome).join(', ')} para longe: o equipamento foi para o descarte do adversário.` };
             }
         },
         n007: passiva('Causa dano apenas em cartas dos tipos fantasma e sombrio.',
             'O ataque desta arma só é somado quando o alvo é fantasma ou sombrio.'),
-        n008: {
-            tipo: 'ativa', local: ['apoio'], botao: 'Chamar auxiliares de volta',
-            texto: 'Manda para a sua mão os auxiliares do universo normal que estão em apoio.',
-            detalhe: 'Os auxiliares voltam para a mão e podem ser jogados de novo. O próprio Heimdall fica em apoio.',
-            exec(c) {
-                const lista = c.j.apoio.filter((x) => x !== c.inst && norm(x.base.universo) === 'normal');
-                if (!lista.length) return erro('Não há outros auxiliares do universo normal em apoio.');
-                lista.forEach((x) => {
-                    c.j.apoio.splice(c.j.apoio.indexOf(x), 1);
-                    reiniciar(x);
-                    c.j.mao.push(x);
-                });
-                return { ok: true, texto: `devolveu à mão: ${lista.map((x) => x.base.nome).join(', ')}.` };
-            }
-        },
-        n009: {
-            tipo: 'ativa', local: ['apoio'], botao: 'Levantar a torcida',
-            texto: 'Ao levantar a torcida, o Fuleco faz os efeitos do seu time dobrarem.',
-            detalhe: 'O ataque do seu campeão ou da sua besta em batalha fica dobrado até o fim deste turno.',
-            exec(c) {
-                const a = c.j.campo[0];
-                if (!a) return erro('Você precisa de um campeão ou de uma besta em batalha.');
-                if (a.st.torcida) return erro('A torcida já está em festa neste turno.');
-                a.st.torcida = true;
-                return { ok: true, texto: `levantou a torcida: o ataque de ${a.base.nome} dobra até o fim do turno.` };
-            }
-        },
+        n008: passiva('Todas as cartas do universo Normal que o oponente já colocou ou vier a colocar em campo são transferidas para a sua mão.',
+            'Funciona enquanto Heimdall estiver em apoio. Captura criaturas, auxiliares, itens e armas do universo Normal em jogo. Anexos de outros universos voltam à mão do dono anterior. Não acessa a mão, o baralho nem o descarte adversário.'),
+        n009: passiva('Enquanto estiver em apoio, duplica os valores numéricos dos efeitos das habilidades das suas outras cartas.',
+            'Duplica danos de habilidades, bônus, multiplicadores, cartas obtidas e duração dos efeitos. Não dobra o ataque básico, os custos de ações, as recargas, os intervalos de ativação nem os limites de uso único. Efeitos já aplicados conservam seus valores e sua duração.'),
         n010: passiva('Não sofre dano direto de campeões.'),
         n011: passiva('Causa o dobro de dano em cartas do tipo metálico.'),
         n012: passiva('Com o seu canto, bloqueia e anula as habilidades das cartas do universo game do adversário.',
@@ -771,8 +858,8 @@
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const b = bloqueio(c, r.t); if (b) return erro(b);
                 if (r.t.st.veneno) return erro(`${r.t.base.nome} já está envenenada.`);
-                r.t.st.veneno = 2;
-                return { ok: true, texto: `envenenou ${r.t.base.nome}: 2 de dano por turno.` };
+                r.t.st.veneno = 2 * c.potencia;
+                return { ok: true, texto: `envenenou ${r.t.base.nome}: ${r.t.st.veneno} de dano por turno.` };
             }
         },
         n017: {
@@ -782,8 +869,8 @@
             exec(c) {
                 const t = c.o.campo[0];
                 if (t && norm(t.base.universo) === 'game') {
-                    t.st.paralisia = 1;
-                    return { ok: true, texto: `${t.base.nome} foi paralisada por 1 turno.` };
+                    t.st.paralisia = c.potencia;
+                    return { ok: true, texto: `${t.base.nome} foi paralisada por ${t.st.paralisia} turno(s).` };
                 }
                 return { ok: true, texto: '' };
             }
@@ -792,17 +879,20 @@
         n019: {
             tipo: 'ativa', local: ['campo'], botao: 'Voltar para a mão',
             texto: 'Consegue voltar para a sua mão uma única vez, para recuperar seus atributos.',
-            detalhe: 'Kitsune volta com defesa e ataque originais. Itens e armas equipados também voltam para a mão. Só pode ser usada uma vez.',
+            detalhe: 'Kitsune volta com defesa e ataque originais. Itens, armas e auxiliares vinculados também voltam para a mão. Esta habilidade só pode ser usada uma vez por partida.',
             exec(c) {
-                if (c.inst.usos[c.chave]) return erro('Essa habilidade só pode ser usada uma vez e já foi usada.');
-                const eq = c.inst.equip;
+                if (c.estado.kitsuneUsada || c.inst.usos[c.chave]) return erro('Essa habilidade só pode ser usada uma vez por partida e já foi usada.');
+                const aux = c.j.apoio.filter(a => a.vinculo == null || a.vinculo === c.inst.uid);
+                c.j.apoio = c.j.apoio.filter(a => !aux.includes(a));
+                const eq = [...c.inst.equip, ...aux];
                 c.inst.equip = [];
                 c.j.campo.splice(c.j.campo.indexOf(c.inst), 1);
                 reiniciar(c.inst);
                 c.inst.usos[c.chave] = true;
+                c.estado.kitsuneUsada = true;
                 c.j.mao.push(c.inst);
-                eq.forEach((x) => { reiniciar(x); c.j.mao.push(x); });
-                return { ok: true, texto: `voltou para a mão e recuperou seus atributos${eq.length ? ' (o equipamento também voltou)' : ''}.` };
+                eq.forEach((x) => { reiniciar(x); delete x.vinculo; c.j.mao.push(x); });
+                return { ok: true, texto: `voltou para a mão e recuperou seus atributos${eq.length ? ' (itens, armas e auxiliares vinculados também voltaram)' : ''}.` };
             }
         },
         n020: {
@@ -814,9 +904,9 @@
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const b = bloqueio(c, r.t); if (b) return erro(b);
                 if (r.t.st.confusao) return erro(`${r.t.base.nome} já está confusa.`);
-                r.t.st.confusao = true;
+                r.t.st.confusao = c.potencia;
                 c.inst.rec = 3;
-                return { ok: true, texto: `confundiu ${r.t.base.nome}: ela vai atacar a si mesma no início do próximo turno do adversário.` };
+                return { ok: true, texto: `confundiu ${r.t.base.nome}: ela vai atacar a si mesma no início dos próximos ${c.potencia} turno(s) do adversário.` };
             }
         },
         n021: passiva('Sopra bolhas no oponente, distraindo os auxiliares dele e impedindo que usem habilidades.',
@@ -852,10 +942,13 @@
                 const b = bloqueio(c, t); if (b) return erro(b);
                 if (t.st.zumbi) return erro(`${t.base.nome} já está zumbificada.`);
                 const antes = t.defesa;
-                t.defesaMax = Math.max(1, Math.floor(t.defesaMax / 2));
-                t.defesa = Math.min(t.defesaMax, Math.max(1, Math.floor(t.defesa / 2)));
+                const restante = Math.max(0, 1 - .5 * c.potencia), minimo = restante ? 1 : 0;
+                t.defesaMax = Math.max(minimo, Math.floor(t.defesaMax * restante));
+                t.defesa = Math.min(t.defesaMax, Math.max(minimo, Math.floor(t.defesa * restante)));
                 t.st.zumbi = true;
-                return { ok: true, texto: `zumbificou ${t.base.nome}: a defesa caiu de ${antes} para ${t.defesa}.` };
+                const depois = t.defesa;
+                if (depois <= 0) morrer(c.estado, c.idxOp, t);
+                return { ok: true, texto: `zumbificou ${t.base.nome}: a defesa caiu de ${antes} para ${depois}.` };
             }
         },
         n029: passiva('Se o oponente for do tipo sombrio, a defesa desta carta é multiplicada por 10.',
@@ -871,8 +964,8 @@
             texto: 'Compre três cartas do baralho e coloque esta carta na pilha de descarte.',
             detalhe: 'É de uso único e não pode ser equipada.',
             exec(c) {
-                if (!c.j.baralho.length && !c.j.descarte.length) return erro('Não há cartas para comprar.');
-                const n = comprar(c.estado, c.dono, 3);
+                if (!podeComprar(c.estado, c.dono)) return erro('Não há cartas para comprar.');
+                const n = comprar(c.estado, c.dono, 3 * c.potencia);
                 return { ok: true, texto: `comprou ${n} carta(s).` };
             }
         },
@@ -907,12 +1000,13 @@
             exec(c) {
                 const lista = c.j.baralho.filter((x) => ehCampeao(x));
                 if (!lista.length) return erro('Não há campeões no seu baralho.');
-                const alvo = lista.length === 1 ? lista[0] : lista.find((x) => x.uid === c.escolha);
-                if (!alvo) return pedir('Qual campeão do baralho vai para a sua mão?', lista.map((x) => ({ valor: x.uid, rotulo: `${x.base.nome} (ATQ ${x.base.ataque} · DEF ${x.base.defesa})` })));
-                c.j.baralho.splice(c.j.baralho.indexOf(alvo), 1);
+                const escolhidos = escolherCartas(c,lista,'Qual campeão do baralho vai para a sua mão?');
+                if (!escolhidos.alvos) return escolhidos;
+                const alvos = escolhidos.alvos;
+                c.j.baralho = c.j.baralho.filter(x => !alvos.includes(x));
                 c.j.baralho = embaralhar(c.j.baralho);
-                c.j.mao.push(alvo);
-                return { ok: true, texto: 'procurou um campeão no baralho e o colocou na mão.' };
+                c.j.mao.push(...alvos);
+                return { ok: true, texto: `procurou ${alvos.length} campeão(ões) no baralho e colocou na mão.` };
             }
         },
         n036: {
@@ -949,7 +1043,7 @@
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const t = r.t;
                 const b = bloqueio(c, t); if (b) return erro(b);
-                t.defesa = c.inst.defesa;
+                t.defesa = c.inst.defesa * c.potencia;
                 if (t.defesa > t.defesaMax) t.defesaMax = t.defesa;
                 return { ok: true, texto: `igualou a defesa de ${t.base.nome} à sua: ${t.defesa}.` };
             }
@@ -974,7 +1068,8 @@
         HAB[cod] = passiva('Dá mais 10 de defesa para os seres do seu universo.',
             'As criaturas do universo do representante entram em batalha com +10 de defesa.');
     });
-    HAB.D007 = passiva('Tem mais defesa que os outros representantes.', 'Não altera as criaturas em batalha.', { semEfeito: true });
+    HAB.D007 = passiva('A cada turno, recupera 1 ponto de defesa do seu campeão ou da sua besta.',
+        'Recupera no início do turno do dono, até o limite de defesa da criatura. Não recupera criaturas já derrotadas.');
 
     // textos corrigidos por código (usados também pelo seed.js e pelo catálogo)
     const TEXTOS = {};
@@ -1011,6 +1106,7 @@
         const sil = zona !== 'mao' ? silenciada(estado, inst) : null;
         if (sil) return nao(sil);
         if (inst.rec > 0) return nao(`Recarregando: faltam ${inst.rec} turno(s) seus.`);
+        if (inst.base.codigo === 'n019' && estado.kitsuneUsada) return nao('Já usada nesta partida (uso único).');
         if ((inst.base.codigo === 'n019' || inst.base.codigo === 'n040') && inst.usos[inst.base.codigo]) return nao('Já usada (uso único).');
         return r;
     }
@@ -1039,7 +1135,7 @@
         const o = outro(estado);
         const c = {
             estado, dono: estado.turno, idxOp: indiceOponente(estado), j, o,
-            inst, escolha, chave: inst.base.codigo, origem: inst.base
+            inst, escolha, chave: inst.base.codigo, origem: inst.base, potencia: fatorHabilidade(estado, inst)
         };
 
         // feitiços com ataque machucam a criatura em batalha do adversário
@@ -1060,10 +1156,11 @@
         let texto = `${j.nome} usou ${inst.base.nome}${res.texto ? `: ${res.texto}` : '.'}`;
 
         if (zona === 'mao' && h.consumivel) {
+            const dano = alvoDano ? ataqueFeitico(inst, alvoDano.base, estado) : 0;
             const i = j.mao.findIndex((x) => x.uid === uid);
             if (i >= 0) j.mao.splice(i, 1);
             if (alvoDano) {
-                const d = ataqueFeitico(inst, alvoDano.base);
+                const d = dano;
                 alvoDano.defesa -= d;
                 texto += ` ${alvoDano.base.nome} perdeu ${d} de defesa.`;
             }
@@ -1075,6 +1172,7 @@
         }
         verificarPresenca(estado);
         verificarFim(estado);
+        redistribuirDescartes(estado);
         return { ok: true };
     }
 
@@ -1085,7 +1183,7 @@
     }
 
     const Motor = {
-        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel,
+        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, podeComprar, fatorHabilidade,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,

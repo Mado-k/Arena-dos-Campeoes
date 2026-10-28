@@ -15,6 +15,33 @@
     let salaAtual = null;
     let mesa = null;
     let pedidoInicio = false;
+    let representantes = [];
+    let carregandoRepresentantes = true;
+    const seletorRepresentante = $('representante');
+
+    async function carregarRepresentantes() {
+        try {
+            const r = await fetch(`${API}/cartas`, { signal: AbortSignal.timeout(10000) });
+            if (!r.ok) throw new Error('Falha ao carregar representantes.');
+            const lista = await r.json();
+            if (!Array.isArray(lista)) throw new Error('Lista de cartas inválida.');
+            representantes = lista.filter(c => Motor.norm(c.classe) === 'representante').map(Motor.normalizarCarta);
+            seletorRepresentante.replaceChildren(new Option('Sem representante', ''), ...representantes.map(c => new Option(c.nome, c.codigo)));
+            carregandoRepresentantes = false;
+            if (salaAtual) mostrarSala(salaAtual);
+        } catch {
+            $('representante-descricao').textContent = 'Não foi possível carregar os representantes. Clique para tentar novamente.';
+            const tentar = el('button', 'btn pequeno', 'Carregar representantes');
+            tentar.type = 'button';
+            tentar.onclick = () => { tentar.remove(); carregarRepresentantes(); };
+            seletorRepresentante.after(tentar);
+        }
+    }
+    carregarRepresentantes();
+    seletorRepresentante.addEventListener('change', async () => {
+        const res = await pedir('sala:representante', seletorRepresentante.value || null);
+        if (res?.erro) $('sala-erro').textContent = res.erro;
+    });
 
     function el(tag, classe, texto) {
         const e = document.createElement(tag);
@@ -68,7 +95,7 @@
             }
         });
         socket.on('sala', mostrarSala);
-        socket.on('partida:encerrada', dados => { mesa.limpar(); aviso(dados.motivo, 'erro'); $('sala-aviso').textContent = dados.motivo; });
+        socket.on('partida:encerrada', dados => { mesa.limpar(); aviso(dados.motivo, dados.empate ? '' : 'erro'); $('sala-aviso').textContent = dados.motivo; });
         socket.on('disconnect', () => {
             if (salaAtual) voltarParaEntrada('A conexão com o servidor caiu. Entre em uma sala de novo.', 'erro');
         });
@@ -152,6 +179,8 @@
         for (const j of sala.jogadores) {
             const li = el('li', 'jogador');
             const nome = el('span', 'nome', j.nome);
+            const rep = representantes.find(r => r.codigo === j.representante);
+            nome.append(el('small', null, rep ? rep.nome : 'Sem representante'));
             if (j.id === socket.id) nome.append(el('small', null, '(você)'));
             if (j.id === sala.anfitriao) nome.append(el('small', null, 'anfitrião'));
             li.append(
@@ -168,6 +197,10 @@
         }
 
         const eu = sala.jogadores.find((j) => j.id === socket.id);
+        seletorRepresentante.value = eu?.representante || '';
+        seletorRepresentante.disabled = sala.iniciando || sala.emPartida || carregandoRepresentantes;
+        const rep = representantes.find(r => r.codigo === eu?.representante);
+        if (!carregandoRepresentantes) $('representante-descricao').textContent = rep ? Motor.descricao(rep).texto : 'Sem bônus de representante. Você pode escolher antes de ficar pronto.';
         $('pronto').textContent = eu && eu.pronto ? 'Cancelar' : 'Estou pronto';
 
         const total = sala.jogadores.length;
@@ -180,7 +213,7 @@
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
         $('iniciar').disabled = pedidoInicio || sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;
-        $('pronto').disabled = sala.iniciando || sala.emPartida;
+        $('pronto').disabled = sala.iniciando || sala.emPartida || carregandoRepresentantes;
     }
 
     function voltarParaEntrada(texto, tipo) {

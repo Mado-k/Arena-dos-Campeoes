@@ -69,7 +69,8 @@ test('equipamentos recebem estado de habilidade; perguntas não gastam ações',
   assert.deepEqual(p.estado, antes);
   assert(p.agir('p0', { tipo: 'habilidade', uid: busca.uid, escolha: res.pergunta.opcoes[0].valor, revisao: 0 }).ok);
   assert.equal(p.estado.acoes, 1);
-  assert.equal(motor.HAB.D007.semEfeito, true);
+  assert.equal(motor.HAB.D007.tipo, 'passiva');
+  assert.notEqual(motor.HAB.D007.semEfeito, true);
 });
 
 test('co-op mantém o turno e a mão de cada humano e executa o turno da máquina', () => {
@@ -201,6 +202,8 @@ for (const modo of ['multiplayer', 'coop']) test('Socket.IO real: ' + modo, { ti
     }
   }
   const todos = [host, ...convidados];
+  assert((await pedir(host, 'sala:representante', {})).erro);
+  assert((await pedir(host, 'sala:representante', 'D007')).ok);
   assert((await pedir(convidados[0], 'partida:iniciar', {})).erro);
   assert((await pedir(host, 'partida:iniciar', {})).erro);
   const pronto = esperar(host, 'sala');
@@ -212,10 +215,13 @@ for (const modo of ['multiplayer', 'coop']) test('Socket.IO real: ' + modo, { ti
   assert((await pedir(host, 'partida:iniciar', {})).ok);
   const visoes = await Promise.all(estados);
   for (const v of visoes) {
+    assert.equal(v.jogadores[0].rep.codigo, 'D007');
     assert.equal(v.tamanhoBaralho, tamanhoBaralho);
     for (const time of [0, 1]) assert.equal(v.jogadores.filter(j => j.equipe === time).reduce((n, j) => n + j.maoTotal + j.baralhoTotal, 0), tamanhoBaralho / 2);
   }
   assert.equal(visoes[0].jogadores[1 - visoes[0].voce].mao.length, 0);
+  assert((await pedir(host, 'sala:representante', 'D001')).erro);
+  assert((await pedir(host, 'partida:revanche', true)).erro);
   assert.equal(visoes.at(-1).jogadores[visoes.at(-1).voce].mao.length, 3);
   const ativo = modo === 'coop' ? 0 : visoes[0].turno;
   const novas = todos.map(c => esperar(c, 'partida:estado'));

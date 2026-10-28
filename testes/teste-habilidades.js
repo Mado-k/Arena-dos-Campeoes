@@ -25,7 +25,7 @@ let t;
 
 // n001
 t = mesa(); let a = t.apoio(t.A, 'n001'); t.deck(t.A, 'n011'); let r = M.executarHabilidade(t.e, a.uid);
-ok(r.ok && t.A.descarte.length === 1 && t.A.mao.length === 0 && t.e.acoes === 1, 'n001 não-metálica descarta');
+ok(r.erro && t.A.descarte.length === 0 && t.A.mao.length === 0 && t.e.acoes === 2, 'n001 sem metálica não gasta ação nem descarta');
 t = mesa(); a = t.apoio(t.A, 'n001'); t.deck(t.A, 'n006'); r = M.executarHabilidade(t.e, a.uid);
 ok(r.ok && t.A.mao.length === 1 && t.A.descarte.length === 0, 'n001 metálica fica na mão');
 // n002 pandora + dano por turno
@@ -40,12 +40,12 @@ t = mesa(); s = t.mao(t.A, 'n005'); r = M.executarHabilidade(t.e, s.uid); ok(r.e
 t = mesa(); t.campo(t.A, 'n013'); let gg = t.equip(t.A, 'n006'); cb = t.campo(t.B, 'n010'); let it = t.equip(t.B, 'n026');
 let d0 = cb.defesa; r = M.executarHabilidade(t.e, gg.uid); ok(r.ok && !cb.equip.length && t.B.descarte.includes(it) && cb.defesa === d0 - 11, 'n006');
 // n008
-t = mesa(); a = t.apoio(t.A, 'n008'); let a2 = t.apoio(t.A, 'n025'); r = M.executarHabilidade(t.e, a.uid);
-ok(r.ok && t.A.mao.includes(a2) && t.A.apoio.length === 1, 'n008');
+t = mesa(); a = t.mao(t.A, 'n008'); let a2 = t.campo(t.B, 'n013'); r = M.colocarApoio(t.e, a.uid);
+ok(r.ok && t.A.mao.includes(a2) && t.B.campo.length === 0 && M.descricao(a.base).tipo === 'passiva', 'n008 captura passiva');
 // n009
 t = mesa(); a = t.apoio(t.A, 'n009'); ca = t.campo(t.A, 'n013'); cb = t.campo(t.B, 'n015');
-r = M.executarHabilidade(t.e, a.uid); ok(r.ok, 'n009'); eq(M.ataqueTotal(ca, cb.base, t.e), 14, 'torcida dobra');
-M.encerrarTurno(t.e); ok(!ca.st.torcida, 'torcida acaba');
+r = M.executarHabilidade(t.e, a.uid); ok(r.erro && M.descricao(a.base).tipo === 'passiva', 'n009 passiva não gasta ação'); eq(M.ataqueTotal(ca, cb.base, t.e), 7, 'Fuleco não dobra ataque básico');
+M.encerrarTurno(t.e); eq(M.fatorHabilidade(t.e, ca), 2, 'Fuleco permanece ativo em apoio');
 // n016 veneno
 t = mesa(); ca = t.campo(t.A, 'n016'); cb = t.campo(t.B, 'n011'); r = M.executarHabilidade(t.e, ca.uid); ok(r.ok && cb.st.veneno === 2, 'n016');
 M.encerrarTurno(t.e); eq(cb.defesa, 16, 'veneno tira 2');

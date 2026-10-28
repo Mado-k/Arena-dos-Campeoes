@@ -31,13 +31,13 @@ function publico(sala) {
     anfitriao: sala.anfitriao,
     iniciando: Boolean(sala.iniciando),
     emPartida: Boolean(sala.partida),
-    jogadores: sala.jogadores.map((j) => ({ id: j.id, nome: j.nome, pronto: j.pronto }))
+    jogadores: sala.jogadores.map((j) => ({ id: j.id, nome: j.nome, pronto: j.pronto, representante: j.representante || null }))
   };
 }
 
 function mensagemInicio(err) {
   if (err.code === 'TEMPO_CARTAS_ESGOTADO') return 'O banco demorou demais para carregar as cartas. Confira a conexão com o Aiven nos Logs do Render e tente novamente.';
-  if (err.code === 'CARTAS_INSUFICIENTES') return err.message;
+  if (['CARTAS_INSUFICIENTES', 'REPRESENTANTE_INVALIDO'].includes(err.code)) return err.message;
   if (['HANDSHAKE_SSL_ERROR', 'SELF_SIGNED_CERT_IN_CHAIN', 'DEPTH_ZERO_SELF_SIGNED_CERT', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'CERT_HAS_EXPIRED'].includes(err.code)) {
     return 'O servidor não conseguiu validar o certificado do banco. Confira o certificado CA do Aiven nas configurações do Render (DB_CA_CERT ou DB_CA_FILE).';
   }
@@ -146,6 +146,36 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
       io.to(sala.codigo).emit('sala', publico(sala));
     });
 
+    socket.on('sala:representante', (codigo, cb) => {
+      const responder = resposta(cb);
+      const sala = salas.get(socket.data.sala);
+      if (!sala || sala.partida || sala.iniciando) return responder({ erro: 'Escolha seu representante antes de iniciar a partida.' });
+      if (codigo !== null && (typeof codigo !== 'string' || !/^[a-z0-9_-]{1,32}$/i.test(codigo))) return responder({ erro: 'Representante inválido.' });
+      const jogador = sala.jogadores.find(j => j.id === socket.id);
+      if (!jogador) return responder({ erro: 'Você não participa desta sala.' });
+      jogador.representante = codigo;
+      sala.jogadores.forEach(j => { j.pronto = false; });
+      publicar(sala);
+      responder({ ok: true });
+    });
+
+    socket.on('partida:revanche', (aceitar, cb) => {
+      const responder = resposta(cb);
+      const sala = salas.get(socket.data.sala);
+      if (!sala?.partida || sala.partida.estado.vencedor !== -1) return responder({ erro: 'A partida não terminou empatada.' });
+      if (typeof aceitar !== 'boolean') return responder({ erro: 'Resposta inválida.' });
+      sala.revanche = sala.revanche || new Set();
+      if (aceitar) sala.revanche.add(socket.id);
+      if (!aceitar || sala.revanche.size === sala.jogadores.length) {
+        sala.partida = null;
+        sala.revanche = null;
+        sala.jogadores.forEach(j => { j.pronto = false; });
+        io.to(sala.codigo).emit('partida:encerrada', { empate: true, motivo: aceitar ? 'Todos aceitaram jogar novamente. Confiram os representantes e fiquem prontos para uma nova partida.' : 'A partida empatada foi encerrada. Vocês podem sair ou preparar outra partida.' });
+        publicar(sala);
+      } else io.to(sala.codigo).emit('partida:revanche', { votos: sala.revanche.size, total: sala.jogadores.length });
+      responder({ ok: true });
+    });
+
     socket.on('partida:iniciar', async (_, cb) => {
       const responder = resposta(cb);
       const sala = salas.get(socket.data.sala);
@@ -159,6 +189,7 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
         const cartas = await carregarComPrazo(carregarCartas, tempoCarregamento);
         if (!sala.iniciando || !salas.has(sala.codigo) || ids !== sala.jogadores.map(j => j.id).join(',')) return responder({ erro: 'Os jogadores da sala mudaram. Tente novamente.' });
         sala.partida = new Partida(sala.jogadores, cartas, sala.modo, sala.tamanhoBaralho);
+        sala.revanche = null;
         sala.iniciando = false;
         publicar(sala);
         atualizarPartida(sala);

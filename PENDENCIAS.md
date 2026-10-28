@@ -1,77 +1,97 @@
-# O que falta verificar
+# Regras confirmadas e o que falta verificar
 
-Esta lista separa as regras que Luciano ainda vai confirmar com os demais
-desenvolvedores das verificações práticas do jogo. As interpretações atuais continuam
-valendo até uma decisão nova; não é necessário inventar valores para cartas de apoio.
+Atualizado com as respostas de Luciano e os esclarecimentos enviados no chat.
+Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
-## Regra confirmada dos auxiliares
+## Confirmado e implementado
 
-Cartas de apoio e cartas auxiliares são a mesma categoria. Quando o campeão morre,
-todos os auxiliares do mesmo jogador vão para o descarte, independentemente da
-causa da derrota. No co-op, os auxiliares dos aliados permanecem em jogo.
-Essa regra já está implementada no offline, no multiplayer e no co-op.
-Não há ataque direto aos auxiliares nem duração padrão por turnos; os efeitos
-específicos de cada carta continuam valendo.
+- [x] Escolha do representante antes da partida nos três modos. No offline, fica na
+  configuração; no online, na sala, antes de confirmar prontidão. Trocar a escolha
+  desmarca a prontidão de todos. A opção de jogar sem representante foi preservada.
+- [x] Apoio e auxiliar são a mesma categoria. Quando um campeão **ou besta** morre,
+  os auxiliares vinculados a ele também vão ao descarte, por qualquer causa e em
+  qualquer modo. Não são alvos de ataques diretos; efeitos podem removê-los ou
+  anulá-los. Os auxiliares de outros participantes não são afetados pela derrota.
+- [x] D007 recupera 1 ponto de defesa da criatura no início do turno do dono, até a
+  defesa máxima. Não revive criaturas derrotadas e não restaura a antiga vida dos
+  jogadores. Seu valor de defesa continua 400.
+- [x] `sonoro` e `feitiço` permanecem no jogo.
 
-## Decisões de regras
-
-- [ ] **Bestas e auxiliares:** a morte de uma besta também deve eliminar os auxiliares?
-  A regra confirmada e implementada por enquanto vale para o campeão e para os
-  auxiliares do mesmo dono. Os auxiliares dos aliados no co-op permanecem em jogo.
-- [ ] **Nova habilidade do D007:** ainda em avaliação. Hoje tem defesa 400, sem
-  habilidade adicional; isso não restaura a vida dos jogadores do sistema antigo.
-- [ ] **Interpretações das habilidades:** aprovar ou corrigir os casos abaixo e os
-  demais descritos na seção 8 do dossiê original.
-
-| Carta | Implementação atual a conferir |
+| Carta | Regra confirmada |
 | --- | --- |
-| n001 | A carta comprada fica na mão se for metálica; senão vai ao descarte. |
-| n008 — Heimdall | Devolve os outros auxiliares do universo normal à mão; ele fica em apoio. |
-| n009 — Fuleco | Dobra o ataque da sua criatura até o fim do turno. O texto fala em dobrar os “efeitos do time”, portanto precisa dessa confirmação. |
-| n013 — Hércules | Dobra o ataque base a cada três turnos próprios em batalha, de forma cumulativa. |
-| n019 — Kitsune | Pode voltar uma vez à mão, como exceção à regra de não retirar criaturas da batalha. |
-| n022 — Dino | Dá +4 de ataque por três turnos próprios e depois vai ao descarte. Também sai antes disso se seu campeão morrer. |
-| n025 | Em apoio, bloqueia dano e efeitos de cartas divinas contra seu dono. |
-| n034 — Guss | Executa imediatamente uma habilidade ativa copiada ou mantém a passiva copiada enquanto estiver em batalha. |
+| n001 | Busca a primeira metálica a partir do topo do baralho. Não descarta as cartas ignoradas nem muda sua ordem. |
+| n008 — Heimdall | Passiva: captura para a sua mão as cartas do universo Normal já em jogo ou jogadas posteriormente pelo adversário. Inclui criaturas, auxiliares e equipamentos. Anexos de outros universos voltam à mão do dono anterior. Capturar não conta como derrotar; proteções e anulações continuam valendo. Não acessa cartas escondidas. |
+| n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
+| n013 — Hércules | Multiplica cumulativamente o ataque base por 2 a cada três turnos próprios em batalha: 7 → 14 → 28. |
+| n019 — Kitsune | Retorna à mão com os itens, armas e auxiliares vinculados, recuperando os atributos. Uma utilização da habilidade por partida, inclusive quando copiada. |
+| n022 — Dino | +4 de ataque por três turnos próprios; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
+| n025 | Mantida a proteção contra dano e efeitos divinos enquanto estiver em apoio, conforme confirmação do item anterior. |
+| n034 — Guss | Executa imediatamente a habilidade ativa copiada; uma passiva copiada passa a valer imediatamente, incluindo gatilhos de presença. |
 
-- [ ] **Categorias:** confirmar se `sonoro` e `feitiço` permanecem; existem nas cartas
-  e no jogo, embora não constassem daquela lista inicial de regras.
-- [ ] **Reciclagem e vitória:** hoje, ao acabar o baralho, o descarte do dono é
-  embaralhado para comprar novamente. Cada derrota de campeão conta, mesmo quando
-  a carta já foi usada antes. Confirmar se essa é a regra desejada.
-- [ ] **Impasses:** definir o resultado quando ninguém consegue vencer, por exemplo
-  em combinações de imunidades. Hoje não existe empate automático por estagnação.
-  Algumas simulações atingiram o limite de turnos do teste sem uma vitória.
+### Alcance dos efeitos do Fuleco
 
-## Balanceamento do co-op
+Duplica danos de habilidades, bônus de ataque/defesa, multiplicadores, quantidade de
+cartas obtidas/removidas e duração dos efeitos. Exemplos: veneno 2 → 4, queimadura
+7 → 14, paralisia 1 → 2 turnos, defesa de equipamento 11 → 22, Dino +4/3 turnos →
++8/6 turnos e recuperação do D007 1 → 2. O ataque básico da criatura não dobra.
+Custos de ações, recargas, intervalos de ativação e limites de uso único não dobram.
+Os efeitos já aplicados conservam seus valores e duração; ao sair ou ser anulado,
+Fuleco deixa de ampliar aplicações novas e bônus passivos calculados continuamente.
+Quando uma habilidade permite obter/remover duas cartas, ambas são escolhidas
+antes de gastar a ação; cancelar a seleção não altera a partida.
 
-- [ ] Jogar partidas completas nos formatos 2 humanos × 1 máquina e 4 × 2.
-- [ ] Avaliar duas ações por humano e quatro por máquina.
-- [ ] Avaliar a mão inicial com um campeão garantido para cada participante.
-- [ ] Conferir a divisão de metade das cartas para cada equipe e os baralhos
-  individuais pequenos no formato 4 × 2. Com 40 cartas, cada humano tem 5 e cada
-  máquina tem 10; com quatro humanos, 20 cartas não são oferecidas.
-- [ ] Conferir a eliminação após três campeões perdidos por participante e a vitória
-  somente após derrotar todas as máquinas. Um humano eliminado acompanha os aliados.
+### Redistribuição no offline e no multiplayer
+
+Somente quando **os dois baralhos de compra estiverem vazios**, os descartes são
+reunidos, embaralhados e divididos igualmente entre os dois jogadores. Se houver
+uma carta ímpar, fica reservada no centro para entrar na próxima redistribuição.
+Uma carta já reservada também entra na mistura seguinte. Mãos, campos e equipamentos
+não entram nessa mistura. Sem pelo menos duas cartas disponíveis, não se cria uma
+carta nem se gasta uma ação de compra sem resultado. Feitiços com regra própria de
+reciclagem continuam funcionando conforme sua descrição.
+Não há mais conservação de metade das cartas por jogador depois do início: Heimdall
+e a redistribuição podem mudar a posse. A quantidade total e a unicidade são mantidas.
+
+### Empate
+
+O resultado empatado oferece jogar novamente ou encerrar. No online, todos precisam
+aceitar a revanche; se alguém encerrar, a partida termina. Uma revanche volta à mesma
+sala, para conferir representantes e confirmar prontidão antes de iniciar novamente.
+No offline, reiniciar volta à configuração.
+
+## Ainda falta definir
+
+- [ ] **Critério de empate por impasse:** falta estabelecer quando a estagnação ou
+  uma combinação de imunidades deve produzir empate. Não foi inventado um número
+  de turnos nem uma regra automática. O resultado empatado já tem o fluxo acima.
+- [ ] **Co-op:** regras específicas, balanceamento, distribuição, reciclagem,
+  condições de vitória e habilidades de equipe ficam para uma etapa futura.
+  O protótipo 2 humanos × 1 máquina / 4 × 2 foi preservado sem torná-lo definitivo.
+  A redistribuição de dois jogadores não foi aplicada ao co-op; por enquanto cada
+  participante continua reciclando seu próprio descarte.
 
 ## Verificação prática no Render
 
-- [ ] Confirmar que “Comprar carta” chama atenção quando está disponível e fica
-  desativado ao gastar as ações ou durante o turno de outro jogador.
-- [ ] Derrubar um campeão por ataque, contra-ataque, habilidade e dano de efeito;
-  verificar que seus auxiliares vão ao descarte e os dos demais participantes ficam.
-- [ ] Conferir que mãos e baralhos continuam privados, inclusive entre aliados.
-- [ ] Conferir os avisos de turno, a seleção de máquina alvo e os danos no registro.
-- [ ] Fazer uma partida com quatro pessoas em dispositivos diferentes, incluindo
-  celular. A validação automatizada em navegador local já passou.
+Os cinco “sim” de Luciano foram associados, na ordem, aos itens da lista anterior:
+
+- [x] Comprar carta destacado e desativado conforme ações/turno.
+- [x] Auxiliares descartados com o campeão e preservação dos demais participantes.
+- [x] Privacidade de mãos e baralhos, inclusive entre aliados.
+- [x] Avisos de turno, seleção de alvo e danos no registro.
+- [x] Partida com quatro pessoas, incluindo celular.
+
+Após o próximo deploy, conferir as novidades desta revisão:
+
+- [ ] Selecionar D007 antes da partida e observar a recuperação no turno do dono.
+- [ ] Derrubar uma besta e conferir o descarte dos auxiliares vinculados.
+- [ ] Conferir captura de cartas Normais e retorno dos anexos dos outros universos.
+- [ ] Conferir Fuleco com dano, paralisia e bônus de defesa.
+- [ ] Esgotar os dois baralhos e conferir a redistribuição e a sobra central.
 
 ## Melhorias opcionais
 
-- Retomar a partida após uma queda de conexão. Hoje uma saída ou desconexão encerra
-  a partida, e um reinício do servidor perde as salas em memória.
-- Criar níveis de dificuldade depois de avaliar o balanceamento da IA.
-
-**Já resolvido:** ataque/defesa zero nas cartas de apoio são valores válidos, a
-distribuição não duplica cartas entre participantes e não há ajustes manuais no jogo.
-O complemento do pedido antigo do index ficou perdido; a decisão foi manter a página
-até Luciano trazer um pedido novo.
+- Retomar partidas após desconexão ou reinício do servidor. Hoje as salas ficam em
+  memória e uma desconexão encerra a partida.
+- Definir níveis de dificuldade quando o co-op voltar à etapa de especificação.
+- O complemento antigo do pedido do index continua desconhecido; manter a página
+  atual até Luciano trazer uma alteração nova.

@@ -56,11 +56,13 @@ O servidor precisa estar acessível aos convidados; não compartilhe a porta do 
 
 1. Abra Multiplayer ou Co-op, informe o apelido, escolha o total de cartas e crie a sala.
 2. Compartilhe o convite e aguarde os amigos entrarem.
-3. Todos devem clicar em **Estou pronto**; o anfitrião clica em **Iniciar partida**.
+3. Cada pessoa escolhe seu representante na sala e clica em **Estou pronto**; o
+   anfitrião clica em **Iniciar partida**. Trocar a escolha desmarca a prontidão. A
+   opção de jogar sem representante continua disponível.
 4. Selecione uma carta para ler sua habilidade e ver suas ações. Use **Comprar carta**
    ou **Encerrar turno** nos controles da mesa.
 
-O total é dividido igualmente, sem repetir cartas entre os lados: 40 = 20 para cada
+O total é dividido igualmente no início, sem repetir cartas entre os lados: 40 = 20 para cada
 lado; 30 = 15; 20 = 10. As três cartas da mão inicial já fazem parte dessa metade.
 Essa distribuição vale também no offline. Uma partida só começa se houver cartas
 jogáveis distintas suficientes para o tamanho escolhido.
@@ -71,6 +73,10 @@ Depois da segunda ação, uma janela central avisa que as ações acabaram e ofe
 **Encerrar turno**. Ao confirmar, os dois lados recebem um aviso central de quem
 encerrou e de quem joga em seguida. No offline, a cortina de troca também mostra
 essa informação.
+
+**O co-op permanece um protótipo:** suas regras específicas serão definidas em uma
+etapa futura. O funcionamento descrito a seguir foi preservado, sem novas decisões
+definitivas de balanceamento ou reciclagem.
 
 O duelo tem dois jogadores. O co-op oferece **2 humanos × 1 máquina** ou
 **4 humanos × 2 máquinas**, selecionados ao criar a sala. Todos os integrantes
@@ -83,7 +89,8 @@ quatro, seguem os outros dois humanos e a segunda máquina. A ordem aparece na m
 Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
 As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
 presença consideram os inimigos em jogo, e Pandora vale para todos. Equipamentos,
-auxiliares e recuperações continuam pertencendo ao dono da carta.
+auxiliares e recuperações beneficiam o dono da carta; Heimdall pode transferir
+cartas adversárias do universo Normal conforme sua habilidade.
 
 Metade das cartas únicas pertence a cada equipe, dividida entre seus integrantes.
 Com 40 cartas: no formato 2 × 1, são 10 para cada humano e 20 para a máquina;
@@ -121,23 +128,37 @@ Não entram novos jogadores numa partida em andamento.
 As decisões que ainda precisam de confirmação e a lista de verificações estão em
 [PENDENCIAS.md](PENDENCIAS.md).
 
-## Regras mantidas e decisões pendentes
+## Regras confirmadas
 
-- Ataque e defesa zero em feitiços, auxiliares e equipamentos são válidos; não são
-  valores faltantes que precisem ser preenchidos automaticamente.
-- Mantidas as interpretações atuais das habilidades, inclusive `sonoro` e `feitiço`.
-- Cartas de apoio e cartas auxiliares são a mesma categoria.
-  Quando um campeão morre, seus auxiliares também vão para o descarte, qualquer
-  que seja a causa da derrota. No co-op, os auxiliares dos aliados permanecem.
-  Essa consequência ainda não foi estendida às bestas.
-- Apoios não ganham novo ataque direto ou duração padrão. O motor continua atacando
-  apenas a criatura em batalha, e efeitos específicos existentes continuam valendo.
-- D007 (Rei da Arena dos Campeões) conserva defesa 400 e não recebe nova habilidade.
-  Os representantes não voltam a funcionar como vida dos jogadores. A condição de
-  vitória permanece derrotar três campeões adversários.
+- Ataque e defesa zero nos apoios são válidos; `sonoro` e `feitiço` permanecem.
+- Quando um campeão ou uma besta morre, seus auxiliares vinculados vão para o
+  descarte, por qualquer causa e nos três modos. Auxiliares não recebem ataques
+  diretos, mas podem ser removidos ou anulados por habilidades.
+- D007 recupera 1 ponto de defesa da criatura no início de cada turno do dono, até
+  o máximo. Sua defesa continua 400; os jogadores não voltam a ter vida própria.
+- n001 busca a primeira metálica do baralho; n008 captura passivamente cartas
+  adversárias do universo Normal em jogo, devolvendo anexos de outros universos
+  à mão do dono anterior; n009 duplica passivamente os efeitos numéricos das outras
+  cartas do próprio dono enquanto estiver em apoio.
+- Fuleco amplia danos de habilidades, bônus, multiplicadores, quantidades e duração;
+  não dobra o ataque básico, custos, recargas, intervalos nem usos únicos.
+  Efeitos já aplicados conservam os valores; bônus passivos são recalculados.
+- Hércules dobra cumulativamente a cada três turnos próprios. Kitsune retorna uma
+  vez por partida com equipamentos e auxiliares; Dino sai junto com sua criatura;
+  n025 mantém a proteção divina e Guss aplica a habilidade copiada imediatamente.
+- No offline e no multiplayer, a reciclagem espera os dois baralhos vazios, reúne
+  os descartes e divide igualmente. Uma sobra fica no centro para a redistribuição
+  seguinte. Cartas não são duplicadas; a posse pode mudar durante a partida.
+  O co-op conserva sua reciclagem individual provisória.
+- Um empate oferece reiniciar ou encerrar. A revanche online exige concordância
+  de todos e volta à sala para confirmar representantes e prontidão. O critério
+  de empate por estagnação ainda precisa ser definido.
 - O último pedido do index foi cortado em “e por fim,”: dossiê, seção 4, item c;
-  também mencionado nas seções 10 e 13. O complemento não consta do material.
-  A página inicial fica em `public/index.html`, `public/index.js` e `public/style.css`.
+  também mencionado nas seções 10 e 13. A página inicial continua em
+  `public/index.html`, `public/index.js` e `public/style.css`.
+
+As decisões completas, exemplos de amplificação e os testes a conferir no Render
+estão em [PENDENCIAS.md](PENDENCIAS.md).
 
 ## Validação
 
