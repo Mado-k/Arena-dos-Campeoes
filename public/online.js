@@ -204,7 +204,7 @@
             if (j.eliminado) quem.append(el('span', 'Eliminado', 'etq ruim'));
             else if (j.maquina) quem.append(el('span', '4 ações', 'etq'));
             if (estado.cooperativo && !aliada && i === alvoSelecionado && !j.eliminado) quem.append(el('span', 'Alvo selecionado', 'etq alvo-selecionado'));
-            if (i === estado.turno && estado.vencedor === null) quem.append(el('span', sua ? 'Sua vez' : aliada ? 'Vez do aliado' : 'Vez da máquina', 'selo-vez'));
+            if (i === estado.turno && estado.vencedor === null) quem.append(el('span', sua ? 'Sua vez' : aliada ? 'Vez do aliado' : j.maquina ? 'Vez da máquina' : 'Vez do adversário', 'selo-vez'));
             const derrotados = el('div', undefined, 'derrotados');
             const pips = el('div', undefined, 'pips');
             pips.setAttribute('aria-hidden', 'true');
