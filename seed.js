@@ -2,8 +2,12 @@
 // Uso: node --env-file=.env seed.js
 // Pode rodar mais de uma vez: cartas com o mesmo código são ignoradas.
 const mysql = require('mysql2/promise');
+const { configBanco, garantirTabela } = require('./db');
+// Os textos das habilidades (já revisados) ficam em public/motor.js
+const { TEXTOS } = require('./public/motor.js');
 
-// [codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade]
+// [codigo, nome, elemento, classe, universo, origem, ataque, defesa, habilidade]
+// Toda carta tem ataque e defesa: onde está null, o valor entra como 0 (preencha depois).
 const cartas = [
   ['n001', 'grávida dos robôs', 'metálico', 'auxiliar', 'cyberpunk', 'memes', null, null,
     'quando a habilidade dessa carta, você deve comprar uma carta do baralho se ela for do tipo “metálico” adicione ela no baralho caso não, coloque a carta comprada na pilha de descarte'],
@@ -107,20 +111,16 @@ const cartas = [
 ];
 
 (async () => {
-  const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'defaultdb'
-  });
+  const pool = mysql.createPool(configBanco());
+  await garantirTabela(pool);
 
   let inseridas = 0;
   for (const c of cartas) {
     const [r] = await pool.query(
       `INSERT IGNORE INTO cartas
-         (codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade)
+         (codigo, nome, elemento, classe, universo, origem, ataque, defesa, habilidade)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      c
+      c.map((valor, i) => (i === 8 && TEXTOS[c[0]] ? TEXTOS[c[0]] : (i === 6 || i === 7) && valor == null ? 0 : valor))
     );
     inseridas += r.affectedRows;
   }

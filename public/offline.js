@@ -177,7 +177,6 @@
     $('cortina-ok').addEventListener('click', () => {
         cortina = false;
         $('cortina').hidden = true;
-        setAviso('');
         render();
     });
 
@@ -418,7 +417,7 @@
         if (!d.texto) { caixa.append(el('p', 'habilidade', 'Esta carta não tem habilidade.')); return caixa; }
         caixa.append(el('p', 'habilidade', d.texto));
         if (d.detalhe) {
-            const det = el('p', 'detalhe');
+            const det = el('p', 'hab-detalhe');
             det.append(el('strong', null, 'Como funciona: '), d.detalhe);
             caixa.append(det);
         }
@@ -587,7 +586,9 @@
                 if (Motor.consumivel(loc.inst)) return `Clique em "${h.botao || 'Executar habilidade'}" no painel para usar esta carta.`;
                 return 'Clique no botão do painel para jogar esta carta.';
             }
-            if (h.tipo === 'ativa') return `Você pode atacar ou usar "${h.botao}" (cada um gasta 1 ação).`;
+            if (h.tipo === 'ativa') return loc.zona === 'campo'
+                ? `Você pode atacar ou usar "${h.botao}" (cada um gasta 1 ação).`
+                : `Clique em "${h.botao}" no painel para usar a habilidade (gasta 1 ação).`;
             return 'Esta carta funciona sozinha. Selecione outra ou encerre o turno.';
         }
         if (!j.campo.length) return 'Comece colocando um campeão ou uma besta em batalha. Clique em uma carta da sua mão.';

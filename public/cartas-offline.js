@@ -9,9 +9,9 @@ window.CARTAS_OFFLINE = [
   "classe": "auxiliar",
   "universo": "cyberpunk",
   "origem": "memes",
-  "dano": null,
-  "vida": null,
-  "habilidade": "quando a habilidade dessa carta, você deve comprar uma carta do baralho se ela for do tipo “metálico” adicione ela no baralho caso não, coloque a carta comprada na pilha de descarte",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Compre uma carta do baralho. Se ela for do tipo metálico, fica na sua mão; caso contrário, vai para a pilha de descarte.",
   "imagem": null
  },
  {
@@ -22,9 +22,9 @@ window.CARTAS_OFFLINE = [
   "classe": "feitiço",
   "universo": "normal",
   "origem": "mitologia grega",
-  "dano": null,
-  "vida": null,
-  "habilidade": "todas os campeões/bestas invocados passaram a sofrer 10 de dano por turno (também afetará o invocador)",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Todos os campeões e bestas em batalha passam a sofrer 10 de dano por turno (inclusive os do invocador).",
   "imagem": null
  },
  {
@@ -35,9 +35,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "mágico",
   "origem": "humanidade",
-  "dano": 6,
-  "vida": 18,
-  "habilidade": "da mais 2 de dano em cartas da origem humanidade",
+  "ataque": 6,
+  "defesa": 18,
+  "habilidade": "Causa 2 de dano a mais em cartas da origem humanidade.",
   "imagem": null
  },
  {
@@ -48,9 +48,9 @@ window.CARTAS_OFFLINE = [
   "classe": "arma",
   "universo": "mágico",
   "origem": "folclore brasileiro",
-  "dano": 2,
-  "vida": null,
-  "habilidade": "faz os auxiliares se transformarem em peixes, e impede que eles possam usar as habilidades",
+  "ataque": 2,
+  "defesa": 0,
+  "habilidade": "Transforma os auxiliares do adversário em peixes e os impede de usar habilidades.",
   "imagem": null
  },
  {
@@ -61,9 +61,9 @@ window.CARTAS_OFFLINE = [
   "classe": "feitiço",
   "universo": "zumbi",
   "origem": "mitologia grega",
-  "dano": null,
-  "vida": null,
-  "habilidade": "pega uma carta zumbi da sua pilha de descarte e coloca na sua mão",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Escolha uma carta zumbi da sua pilha de descarte e coloque-a na sua mão.",
   "imagem": null
  },
  {
@@ -74,9 +74,9 @@ window.CARTAS_OFFLINE = [
   "classe": "arma",
   "universo": "game",
   "origem": "humanidade",
-  "dano": 1,
-  "vida": null,
-  "habilidade": "pode jogar os itens ou armas do oponente longe",
+  "ataque": 1,
+  "defesa": 0,
+  "habilidade": "Joga para longe um item ou uma arma do oponente.",
   "imagem": null
  },
  {
@@ -87,9 +87,9 @@ window.CARTAS_OFFLINE = [
   "classe": "arma",
   "universo": "cyberpunk",
   "origem": "folclore japonês",
-  "dano": 4,
-  "vida": null,
-  "habilidade": "dá dano apenas no tipo fantasma e sombrio",
+  "ataque": 4,
+  "defesa": 0,
+  "habilidade": "Causa dano apenas em cartas dos tipos fantasma e sombrio.",
   "imagem": null
  },
  {
@@ -100,9 +100,9 @@ window.CARTAS_OFFLINE = [
   "classe": "auxiliar",
   "universo": "normal",
   "origem": "mitologia nórdica",
-  "dano": null,
-  "vida": null,
-  "habilidade": "manda os auxiliares do universo normal invocador para sua mão",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Manda para a sua mão os auxiliares do universo normal que estão em apoio.",
   "imagem": null
  },
  {
@@ -113,9 +113,9 @@ window.CARTAS_OFFLINE = [
   "classe": "auxiliar",
   "universo": "menção honrosa",
   "origem": "folclore brasileiro",
-  "dano": null,
-  "vida": null,
-  "habilidade": "Ao levantar a torcida o fuleco faz com os efeitos do seu time dobrem",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Ao levantar a torcida, o Fuleco faz os efeitos do seu time dobrarem.",
   "imagem": null
  },
  {
@@ -126,9 +126,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "menção honrosa",
   "origem": "memes",
-  "dano": 2,
-  "vida": 14,
-  "habilidade": "Não sofre dano direto de campeões",
+  "ataque": 2,
+  "defesa": 14,
+  "habilidade": "Não sofre dano direto de campeões.",
   "imagem": null
  },
  {
@@ -139,9 +139,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "cyberpunk",
   "origem": "folclore japonês",
-  "dano": 4,
-  "vida": 18,
-  "habilidade": "Dá dano em dobro em cartas do tipo metálico",
+  "ataque": 4,
+  "defesa": 18,
+  "habilidade": "Causa o dobro de dano em cartas do tipo metálico.",
   "imagem": null
  },
  {
@@ -152,9 +152,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "game",
   "origem": "folclore brasileiro",
-  "dano": 8,
-  "vida": 19,
-  "habilidade": "Com seu canto consegue bugar e anular as habilidades das cartas do universo “game”",
+  "ataque": 8,
+  "defesa": 19,
+  "habilidade": "Com o seu canto, bloqueia e anula as habilidades das cartas do universo game do adversário.",
   "imagem": null
  },
  {
@@ -165,9 +165,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "normal",
   "origem": "mitologia grega",
-  "dano": 7,
-  "vida": 13,
-  "habilidade": "seu dano dobra a cada três turnos",
+  "ataque": 7,
+  "defesa": 13,
+  "habilidade": "O ataque dobra a cada três turnos.",
   "imagem": null
  },
  {
@@ -178,9 +178,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "menção honrosa",
   "origem": "folclore japonês",
-  "dano": 6,
-  "vida": 6,
-  "habilidade": "da o dobro de dano em cartas do tipo sombrio,fantasma e divino",
+  "ataque": 6,
+  "defesa": 6,
+  "habilidade": "Causa o dobro de dano em cartas dos tipos sombrio, fantasma e divino.",
   "imagem": null
  },
  {
@@ -191,9 +191,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "normal",
   "origem": "humanidade",
-  "dano": 5,
-  "vida": 14,
-  "habilidade": "não sofre cartas da classe besta",
+  "ataque": 5,
+  "defesa": 14,
+  "habilidade": "Não sofre dano de cartas da classe besta.",
   "imagem": null
  },
  {
@@ -204,9 +204,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "cyberpunk",
   "origem": "folclore japonês",
-  "dano": 1,
-  "vida": 14,
-  "habilidade": "da efeito de veneno no oponente no oponente, o oponente recebe 2 de dano por turno",
+  "ataque": 1,
+  "defesa": 14,
+  "habilidade": "Envenena o oponente: ele recebe 2 de dano por turno.",
   "imagem": null
  },
  {
@@ -217,9 +217,9 @@ window.CARTAS_OFFLINE = [
   "classe": "feitiço",
   "universo": "game",
   "origem": "mitologia nórdica",
-  "dano": 3,
-  "vida": null,
-  "habilidade": "paraliza por 1 turno, seres do universo games",
+  "ataque": 3,
+  "defesa": 0,
+  "habilidade": "Causa 3 de dano e paralisa por 1 turno os seres do universo game.",
   "imagem": null
  },
  {
@@ -230,9 +230,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "cyberpunk",
   "origem": "mitologia nórdica",
-  "dano": 3,
-  "vida": 14,
-  "habilidade": "da o dobro de dano em criaturas do tipo metálico",
+  "ataque": 3,
+  "defesa": 14,
+  "habilidade": "Causa o dobro de dano em criaturas do tipo metálico.",
   "imagem": null
  },
  {
@@ -243,9 +243,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "mágico",
   "origem": "folclore japonês",
-  "dano": 4,
-  "vida": 18,
-  "habilidade": "consegue retornar para sua mão uma única vez para recuperar seus status",
+  "ataque": 4,
+  "defesa": 18,
+  "habilidade": "Consegue voltar para a sua mão uma única vez, para recuperar seus atributos.",
   "imagem": null
  },
  {
@@ -256,9 +256,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "cyberpunk",
   "origem": "memes",
-  "dano": 4,
-  "vida": 17,
-  "habilidade": "deixa seu oponente confuso e faz ele se atacar por 1 turno e cooldown de 3 turnos para reutilizar a habilidade",
+  "ataque": 4,
+  "defesa": 17,
+  "habilidade": "Deixa o oponente confuso e faz com que ele ataque a si mesmo por 1 turno. Recarga de 3 turnos para usar de novo.",
   "imagem": null
  },
  {
@@ -269,9 +269,9 @@ window.CARTAS_OFFLINE = [
   "classe": "arma",
   "universo": "menção honrosa",
   "origem": "memes",
-  "dano": 6,
-  "vida": null,
-  "habilidade": "sopra bat bolhas no oponente distraindo os auxiliares e impedindo eles de usar as habilidades",
+  "ataque": 6,
+  "defesa": 0,
+  "habilidade": "Sopra bolhas no oponente, distraindo os auxiliares dele e impedindo que usem habilidades.",
   "imagem": null
  },
  {
@@ -282,9 +282,9 @@ window.CARTAS_OFFLINE = [
   "classe": "auxiliar",
   "universo": "game",
   "origem": "memes",
-  "dano": null,
-  "vida": null,
-  "habilidade": "pula em cima dos inimigos em três turnos causando 4 de dano a mais, após os três turnos ele bate em um cacto  morre e a carta vai para pilha de descarte",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Pula sobre os inimigos durante três turnos, causando 4 de dano a mais. Depois, bate em um cacto, morre e a carta vai para a pilha de descarte.",
   "imagem": null
  },
  {
@@ -295,9 +295,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "cyberpunk",
   "origem": "mitologia nórdica",
-  "dano": 2,
-  "vida": 14,
-  "habilidade": "ao ser derrotado adicione mais 100 de vida a próxima carta caso seja um campeão",
+  "ataque": 2,
+  "defesa": 14,
+  "habilidade": "Ao ser derrotada, a próxima carta de campeão que você colocar em batalha recebe +100 de defesa.",
   "imagem": null
  },
  {
@@ -308,9 +308,9 @@ window.CARTAS_OFFLINE = [
   "classe": "feitiço",
   "universo": "game",
   "origem": "folclore brasileiro",
-  "dano": null,
-  "vida": null,
-  "habilidade": "joga todas as cartas da pilha de descarte de volta no baralho e re embaralha as cartas",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Joga todas as cartas da pilha de descarte de volta ao baralho e embaralha as cartas.",
   "imagem": null
  },
  {
@@ -321,9 +321,9 @@ window.CARTAS_OFFLINE = [
   "classe": "auxiliar",
   "universo": "normal",
   "origem": "humanidade",
-  "dano": null,
-  "vida": null,
-  "habilidade": "anula o dano e efeito  de cartas do tipo divino",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Anula o dano e o efeito de cartas do tipo divino contra você.",
   "imagem": null
  },
  {
@@ -334,9 +334,9 @@ window.CARTAS_OFFLINE = [
   "classe": "item",
   "universo": null,
   "origem": "memes",
-  "dano": null,
-  "vida": 11,
-  "habilidade": "HP +11. Anula habilidades de tipo fantasma",
+  "ataque": 0,
+  "defesa": 11,
+  "habilidade": "Defesa +11. Anula habilidades de cartas do tipo fantasma.",
   "imagem": null
  },
  {
@@ -347,9 +347,9 @@ window.CARTAS_OFFLINE = [
   "classe": "item",
   "universo": "game",
   "origem": "folclore brasileiro",
-  "dano": null,
-  "vida": null,
-  "habilidade": "aplica efeito de fogo em qualquer um que te tocar, o oponente receberá 7 de dano por turno",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Aplica efeito de fogo em qualquer um que tocar a criatura: o oponente recebe 7 de dano por turno.",
   "imagem": null
  },
  {
@@ -360,9 +360,9 @@ window.CARTAS_OFFLINE = [
   "classe": "item",
   "universo": "zumbi",
   "origem": "folclore brasileiro",
-  "dano": null,
-  "vida": null,
-  "habilidade": "zumbifica a carta do oponente, fazendo a vida ser reduzida pela metade",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Zumbifica a carta do oponente, fazendo a defesa dela ser reduzida pela metade.",
   "imagem": null
  },
  {
@@ -373,9 +373,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "normal",
   "origem": "folclore brasileiro",
-  "dano": 4,
-  "vida": 9,
-  "habilidade": "caso seu oponente seja do tipo sombrio, a vida dessa carta é multiplicada por 10",
+  "ataque": 4,
+  "defesa": 9,
+  "habilidade": "Se o oponente for do tipo sombrio, a defesa desta carta é multiplicada por 10.",
   "imagem": null
  },
  {
@@ -386,9 +386,9 @@ window.CARTAS_OFFLINE = [
   "classe": "feitiço",
   "universo": "normal",
   "origem": "mitologia grega",
-  "dano": 5,
-  "vida": null,
-  "habilidade": "criaturas do universo normal sofrem dano dobrado",
+  "ataque": 5,
+  "defesa": 0,
+  "habilidade": "Causa 5 de dano. Criaturas do universo normal sofrem o dobro de dano.",
   "imagem": null
  },
  {
@@ -399,9 +399,9 @@ window.CARTAS_OFFLINE = [
   "classe": "item",
   "universo": "menção honrosa",
   "origem": "folclore japonês",
-  "dano": null,
-  "vida": null,
-  "habilidade": "compra três cartas do baralho e coloque essa carta na pilha de descarte",
+  "ataque": 0,
+  "defesa": 0,
+  "habilidade": "Compre três cartas do baralho e coloque esta carta na pilha de descarte.",
   "imagem": null
  },
  {
@@ -412,9 +412,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "zumbi",
   "origem": "humanidade",
-  "dano": 19,
-  "vida": 40,
-  "habilidade": "como ela foi a primeira infectada, ela tem muito mais vida que o normal",
+  "ataque": 19,
+  "defesa": 40,
+  "habilidade": "Como foi a primeira infectada, tem muito mais defesa que o normal.",
   "imagem": null
  },
  {
@@ -425,9 +425,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "zumbi",
   "origem": "folclore japonês",
-  "dano": 3,
-  "vida": 19,
-  "habilidade": "dobra o dano base caso esteja com uma arma",
+  "ataque": 3,
+  "defesa": 19,
+  "habilidade": "Dobra o ataque base se estiver com uma arma.",
   "imagem": null
  },
  {
@@ -438,9 +438,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "menção honrosa",
   "origem": "mitologia grega",
-  "dano": 9,
-  "vida": 16,
-  "habilidade": "consegue copiar a habilidade do campeão/besta do oponente",
+  "ataque": 9,
+  "defesa": 16,
+  "habilidade": "Consegue copiar a habilidade do campeão ou da besta do oponente.",
   "imagem": null
  },
  {
@@ -451,9 +451,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "game",
   "origem": "mitologia grega",
-  "dano": 4,
-  "vida": 13,
-  "habilidade": "procure uma carta de campeão no baralho e coloque na sua mão",
+  "ataque": 4,
+  "defesa": 13,
+  "habilidade": "Procure uma carta de campeão no baralho e coloque-a na sua mão.",
   "imagem": null
  },
  {
@@ -464,9 +464,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "zumbi",
   "origem": "mitologia nórdica",
-  "dano": 4,
-  "vida": 17,
-  "habilidade": "auxiliares,itens e armas do tipo água, são mandados para pilha de descarte",
+  "ataque": 4,
+  "defesa": 17,
+  "habilidade": "Auxiliares, itens e armas do tipo água do adversário são mandados para a pilha de descarte.",
   "imagem": null
  },
  {
@@ -477,9 +477,9 @@ window.CARTAS_OFFLINE = [
   "classe": "besta",
   "universo": "menção honrosa",
   "origem": "folclore japonês",
-  "dano": 1,
-  "vida": 20,
-  "habilidade": "só pode ser ferido por fantasma",
+  "ataque": 1,
+  "defesa": 20,
+  "habilidade": "Só pode ser ferido por cartas do tipo fantasma.",
   "imagem": null
  },
  {
@@ -490,9 +490,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "mágico",
   "origem": "humanidade",
-  "dano": 8,
-  "vida": 18,
-  "habilidade": "não é possível equipar auxiliares, itens e armas nessa carta",
+  "ataque": 8,
+  "defesa": 18,
+  "habilidade": "Não é possível equipar auxiliares, itens nem armas nesta carta.",
   "imagem": null
  },
  {
@@ -503,9 +503,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "game",
   "origem": "mitologia grega",
-  "dano": 3,
-  "vida": 3,
-  "habilidade": "faz seu oponente ter o mesmo tanto de vida que você",
+  "ataque": 3,
+  "defesa": 3,
+  "habilidade": "Faz o oponente ter a mesma defesa que você.",
   "imagem": null
  },
  {
@@ -516,9 +516,9 @@ window.CARTAS_OFFLINE = [
   "classe": "campeão",
   "universo": "menção honrosa",
   "origem": "memes",
-  "dano": 8,
-  "vida": 20,
-  "habilidade": "essa habilidade destrói a carta do oponente (essa habilidade pode ser usada uma única vez)",
+  "ataque": 8,
+  "defesa": 20,
+  "habilidade": "Destrói a carta do oponente. Essa habilidade só pode ser usada uma vez.",
   "imagem": null
  },
  {
@@ -529,9 +529,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "cyberpunk",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -542,9 +542,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "zumbi",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -555,9 +555,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "mágico",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -568,9 +568,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "normal",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -581,9 +581,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "menção honrosa",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -594,9 +594,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "game",
   "origem": null,
-  "dano": null,
-  "vida": 200,
-  "habilidade": "dá mais 10 de HP para seres do seu universo",
+  "ataque": 0,
+  "defesa": 200,
+  "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
   "imagem": null
  },
  {
@@ -607,9 +607,9 @@ window.CARTAS_OFFLINE = [
   "classe": "representante",
   "universo": "void",
   "origem": null,
-  "dano": null,
-  "vida": 400,
-  "habilidade": "contém mais vida que os outros",
+  "ataque": 0,
+  "defesa": 400,
+  "habilidade": "Tem mais defesa que os outros representantes.",
   "imagem": null
  }
 ];

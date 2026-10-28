@@ -22,6 +22,7 @@
 [data-elemento="sombrio"]  { --cor: #8a55e0; }
 [data-elemento="divino"]   { --cor: #ffd54a; }
 [data-elemento="sonoro"]   { --cor: #ff7ac8; }
+[data-elemento="vento"]    { --cor: #7fe3d0; }
 [data-elemento="neutro"]   { --cor: #7c7a8c; }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -264,7 +265,6 @@ a { color: inherit; }
     margin: 4px 0 0;
     font-size: 1rem;
     font-weight: 600;
-    text-transform: capitalize;
 }
 .carta-meta {
     margin: 0;
@@ -409,7 +409,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(3px); }
 .detalhe h3 {
     font-family: var(--fonte-titulo);
     font-size: 1.6rem;
-    text-transform: capitalize;
     padding-right: 28px;
 }
 .detalhe .codigo { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--suave); text-transform: uppercase; }
@@ -614,4 +613,142 @@ a.modo:focus-visible {
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     * { transition: none !important; }
+}
+
+/* dica de regras nos lobbies */
+.dica-regras { max-width: 560px; margin: 12px auto 0; font-size: 0.9rem; text-align: center; }
+.dica-regras a { color: var(--ouro-claro); text-decoration: underline; }
+
+/* ============ Index: faixa de ajuda, modos centralizados e guia "Como jogar" ============ */
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+
+.faixa-ajuda {
+    display: block;
+    padding: 9px 16px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #1d1405;
+    background: linear-gradient(180deg, var(--ouro-claro), var(--ouro));
+    text-decoration: none;
+}
+.faixa-ajuda strong { text-decoration: underline; }
+.faixa-ajuda:hover { filter: brightness(1.06); }
+
+.topo nav a.destaque {
+    color: var(--ouro-claro);
+    padding: 6px 14px;
+    border: 1px solid var(--ouro);
+    border-radius: 999px;
+}
+.topo nav a.destaque:hover { background: rgba(232, 176, 74, 0.14); }
+
+.centro { text-align: center; }
+.sub { margin-top: 8px; }
+
+/* modos de jogo no meio da página */
+.modos-centro {
+    max-width: 1040px;
+    margin: 30px auto 0;
+    justify-content: center;
+}
+.modos-centro .modo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+.modos-centro .etiqueta { position: static; margin-bottom: 4px; }
+.modos-centro .modo h3 { margin: 0; }
+.modos-centro .modo .ir { margin-top: 6px; }
+
+/* guia */
+.como-jogar { max-width: 980px; }
+.como-jogar .indice {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 22px 0 8px;
+}
+.como-jogar .indice a {
+    padding: 8px 14px;
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--suave);
+    background: var(--painel);
+}
+.como-jogar .indice a:hover { color: var(--ouro-claro); border-color: var(--ouro); }
+
+.como-jogar .bloco {
+    margin-top: 18px;
+    padding: clamp(18px, 3vw, 30px);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    background: var(--painel);
+    text-align: left;
+}
+.como-jogar .destaque-bloco {
+    border-color: var(--ouro);
+    background: linear-gradient(180deg, rgba(232, 176, 74, 0.1), var(--painel));
+}
+.como-jogar .bloco h3 {
+    margin: 0 0 12px;
+    font-family: var(--fonte-titulo);
+    font-size: 1.3rem;
+    color: var(--ouro-claro);
+}
+.como-jogar .bloco p { margin: 0 0 12px; line-height: 1.65; }
+.como-jogar .bloco p:last-child { margin-bottom: 0; }
+
+.como-jogar .cartoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+.como-jogar .cartoes.dois { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.como-jogar .cartao {
+    padding: 14px 16px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    background: var(--painel-2);
+}
+.como-jogar .cartao h4 { margin: 0 0 6px; font-size: 1rem; }
+.como-jogar .cartao p { margin: 0; font-size: 0.92rem; color: var(--suave); line-height: 1.5; }
+
+.como-jogar .nota {
+    padding: 12px 14px;
+    border-left: 3px solid var(--ouro);
+    border-radius: 0 10px 10px 0;
+    background: rgba(232, 176, 74, 0.08);
+    font-size: 0.92rem;
+}
+.como-jogar .regras-num,
+.como-jogar .lista-funcoes { margin: 0 0 12px; padding-left: 1.4em; line-height: 1.7; }
+.como-jogar .regras-num li,
+.como-jogar .lista-funcoes li { margin-bottom: 6px; }
+
+.como-jogar .tipo-hab {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.como-jogar .tipo-hab.ativa { color: var(--ouro-claro); border: 1px solid var(--ouro); background: rgba(232, 176, 74, 0.12); }
+.como-jogar .tipo-hab.passiva { color: #8fe39a; border: 1px solid #3f8f4a; background: rgba(92, 193, 95, 0.12); }
+.como-jogar .fecho { margin-top: 28px; }
+
+/* catálogo (começa escondido) */
+.catalogo { margin-top: 26px; text-align: left; }
+.catalogo .acoes { margin-top: 22px; }
+#cartas { padding-bottom: 24px; }
+#ver-cartas[aria-expanded="true"] { display: none; }
+
+@media (max-width: 560px) {
+    .topo nav a.destaque { padding: 5px 10px; }
 }

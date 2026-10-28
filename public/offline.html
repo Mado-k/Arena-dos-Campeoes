@@ -89,11 +89,12 @@
                         <strong id="turno-texto"></strong>
                         <span id="acoes-texto" class="acoes-texto"></span>
                     </div>
-                    <p id="instrucao" class="instrucao" aria-live="polite"></p>
                     <div class="barra-botoes">
-                        <button type="button" class="btn" id="comprar">Comprar carta</button>
+                        <button type="button" class="btn" id="comprar" title="Compra uma carta do baralho e gasta 1 ação">Comprar carta (1 ação)</button>
                         <button type="button" class="btn primario" id="encerrar">Encerrar turno</button>
                     </div>
+                    <p id="instrucao" class="instrucao" aria-live="polite"></p>
+                    <div id="efeitos" class="efeitos" hidden></div>
                 </div>
 
                 <section id="lado-ativo" class="lado lado-ativo"></section>
@@ -103,8 +104,8 @@
                 <div id="painel-carta" class="painel"></div>
 
                 <details class="painel">
-                    <summary>Ajustes manuais da partida</summary>
-                    <p class="suave">Use para aplicar habilidades que o jogo não faz sozinho. Não gastam ações.</p>
+                    <summary>Correções manuais (só se algo der errado)</summary>
+                    <p class="suave">As habilidades são automáticas. Use estas opções apenas para consertar um engano. Não gastam ações.</p>
                     <div id="manual"></div>
                 </details>
 
@@ -140,6 +141,15 @@
             </div>
         </div>
     </div>
+
+    <!-- ESCOLHA DO ALVO DE UMA HABILIDADE -->
+    <dialog id="escolha" aria-labelledby="escolha-titulo">
+        <button type="button" class="fechar" id="escolha-fechar" aria-label="Cancelar">&times;</button>
+        <div class="pilha-corpo">
+            <h3 id="escolha-titulo"></h3>
+            <div id="escolha-opcoes" class="escolha-opcoes"></div>
+        </div>
+    </dialog>
 
     <!-- DESCARTE -->
     <dialog id="pilha" aria-label="Descarte">

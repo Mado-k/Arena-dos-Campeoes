@@ -6,12 +6,17 @@ const fs = require('fs');
 const crypto = require('crypto');
 const http = require('http');
 const { Server } = require('socket.io');
+const { TEXTOS } = require('./public/motor.js');
+const { configBanco, garantirTabela } = require('./db');
+
+// Texto de habilidade revisado (o mesmo que o jogo usa), por cima do que estiver no banco.
+const comTexto = (c) => (TEXTOS[c.codigo] ? { ...c, habilidade: TEXTOS[c.codigo] } : c);
 
 const app = express();
 const servidor = http.createServer(app);
 const io = new Server(servidor, { cors: { origin: '*' } });
 
-// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 16171)
+// CORS: permite que o site aberto pelo Live Server (porta 5500) fale com este servidor (porta 3000)
 app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type, x-admin-senha');
@@ -38,19 +43,16 @@ const OPCOES = {
 const UPLOADS = path.join(__dirname, 'uploads');
 fs.mkdirSync(UPLOADS, { recursive: true });
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'defaultdb'
-});
+// Conexão: host, porta, SSL etc. vêm do .env (local) ou do painel Environment (Render). Ver db.js.
+const pool = mysql.createPool(configBanco());
 
 pool.getConnection()
-  .then((conn) => {
-    console.log('Conectado ao banco MySQL');
+  .then(async (conn) => {
     conn.release();
+    await garantirTabela(pool);
+    console.log('Conectado ao banco MySQL (tabela cartas pronta)');
   })
-  .catch((err) => console.error('Erro ao conectar ao banco:', err));
+  .catch((err) => console.error('Erro ao conectar ao banco:', err.code || '', err.message));
 
 // ---------- upload de imagem ----------
 const upload = multer({
@@ -88,7 +90,7 @@ app.get('/opcoes', (req, res) => res.json(OPCOES));
 app.get('/cartas', async (req, res) => {
   try {
     const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
-    res.json(cartas);
+    res.json(cartas.map(comTexto));
   } catch (err) {
     console.error('Erro ao buscar cartas:', err);
     res.status(500).json({ erro: 'Não foi possível buscar as cartas' });
@@ -99,7 +101,7 @@ app.get('/cartas/:numero', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM cartas WHERE numero = ?', [req.params.numero]);
     if (rows.length === 0) return res.status(404).json({ erro: 'Carta não encontrada' });
-    res.json(rows[0]);
+    res.json(comTexto(rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro no servidor' });
@@ -174,7 +176,8 @@ app.use((err, req, res, next) => {
 // salas de multiplayer e co-op
 require('./salas')(io);
 
-const PORT = process.env.PORT || 16171;
-servidor.listen(PORT, () => {
-  console.log(`Arena dos Campeões rodando na porta ${PORT}`);
+// O Render define a porta pela variável PORT; localmente continua sendo a 3000.
+const PORTA = Number(process.env.PORT) || 3000;
+servidor.listen(PORTA, '0.0.0.0', () => {
+  console.log(`Arena dos Campeões rodando na porta ${PORTA}`);
 });

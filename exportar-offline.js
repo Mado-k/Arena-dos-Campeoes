@@ -2,18 +2,16 @@
 // Rode sempre que cadastrar cartas novas e quiser que o modo offline as tenha:
 //   node --env-file=.env exportar-offline.js
 const mysql = require('mysql2/promise');
+const { configBanco, garantirTabela } = require('./db');
 const fs = require('fs');
 const path = require('path');
+const { TEXTOS } = require('./public/motor.js');
 
 (async () => {
-  const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'arena_campeoes'
-  });
+  const pool = mysql.createPool(configBanco());
 
-  const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
+  const [linhas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
+  const cartas = linhas.map((c) => (TEXTOS[c.codigo] ? { ...c, habilidade: TEXTOS[c.codigo] } : c));
   const topo =
     '// Cópia das cartas para jogar sem servidor nem internet.\n' +
     '// Para atualizar com as cartas do banco: node --env-file=.env exportar-offline.js\n';

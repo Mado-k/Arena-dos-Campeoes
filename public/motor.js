@@ -48,11 +48,23 @@
     const ehCriatura = (inst) => ['campeao', 'besta'].includes(classeDe(inst));
     const temEfeito = (codigo) => Boolean(codigo && EFEITOS[codigo]);
 
+    // Nome de exibição: primeira letra maiúscula em cada palavra, exceto "de", "da", "do"...
+    // (palavras que já têm maiúsculas no meio, como "TI", ficam como estão). Não altera o banco.
+    function tituloNome(nome) {
+        const peq = ['de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o'];
+        return String(nome == null ? '' : nome).trim().split(/\s+/).map((p, i) => {
+            if (/[A-ZÀ-Ý]/.test(p.slice(1))) return p;
+            const min = p.toLowerCase();
+            if (i > 0 && peq.includes(min)) return min;
+            return min.charAt(0).toUpperCase() + min.slice(1);
+        }).join(' ');
+    }
+
     // toda carta tem ataque e defesa (aceita também o formato antigo dano/vida)
     function normalizarCarta(c) {
         const ataque = c.ataque != null ? c.ataque : c.dano;
         const defesa = c.defesa != null ? c.defesa : c.vida;
-        return Object.assign({}, c, { ataque: Number(ataque) || 0, defesa: Number(defesa) || 0 });
+        return Object.assign({}, c, { nome: tituloNome(c.nome), ataque: Number(ataque) || 0, defesa: Number(defesa) || 0 });
     }
 
     function casa(criterios, base) {
@@ -1048,7 +1060,7 @@
 
     const Motor = {
         REGRAS, EFEITOS, HAB, TEXTOS, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel,
-        normalizarCarta, descricao, estadoHabilidade, silenciada,
+        normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,
         executarHabilidade, usarHabilidade: executarHabilidade,
