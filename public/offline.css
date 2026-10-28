@@ -177,6 +177,17 @@
     font-size: 0.75rem;
 }
 .apoio .slot-vazio { min-height: 120px; }
+/* Cartas em jogo ficam no centro; a mão mantém a organização própria. */
+.campo-mesa { display: flex; flex-direction: column; gap: 12px; padding: 8px 0 16px; }
+.campo-mesa .fileira-wrap { margin-top: 0; }
+.campo-mesa h4 { text-align: center; }
+.campo-mesa .fileira { justify-content: center; align-items: stretch; }
+.campo-mesa .c-wrap,
+.campo-mesa .slot-vazio { width: min(158px, calc(50% - 4px)); flex-shrink: 0; }
+/* O campeão fica voltado para o centro da mesa, com os apoios atrás. */
+.lado-adversario .campo-mesa { flex-direction: column-reverse; }
+/* Só a arte gira: nomes, atributos, habilidades e painel de consulta ficam legíveis. */
+.lado-adversario .campo-mesa .c-arte img { transform: rotate(180deg); }
 .mao-escondida {
     padding: 18px;
     border: 1px dashed var(--borda);

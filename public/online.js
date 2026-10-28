@@ -162,8 +162,9 @@
             b.append(topo, arte(c.base), el('p', c.base.nome, 'c-nome'), stats(c), el('p', d.texto, 'c-desc'), selo(d), etiquetas(c));
             return b;
         }
-        function zona(titulo, cartas, { limite, dica = '', apoio = false } = {}) {
+        function zona(titulo, cartas, { limite, dica = '', apoio = false, campo = false } = {}) {
             const s = el('section', undefined, 'fileira-wrap' + (apoio ? ' apoio' : ''));
+            if (campo) s.dataset.zona = apoio ? 'apoio' : 'campo';
             const h = el('h4', titulo + (limite === undefined ? ` (${cartas.length})` : ` (${cartas.length}/${limite})`));
             if (dica) h.append(el('span', ' · ' + dica, 'dica-fileira'));
             s.append(h);
@@ -182,7 +183,9 @@
                 }
                 lista.append(grupo);
             }
-            for (let i = cartas.length; i < (limite || 0); i++) lista.append(el('div', 'vazio', 'slot-vazio'));
+            if (!campo || !cartas.length) {
+                for (let i = cartas.length; i < (limite || 0); i++) lista.append(el('div', 'vazio', 'slot-vazio'));
+            }
             if (!cartas.length && limite === undefined) lista.append(el('p', 'Nenhuma carta.', 'mao-escondida'));
             s.append(lista);
             return s;
@@ -196,6 +199,7 @@
             const j = estado.jogadores[i], sua = i === estado.voce;
             const aliada = estado.equipes[i] === estado.equipes[estado.voce];
             const n = el('section', undefined, 'lado lado-online' + (sua ? ' lado-ativo' : '') + (j.eliminado ? ' lado-eliminado' : ''));
+            if (!aliada) n.classList.add('lado-adversario');
             if (estado.cooperativo && !sua) n.classList.add('lado-publico');
             if (estado.cooperativo && !aliada && i === alvoSelecionado) n.classList.add('lado-alvo');
             n.setAttribute('aria-label', sua ? 'Seu lado da mesa' : (aliada ? 'Campo aliado: ' : 'Campo adversário: ') + j.nome);
@@ -213,7 +217,12 @@
             const pilhas = el('div', undefined, 'pilhas');
             pilhas.append(el('span', `Mão: ${j.maoTotal}`), el('span', `Baralho: ${j.baralhoTotal}`), botao(`Descarte: ${j.descarte.length}`, () => abrirDescarte(i), true, ''));
             cab.append(quem, derrotados, pilhas);
-            n.append(cab, zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta' }), zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true }));
+            const campo = el('div', undefined, 'campo-mesa');
+            campo.append(
+                zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta', campo: true }),
+                zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true, campo: true })
+            );
+            n.append(cab, campo);
             if (sua) n.append(zona('Sua mão', j.mao));
             else n.append(el('p', `Mão ${aliada ? 'do aliado' : 'do adversário'} escondida (${j.maoTotal} cartas).`, 'mao-escondida'));
             return n;

@@ -346,12 +346,15 @@
 
     function fileira(titulo, dica, lista, zona, max, classe) {
         const caixa = el('div', `fileira-wrap ${classe || ''}`);
+        caixa.dataset.zona = zona;
         const h = el('h4', null, `${titulo} (${lista.length}/${max})`);
         if (dica) h.append(el('span', 'dica-fileira', ` · ${dica}`));
         caixa.append(h);
         const linha = el('div', 'fileira');
         lista.forEach((inst) => linha.append(cartaComEquip(inst, zona)));
-        for (let i = lista.length; i < max; i++) linha.append(el('div', 'slot-vazio', 'vazio'));
+        if (!lista.length) {
+            for (let i = 0; i < max; i++) linha.append(el('div', 'slot-vazio', 'vazio'));
+        }
         caixa.append(linha);
         return caixa;
     }
@@ -359,6 +362,7 @@
     function renderLado(raiz, indice) {
         const j = estado.jogadores[indice];
         const ativo = indice === estado.turno;
+        raiz.classList.toggle('lado-adversario', !ativo);
         raiz.replaceChildren();
 
         const cab = el('div', 'cab');
@@ -386,8 +390,12 @@
         cab.append(quem, derrotados, pilhas);
         raiz.append(cab);
 
-        raiz.append(fileira('Em batalha', 'campeão ou besta', j.campo, 'campo', R.maxCampo));
-        raiz.append(fileira('Apoio', 'auxiliares', j.apoio, 'apoio', R.maxApoio, 'apoio'));
+        const campo = el('div', 'campo-mesa');
+        campo.append(
+            fileira('Em batalha', 'campeão ou besta', j.campo, 'campo', R.maxCampo),
+            fileira('Apoio', 'auxiliares', j.apoio, 'apoio', R.maxApoio, 'apoio')
+        );
+        raiz.append(campo);
 
         if (ativo) {
             const mao = el('div', 'fileira-wrap');
