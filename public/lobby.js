@@ -141,12 +141,7 @@
         mostrarSala(resp.sala);
     }
 
-    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value), ...(modo === 'coop' ? { quantidadeJogadores: Number($('formato-coop').value) } : {}) }));
-    if (modo === 'coop') $('formato-coop').addEventListener('change', () => {
-        const quatro = $('formato-coop').value === '4';
-        $('tamanho-baralho').querySelector('option[value="20"]').disabled = quatro;
-        if (quatro && $('tamanho-baralho').value === '20') $('tamanho-baralho').value = '40';
-    });
+    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value) }));
 
     function tentarEntrar() {
         const c = limpar(codigo.value);
@@ -170,7 +165,7 @@
         document.querySelector('main').classList.toggle('em-partida', Boolean(sala.emPartida));
         $('sala-codigo').textContent = sala.codigo;
         $('sala-baralho').textContent = modo === 'coop'
-            ? `${sala.max} jogadores × ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe, divididas entre seus integrantes · mãos privadas`
+            ? `${sala.jogadores.length} de ${sala.max} jogadores · ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe · mãos privadas${sala.tamanhoBaralho !== sala.tamanhoBaralhoEscolhido ? ' · Total ajustado automaticamente para garantir 3 cartas por participante.' : ''}`
             : `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por jogador · sem repetição`;
 
         const lista = $('jogadores');
@@ -192,7 +187,7 @@
         }
         for (let i = sala.jogadores.length; i < sala.max; i++) {
             const li = el('li', 'jogador slot-vazio');
-            li.append(el('span', 'nome', 'Aguardando jogador…'));
+            li.append(el('span', 'nome', modo === 'coop' ? 'Vaga disponível (opcional)' : 'Aguardando jogador…'));
             lista.append(li);
         }
 
@@ -209,7 +204,7 @@
         if (total < sala.min) texto = `Aguardando jogadores (${total} de ${sala.min} no mínimo).`;
         else if (sala.emPartida) texto = 'Partida em andamento. A mesa está abaixo.';
         else if (sala.iniciando) texto = 'Carregando as cartas…';
-        else if (prontos === total) texto = 'Todos prontos! O anfitrião pode iniciar a partida.';
+        else if (prontos === total) texto = modo === 'coop' ? `Todos prontos! O anfitrião pode iniciar ${total} jogador(es) × ${sala.maquinas} máquina(s).` : 'Todos prontos! O anfitrião pode iniciar a partida.';
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
         $('iniciar').disabled = pedidoInicio || sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;

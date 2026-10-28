@@ -13,13 +13,17 @@ const ACOES = {
 const ROTULOS = { comprar: 'comprou uma carta', encerrar: 'encerrou o turno', invocar: 'colocou uma criatura em batalha', apoio: 'colocou um auxiliar em apoio', equipar: 'equipou uma carta', atacar: 'atacou', habilidade: 'executou uma habilidade' };
 
 class Partida {
+  static tamanhoCoop(total, humanos) {
+    return total === 20 && humanos === 4 ? 30 : total;
+  }
+
   constructor(jogadores, cartas, modo = 'multiplayer', tamanhoBaralho = 40) {
     this.coop = modo === 'coop';
     if (!this.coop && jogadores.length !== 2) throw new Error('O duelo precisa de dois jogadores.');
-    if (this.coop && ![2, 4].includes(jogadores.length)) throw new Error('O co-op precisa de dois ou quatro jogadores.');
-    if (this.coop && jogadores.length === 4 && tamanhoBaralho === 20) throw new Error('Quatro jogadores precisam de 30 ou 40 cartas.');
+    if (this.coop && ![1, 2, 3, 4].includes(jogadores.length)) throw new Error('O co-op aceita de um a quatro jogadores.');
+    if (this.coop) tamanhoBaralho = Partida.tamanhoCoop(tamanhoBaralho, jogadores.length);
     this.ids = jogadores.map(j => j.id);
-    const maquinas = this.coop ? jogadores.length / 2 : 0;
+    const maquinas = this.coop ? jogadores.length : 0;
     const nomes = [...jogadores.map(j => j.nome), ...Array.from({ length: maquinas }, (_, i) => `Máquina ${i + 1}`)];
     const config = { nomes, tamanhoBaralho };
     config.reps = jogadores.map(j => {
@@ -32,7 +36,7 @@ class Partida {
       config.equipes = nomes.map((_, i) => i < jogadores.length ? 0 : 1);
       config.maquinas = nomes.map((_, i) => i >= jogadores.length);
       config.comeca = 0;
-      config.ordemTurnos = jogadores.length === 2 ? [0, 1, 2] : [0, 1, 4, 2, 3, 5];
+      config.ordemTurnos = jogadores.flatMap((_, i) => [i, i + jogadores.length]);
     }
     this.estado = Motor.novoJogo(config, cartas);
     this.revisao = 0;
@@ -77,9 +81,10 @@ class Partida {
 
   jogarComputador() {
     if (!this.coop) return;
-    // No máximo duas máquinas consecutivas quando os humanos de uma equipe foram eliminados.
+    // Processa todas as máquinas consecutivas quando turnos de humanos são pulados.
     let turnos = 0;
-    while (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].maquina && turnos++ < 2) {
+    const limiteTurnos = this.estado.jogadores.filter(j => j.maquina).length;
+    while (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].maquina && turnos++ < limiteTurnos) {
       const indice = this.estado.turno;
       const nome = this.estado.jogadores[indice].nome;
       const limite = this.estado.jogadores[indice].acoesPorTurno;
@@ -139,7 +144,7 @@ class Partida {
       voce, cooperativo: this.coop, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
       acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
-        nome: j.nome, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado,
+        nome: j.nome, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,
         maoTotal: j.mao.length, baralhoTotal: j.baralho.length,
         mao: i === voce ? j.mao.map(carta) : [],
         campo: j.campo.map(carta), apoio: j.apoio.map(carta), descarte: j.descarte.map(carta)

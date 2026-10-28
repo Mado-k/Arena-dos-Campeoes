@@ -72,9 +72,21 @@ No offline, reiniciar volta à configuração.
 
 - [ ] **Co-op:** regras específicas, balanceamento, distribuição, reciclagem,
   condições de vitória e habilidades de equipe ficam para uma etapa futura.
-  O protótipo 2 humanos × 1 máquina / 4 × 2 foi preservado sem torná-lo definitivo.
+  O formato provisório agora aceita de 1 a 4 humanos e cria uma máquina por pessoa,
+  automaticamente conforme o lobby. Ambos têm duas ações e turnos alternados.
+  Quatro pessoas em uma sala criada com 20 cartas elevam o total para 30; o lobby
+  informa o ajuste, garantindo mãos de três sem repetir cartas.
   A redistribuição de dois jogadores não foi aplicada ao co-op; por enquanto cada
   participante continua reciclando seu próprio descarte.
+
+## Ajuste provisório do co-op confirmado
+
+- [x] Uma pessoa pode criar a sala e iniciar contra uma máquina.
+- [x] Entradas e saídas no lobby ajustam a contagem, de 1 × 1 até 4 × 4.
+- [x] Removido o seletor de formatos; as vagas adicionais são opcionais.
+- [x] Mãos e campos continuam individuais, com cartas únicas e representantes prévios.
+- [x] Duas ações por participante e turnos alternados entre humano e máquina.
+- [x] Ajuste automático de 20 para 30 cartas se houver quatro humanos ao iniciar.
 
 ## Verificação prática no Render
 
@@ -87,6 +99,9 @@ Os cinco “sim” de Luciano foram associados, na ordem, aos itens da lista ant
 - [x] Partida com quatro pessoas, incluindo celular.
 
 Após o próximo deploy, conferir as novidades desta revisão:
+
+- [ ] Criar co-op sozinho e iniciar; depois testar entradas/saídas até quatro pessoas.
+- [ ] Conferir a contagem de máquinas, o ajuste de cartas e os turnos alternados.
 
 - [ ] Selecionar D007 antes da partida e observar a recuperação no turno do dono.
 - [ ] Derrubar uma besta e conferir o descarte dos auxiliares vinculados.

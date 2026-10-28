@@ -74,35 +74,41 @@ Depois da segunda ação, uma janela central avisa que as ações acabaram e ofe
 encerrou e de quem joga em seguida. No offline, a cortina de troca também mostra
 essa informação.
 
-**O co-op permanece um protótipo:** suas regras específicas serão definidas em uma
-etapa futura. O funcionamento descrito a seguir foi preservado, sem novas decisões
-definitivas de balanceamento ou reciclagem.
+**O co-op permanece um protótipo:** o formato abaixo foi solicitado como solução
+provisória até a equipe definir as regras finais.
 
-O duelo tem dois jogadores. O co-op oferece **2 humanos × 1 máquina** ou
-**4 humanos × 2 máquinas**, selecionados ao criar a sala. Todos os integrantes
-precisam entrar e ficar prontos. Cada participante tem mão, campo, auxiliares,
-equipamentos, descarte e baralho individuais. Mesmo os aliados não veem sua mão.
+O duelo tem dois jogadores. O co-op aceita **de 1 a 4 pessoas**, com **uma máquina
+por pessoa presente no lobby**. Não há seletor de formato: o anfitrião pode iniciar
+sozinho ou esperar convidados. Ao entrar ou sair alguém, a contagem de máquinas é
+atualizada e todos precisam confirmar prontidão novamente. Após o início, a
+quantidade fica fixa; novas entradas são permitidas apenas antes da partida.
 
-Os humanos têm duas ações por turno; cada máquina tem quatro, equilibrando a
-quantidade de ações por equipe. A ordem é dois humanos, uma máquina; no grupo de
-quatro, seguem os outros dois humanos e a segunda máquina. A ordem aparece na mesa.
+Humanos e máquinas têm **duas ações por turno**, em ordem alternada: jogador 1,
+máquina 1, jogador 2, máquina 2, e assim por diante. O sistema pula eliminados e
+executa automaticamente todas as máquinas consecutivas até chegar a um humano
+ativo. Cada participante tem mão, campo, auxiliares, equipamentos, descarte e
+baralho individuais. Mesmo os aliados não veem sua mão.
+
+Metade das cartas únicas vai para cada equipe, dividida entre os integrantes sem
+repetições. Com 40 cartas: no 1 × 1 são 20 por participante; no 2 × 2, 10; no 3 × 3,
+a divisão por equipe é 7/7/6; no 4 × 4, são 5 por participante. Se a sala foi criada
+com 20 cartas e chega a quatro pessoas, o total sobe automaticamente para 30,
+garantindo a mão inicial de três aos oito participantes. O lobby informa o ajuste;
+se voltar a três pessoas antes do início, o total escolhido de 20 volta a valer.
+A mão inicial de cada participante inclui um campeão distinto.
+
 Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
 As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
 presença consideram os inimigos em jogo, e Pandora vale para todos. Equipamentos,
 auxiliares e recuperações beneficiam o dono da carta; Heimdall pode transferir
 cartas adversárias do universo Normal conforme sua habilidade.
 
-Metade das cartas únicas pertence a cada equipe, dividida entre seus integrantes.
-Com 40 cartas: no formato 2 × 1, são 10 para cada humano e 20 para a máquina;
-no 4 × 2, são 5 para cada humano e 10 para cada máquina. No formato 4 × 2, só há
-30 ou 40 cartas para garantir a mão inicial de três a todos. No co-op, a mão inicial
-sempre inclui um campeão, evitando começar sem uma criatura com que jogar.
-
 Cada participante é eliminado ao perder três campeões. Seu turno passa a ser
 pulado, mas ele pode acompanhar a equipe. A vitória exige eliminar todas as máquinas;
 a derrota só ocorre quando todos os humanos são eliminados. A IA considera seus
 próprios recursos e os campos públicos, sem consultar mãos ou baralhos humanos.
-A dificuldade é inicial e poderá ser ajustada com testes de balanceamento.
+A reciclagem individual e as condições de vitória do protótipo continuam provisórias;
+a regra de empate do duelo não foi aplicada ao co-op.
 
 O servidor valida turno, dono da carta, ações restantes e versão da mesa. O cliente
 não oferece ajustes manuais de atributos, descartes ou ações extras. Pedidos de

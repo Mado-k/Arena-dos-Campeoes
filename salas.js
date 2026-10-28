@@ -3,7 +3,7 @@
 const { randomInt } = require('crypto');
 const Partida = require('./partida');
 
-// O formato do co-op define se a sala precisa de dois ou quatro humanos.
+// O co-op aceita de um a quatro humanos e cria uma máquina por pessoa ao iniciar.
 const MODOS = new Set(['multiplayer', 'coop']);
 
 const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I, para não confundir
@@ -24,8 +24,9 @@ function publico(sala) {
   return {
     codigo: sala.codigo,
     modo: sala.modo,
-    tamanhoBaralho: sala.tamanhoBaralho,
-    maquinas: sala.modo === 'coop' ? sala.max / 2 : 0,
+    tamanhoBaralho: sala.modo === 'coop' ? Partida.tamanhoCoop(sala.tamanhoBaralho, sala.jogadores.length) : sala.tamanhoBaralho,
+    tamanhoBaralhoEscolhido: sala.tamanhoBaralho,
+    maquinas: sala.modo === 'coop' ? sala.jogadores.length : 0,
     max: sala.max,
     min: sala.min,
     anfitriao: sala.anfitriao,
@@ -107,11 +108,8 @@ module.exports = function iniciarSalas(io, carregarCartas, { tempoCarregamento =
       const tamanhoBaralho = dados.tamanhoBaralho ?? 40;
       if (![20, 30, 40].includes(tamanhoBaralho)) return responder({ ok: false, erro: 'Escolha 20, 30 ou 40 cartas no total.' });
 
-      const humanos = dados.modo === 'coop' ? (dados.quantidadeJogadores ?? 2) : 2;
-      if (![2, 4].includes(humanos)) return responder({ ok: false, erro: 'Escolha dois ou quatro jogadores para o co-op.' });
-      if (humanos === 4 && tamanhoBaralho === 20) return responder({ ok: false, erro: 'Quatro jogadores precisam de 30 ou 40 cartas.' });
       sair();
-      const sala = { codigo: novoCodigo(salas), modo: dados.modo, tamanhoBaralho, max: humanos, min: humanos, anfitriao: socket.id, jogadores: [] };
+      const sala = { codigo: novoCodigo(salas), modo: dados.modo, tamanhoBaralho, max: dados.modo === 'coop' ? 4 : 2, min: dados.modo === 'coop' ? 1 : 2, anfitriao: socket.id, jogadores: [] };
       salas.set(sala.codigo, sala);
       entrar(sala, nome);
       responder({ ok: true, sala: publico(sala) });

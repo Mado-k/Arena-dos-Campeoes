@@ -551,7 +551,7 @@
             jogadores: participantes.map((i) => ({
                 nome: config.nomes[i],
                 equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
-                eliminado: false, acoesPorTurno: config.maquinas && config.maquinas[i] ? 4 : REGRAS.acoesPorTurno,
+                eliminado: false, acoesPorTurno: REGRAS.acoesPorTurno,
                 rep: (config.reps && config.reps[i]) || null,
                 baralho: [], mao: [], campo: [], apoio: [], descarte: [],
                 derrotados: 0,

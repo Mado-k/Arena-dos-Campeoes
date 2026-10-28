@@ -13,10 +13,12 @@ function emCampo(p, i, { ataque = 3, defesa = 20, codigo } = {}) {
 }
 const acao = (p, i, dados) => p.agir('p' + i, { ...dados, revisao: p.revisao });
 
-for (const [n, total] of [[2, 20], [2, 30], [2, 40], [4, 30], [4, 40]]) test(`${n} humanos, ${n / 2} máquinas e ${total} cartas únicas com mãos privadas`, () => {
-  const p = criar(n, total), e = p.estado;
-  assert.equal(e.jogadores.length, n + n / 2);
-  assert.equal(e.jogadores.filter(j => j.maquina).length, n / 2);
+for (const n of [1,2,3,4]) for (const pedido of [20,30,40]) test(`${n} humanos, ${n} máquinas e total solicitado ${pedido}, com cartas únicas e mãos privadas`, () => {
+  const total = n === 4 && pedido === 20 ? 30 : pedido;
+  const p = criar(n, pedido), e = p.estado;
+  assert.equal(e.tamanhoBaralho,total);
+  assert.equal(e.jogadores.length, 2 * n);
+  assert.equal(e.jogadores.filter(j => j.maquina).length, n);
   assert.equal(new Set(e.jogadores.flatMap(todas).map(c => c.base.codigo)).size, total);
   for (const equipe of [0, 1]) assert.equal(e.jogadores.filter(j => j.equipe === equipe).reduce((t, j) => t + todas(j).length, 0), total / 2);
   for (let i = 0; i < n; i++) {
@@ -29,9 +31,10 @@ for (const [n, total] of [[2, 20], [2, 30], [2, 40], [4, 30], [4, 40]]) test(`${
   }
 });
 
-test('4 contra 2 recusa 20 cartas e formatos incompletos', () => {
-  assert.throws(() => criar(4, 20), /30 ou 40/);
-  assert.throws(() => criar(3), /dois ou quatro/);
+test('co-op aceita de uma a quatro pessoas e ajusta 20 para 30 cartas com quatro', () => {
+  assert.equal(criar(4,20).estado.tamanhoBaralho,30);
+  assert.throws(() => criar(0), /um a quatro/);
+  assert.throws(() => criar(5), /um a quatro/);
 });
 
 test('a mão inicial do co-op inclui um campeão sem duplicar cartas', () => {
@@ -39,7 +42,7 @@ test('a mão inicial do co-op inclui um campeão sem duplicar cartas', () => {
   const contexto = { window: {} };
   vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../public/cartas-offline.js'), 'utf8'), contexto);
   const catalogo = JSON.parse(JSON.stringify(contexto.window.CARTAS_OFFLINE));
-  for (const n of [2, 4]) for (let tentativa = 0; tentativa < 20; tentativa++) {
+  for (const n of [1, 2, 3, 4]) for (let tentativa = 0; tentativa < 20; tentativa++) {
     const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Pessoa ' + i })), catalogo, 'coop', 40);
     assert(p.estado.jogadores.every(j => j.mao.length === 3 && j.mao.some(Motor.ehCampeao)));
     assert.equal(new Set(p.estado.jogadores.flatMap(todas).map(c => c.base.codigo)).size, 40);
@@ -55,7 +58,7 @@ test('mãos de aliados e máquinas, baralhos e logs internos não vazam na visã
   }
   const json = JSON.stringify(p.visao('p0'));
   assert(json.includes('SEGREDO DA MÃO 0'));
-  for (let i = 1; i < 6; i++) assert(!json.includes('SEGREDO DA MÃO ' + i));
+  for (let i = 1; i < 8; i++) assert(!json.includes('SEGREDO DA MÃO ' + i));
   assert(!json.includes('SEGREDO DO BARALHO'));
   assert(!json.includes('SEGREDO INTERNO'));
 });
@@ -94,7 +97,7 @@ test('habilidade ofensiva também respeita a máquina selecionada', () => {
   assert.equal(p.estado.acoes, 1);
 });
 
-for (const n of [2, 4]) test(`ordem e orçamento de ações corretos com ${n} humanos`, () => {
+for (const n of [1, 2, 3, 4]) test(`ordem e orçamento de ações corretos com ${n} humanos`, () => {
   const p = criar(n);
   const recebidos = [];
   for (let i = 0; i < n; i++) {
@@ -102,14 +105,13 @@ for (const n of [2, 4]) test(`ordem e orçamento de ações corretos com ${n} hu
     recebidos.push(i);
     assert.equal(p.estado.acoes, 2);
     assert(acao(p, i, { tipo: 'encerrar' }).ok);
-    if (i % 2 === 1) {
-      assert(p.estado.jogadores[p.estado.turno].maquina);
-      assert.equal(p.estado.acoes, 4);
-    }
+    assert.equal(p.estado.turno,n+i);
+    assert(p.estado.jogadores[p.estado.turno].maquina);
+    assert.equal(p.estado.acoes,2);
     p.jogarComputador();
   }
   assert.equal(p.estado.turno, 0);
-  assert.equal(p.estado.numTurno, n + n / 2 + 1);
+  assert.equal(p.estado.numTurno, 2 * n + 1);
   assert.deepEqual(recebidos, Array.from({ length: n }, (_, i) => i));
 });
 
@@ -119,7 +121,7 @@ test('eliminar um humano não encerra a equipe e seus turnos são pulados', () =
   assert(acao(p, 0, { tipo: 'atacar', alvo: 2 }).ok);
   assert.equal(p.estado.jogadores[0].eliminado, true);
   assert.equal(p.estado.vencedor, null);
-  assert.equal(p.estado.turno, 1);
+  assert.equal(p.estado.turno,2);p.jogarComputador();assert.equal(p.estado.turno,1);
   assert(acao(p, 0, { tipo: 'comprar' }).erro);
   assert(acao(p, 1, { tipo: 'encerrar' }).ok);
   p.jogarComputador();
@@ -129,21 +131,22 @@ test('eliminar um humano não encerra a equipe e seus turnos são pulados', () =
 test('eliminação por dano no início do turno avança até um participante ativo', () => {
   const p = criar(4); emCampo(p, 1, { defesa: 1 });
   p.estado.jogadores[1].derrotados = 2; p.estado.pandora = true;
-  assert(acao(p, 0, { tipo: 'encerrar' }).ok);
+  p.estado.turno=4;
+  assert(Motor.encerrarTurno(p.estado).ok);
   assert.equal(p.estado.jogadores[1].eliminado, true);
-  assert.equal(p.estado.turno, 4);
+  assert.equal(p.estado.turno,5);
   p.jogarComputador();
   assert.equal(p.estado.turno, 2);
   assert.equal(p.estado.acoes, 2);
 });
 
-test('uma máquina eliminada sai dos alvos; vitória exige eliminar as duas', () => {
-  const p = criar(4); emCampo(p, 0, { ataque: 30 }); emCampo(p, 4, { defesa: 1 }); emCampo(p, 5, { defesa: 1 });
-  p.estado.jogadores[4].derrotados = 2; p.estado.jogadores[5].derrotados = 2;
-  assert(acao(p, 0, { tipo: 'atacar', alvo: 4 }).ok);
-  assert.equal(p.estado.vencedor, null); assert.equal(p.estado.jogadores[4].eliminado, true);
-  assert(acao(p, 0, { tipo: 'atacar', alvo: 4 }).erro);
-  assert(acao(p, 0, { tipo: 'atacar', alvo: 5 }).ok);
+test('uma máquina eliminada sai dos alvos; vitória exige eliminar todas', () => {
+  const p = criar(2); emCampo(p, 0, { ataque: 30 }); emCampo(p, 2, { defesa: 1 }); emCampo(p, 3, { defesa: 1 });
+  p.estado.jogadores[2].derrotados = 2; p.estado.jogadores[3].derrotados = 2;
+  assert(acao(p, 0, { tipo: 'atacar', alvo: 2 }).ok);
+  assert.equal(p.estado.vencedor, null); assert.equal(p.estado.jogadores[2].eliminado, true);
+  assert(acao(p, 0, { tipo: 'atacar', alvo: 2 }).erro);
+  assert(acao(p, 0, { tipo: 'atacar', alvo: 3 }).ok);
   assert.equal(p.estado.vencedor, 0);
   assert(acao(p, 0, { tipo: 'comprar' }).erro);
 });
@@ -151,13 +154,13 @@ test('uma máquina eliminada sai dos alvos; vitória exige eliminar as duas', ()
 test('a derrota da equipe só ocorre quando o último humano perde três campeões', () => {
   const p = criar(2); emCampo(p, 0, { ataque: 1, defesa: 1 }); emCampo(p, 1, { ataque: 1, defesa: 1 }); emCampo(p, 2, { ataque: 30 });
   p.estado.jogadores[0].derrotados = 2; p.estado.jogadores[1].derrotados = 2;
-  p.estado.turno = 2; p.estado.acoes = 4;
+  p.estado.turno = 2; p.estado.acoes = 2;
   p.jogarComputador();
   assert.equal(p.estado.vencedor, 1);
   assert(p.estado.jogadores.slice(0, 2).every(j => j.eliminado));
 });
 
-test('Iara e Pandora alcançam os adversários corretos no tabuleiro de seis participantes', () => {
+test('Iara e Pandora alcançam os adversários corretos no tabuleiro de oito participantes', () => {
   const p = criar(4);
   const humano = emCampo(p, 0); humano.base.universo = 'game';
   const aliado = emCampo(p, 1, { codigo: 'n012' });
@@ -167,18 +170,18 @@ test('Iara e Pandora alcançam os adversários corretos no tabuleiro de seis par
   assert.equal(Motor.silenciada(p.estado, aliado), null);
   p.estado.pandora = true;
   const defesa = maquina.defesa;
-  p.estado.turno = 3;
+  p.estado.turno = 1;
   Motor.encerrarTurno(p.estado);
   assert.equal(p.estado.turno, 5); assert.equal(maquina.defesa, defesa - 10);
 });
 
-test('simulações com cartas reais preservam propriedade, unicidade e ações nos dois formatos', { timeout: 60000 }, () => {
+test('simulações com cartas reais preservam propriedade, unicidade e ações de um a quatro jogadores', { timeout: 60000 }, () => {
   const fs = require('node:fs'), vm = require('node:vm');
   const contexto = { window: {} };
   vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../public/cartas-offline.js'), 'utf8'), contexto);
   const catalogo = JSON.parse(JSON.stringify(contexto.window.CARTAS_OFFLINE));
   const resumo = { partidas: 0, concluidas: 0, atingiramLimite: 0 };
-  for (const n of [2, 4]) for (let rodada = 0; rodada < 4; rodada++) {
+  for (const n of [1, 2, 3, 4]) for (let rodada = 0; rodada < 4; rodada++) {
     const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Humano ' + i })), catalogo, 'coop');
     for (let turno = 0; turno < 120 && p.estado.vencedor === null; turno++) {
       const indice = p.estado.turno;
@@ -212,10 +215,19 @@ test('simulações com cartas reais preservam propriedade, unicidade e ações n
       p.estado.jogadores.forEach((j, i) => {
         assert(j.campo.length <= 1 && j.apoio.length <= 2);
       });
-      assert(p.estado.acoes >= 0 && p.estado.acoes <= 4);
+      assert(p.estado.acoes >= 0 && p.estado.acoes <= 2);
     }
     resumo.partidas++;
     if (p.estado.vencedor === null) resumo.atingiramLimite++; else resumo.concluidas++;
   }
   console.log('Simulações co-op:', resumo);
+});
+
+test('até quatro máquinas consecutivas são processadas após eliminar os demais humanos', () => {
+  const p=criar(4);
+  for(const j of p.estado.jogadores.slice(1,4)){j.derrotados=3;j.eliminado=true;}
+  p.estado.turno=4;p.estado.acoes=2;
+  p.jogarComputador();
+  assert.equal(p.estado.vencedor,null);assert.equal(p.estado.turno,0);assert.equal(p.estado.numTurno,5);
+  for(const j of p.estado.jogadores.slice(4))assert.equal(j.campo.length,1);
 });

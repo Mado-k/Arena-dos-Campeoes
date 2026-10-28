@@ -22,6 +22,10 @@
 
 /* Co-op: campos individuais e uma visão comum da equipe. */
 .maquinas-online { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.maquinas-online.quatro-maquinas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) {
+    .maquinas-online.quatro-maquinas { grid-template-columns: minmax(0, 1fr); }
+}
 .aliados-online { display: grid; gap: 8px; }
 .aliados-online > details { border: 1px solid var(--borda); border-radius: var(--raio); background: var(--painel); padding: 10px; }
 .aliados-online summary { cursor: pointer; color: var(--ouro-claro); font-size: .9rem; }

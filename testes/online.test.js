@@ -85,7 +85,7 @@ test('co-op mantém o turno e a mão de cada humano e executa o turno da máquin
   assert(p.agir('p1', { tipo: 'encerrar', revisao: p.revisao }).ok);
   p.jogarComputador();
   assert.equal(p.estado.turno, 0);
-  assert.equal(p.estado.numTurno, 4);
+  assert.equal(p.estado.numTurno, 5);
   assert.equal(p.estado.acoes, 2);
   assert.equal(p.visao('p0').jogadores[1].mao.length, 0);
   assert.equal(p.visao('p1').jogadores[0].mao.length, 0);
@@ -188,18 +188,13 @@ function esperar(c, evento) { return new Promise((resolve, reject) => {
 for (const modo of ['multiplayer', 'coop']) test('Socket.IO real: ' + modo, { timeout: 12000 }, async t => {
   const a = await ambiente(t), host = await a.cliente(), convidados = [];
   const total = modo === 'coop' ? 4 : 2;
-  if (modo === 'coop') assert((await pedir(host, 'sala:criar', { modo, nome: 'Host', quantidadeJogadores: 3 })).erro);
   assert((await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião', tamanhoBaralho: 80 })).erro);
   const tamanhoBaralho = modo === 'coop' ? 40 : 30;
-  const criado = await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião', tamanhoBaralho, quantidadeJogadores: total });
+  const criado = await pedir(host, 'sala:criar', { modo, nome: 'Anfitrião', tamanhoBaralho });
   assert.equal(criado.sala.tamanhoBaralho, tamanhoBaralho);
   for (let i = 1; i < total; i++) {
     const c = await a.cliente(); convidados.push(c);
     assert((await pedir(c, 'sala:entrar', { modo, codigo: criado.sala.codigo, nome: 'Amigo ' + i })).ok);
-    if (modo === 'coop' && i === 2) {
-      for (const cliente of [host, ...convidados]) cliente.emit('sala:pronto', true);
-      assert((await pedir(host, 'partida:iniciar', {})).erro, 'sala de quatro não inicia com três');
-    }
   }
   const todos = [host, ...convidados];
   assert((await pedir(host, 'sala:representante', {})).erro);
@@ -285,4 +280,37 @@ test('consulta pendurada expira, permite nova tentativa e ignora o resultado atr
   const sincronizado = esperar(host, 'partida:estado');
   host.emit('partida:sincronizar');
   assert.deepEqual(await sincronizado, inicial);
+});
+
+for(const n of [1,2,3,4]) test(`co-op automático com ${n} pessoa(s): lobby e partida têm ${n} máquina(s)`, {timeout:12000}, async t=>{
+  const a=await ambiente(t),host=await a.cliente(),todos=[host];
+  const criado=await pedir(host,'sala:criar',{modo:'coop',nome:'Host',tamanhoBaralho:20});
+  assert.equal(criado.sala.min,1);assert.equal(criado.sala.max,4);assert.equal(criado.sala.maquinas,1);
+  for(let i=1;i<n;i++){
+    const pronto=esperar(host,'sala');host.emit('sala:pronto',true);await pronto;
+    const c=await a.cliente();todos.push(c);
+    const r=await pedir(c,'sala:entrar',{modo:'coop',nome:'Pessoa '+i,codigo:criado.sala.codigo});
+    assert(r.ok);assert.equal(r.sala.maquinas,i+1);assert(r.sala.jogadores.every(j=>!j.pronto));
+    assert.equal(r.sala.tamanhoBaralho,i===3?30:20);
+  }
+  if(n===4){const extra=await a.cliente();assert((await pedir(extra,'sala:entrar',{modo:'coop',nome:'Extra',codigo:criado.sala.codigo})).erro);}
+  const prontos=esperar(host,'sala');for(const c of todos)c.emit('sala:pronto',true);await prontos;
+  for(const c of todos.slice(1))await pedir(c,'partida:iniciar',{});
+  const estados=todos.map(c=>esperar(c,'partida:estado'));assert((await pedir(host,'partida:iniciar',{})).ok);
+  for(const v of await Promise.all(estados)){
+    assert.equal(v.jogadores.length,2*n);assert.equal(v.jogadores.filter(j=>j.maquina).length,n);
+    assert.equal(v.tamanhoBaralho,n===4?30:20);assert(v.jogadores.every(j=>j.acoesPorTurno===2));
+    for(let i=0;i<2*n;i++)assert.equal(v.jogadores[i].mao.length,i===v.voce?3:0);
+    assert.deepEqual(v.ordemTurnos,Array.from({length:n},(_,i)=>[i,i+n]).flat());
+  }
+});
+
+test('lobby co-op reduz máquinas e volta a 20 cartas se a quarta pessoa sair, permitindo novo convidado', {timeout:12000}, async t=>{
+  const a=await ambiente(t),host=await a.cliente(),convidados=[];
+  const r=await pedir(host,'sala:criar',{modo:'coop',nome:'Host',tamanhoBaralho:20});
+  for(let i=0;i<3;i++){const c=await a.cliente();convidados.push(c);await pedir(c,'sala:entrar',{modo:'coop',nome:'Pessoa '+i,codigo:r.sala.codigo});}
+  const esperando=esperar(host,'sala');convidados[2].emit('sala:sair');const menor=await esperando;
+  assert.equal(menor.maquinas,3);assert.equal(menor.jogadores.length,3);assert.equal(menor.tamanhoBaralho,20);assert(menor.jogadores.every(j=>!j.pronto));
+  const novo=await a.cliente(),resp=await pedir(novo,'sala:entrar',{modo:'coop',nome:'Novo',codigo:r.sala.codigo});
+  assert(resp.ok);assert.equal(resp.sala.maquinas,4);assert.equal(resp.sala.tamanhoBaralho,30);
 });

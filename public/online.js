@@ -225,7 +225,7 @@
             quem.append(el('strong', j.nome));
             if (j.rep) quem.append(el('span', '· ' + j.rep.nome, 'rep'));
             if (j.eliminado) quem.append(el('span', 'Eliminado', 'etq ruim'));
-            else if (j.maquina) quem.append(el('span', '4 ações', 'etq'));
+            else if (j.maquina) quem.append(el('span', `${j.acoesPorTurno} ações`, 'etq'));
             if (estado.cooperativo && !aliada && i === alvoSelecionado && !j.eliminado) quem.append(el('span', 'Alvo selecionado', 'etq alvo-selecionado'));
             if (i === estado.turno && estado.vencedor === null) quem.append(el('span', sua ? 'Sua vez' : aliada ? 'Vez do aliado' : j.maquina ? 'Vez da máquina' : 'Vez do adversário', 'selo-vez'));
             const derrotados = el('div', undefined, 'derrotados');
@@ -270,7 +270,7 @@
             if (estado.pandora) barra.append(el('p', 'Caixa de Pandora: criaturas em batalha sofrem dano por turno.', 'etq ruim'));
             if (estado.cooperativo) {
                 const rivais = estado.jogadores.map((j, i) => i).filter(i => estado.equipes[i] !== estado.equipes[estado.voce]);
-                const maquinas = el('section', undefined, 'equipe-online maquinas-online');
+                const maquinas = el('section', undefined, 'equipe-online maquinas-online' + (rivais.length === 4 ? ' quatro-maquinas' : ''));
                 maquinas.setAttribute('aria-label', 'Máquinas adversárias');
                 for (const i of rivais) maquinas.append(lado(i));
                 const alvos = el('div', undefined, 'alvo-coop');
@@ -286,7 +286,7 @@
                 select.disabled = !ativo();
                 select.addEventListener('change', () => { alvoSelecionado = Number(select.value); render(); });
                 label.append(select); alvos.append(label); barra.append(alvos);
-                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
+                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
                 const aliados = el('section', undefined, 'aliados-online');
                 aliados.setAttribute('aria-label', 'Seus aliados');
                 for (let i = 0; i < estado.jogadores.length; i++) if (i !== estado.voce && estado.equipes[i] === estado.equipes[estado.voce]) {
