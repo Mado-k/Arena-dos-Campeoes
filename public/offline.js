@@ -97,6 +97,7 @@
         const itens = [
             `Objetivo: vença ${R.campeoesParaVencer} campeões do adversário, usando suas cartas. Bestas derrotadas não contam.`,
             `As cartas são divididas sem repetição: 40 no total = 20 por jogador; 30 = 15; 20 = 10. Cada jogador começa com ${R.maoInicial} dessas cartas na mão.`,
+            `Quando os dois baralhos acabam, os descartes são reunidos e divididos igualmente; uma sobra fica no centro. Após pelo menos ${R.redistribuicoesParaEmpate} redistribuições, todas as cartas nos descartes ou no centro encerram a partida em empate antes de embaralhar de novo.`,
             `Em cada turno você tem ${R.acoesPorTurno} ações. Cada uma pode ser: atacar, comprar uma carta, usar a habilidade de uma carta ou jogar uma carta.`,
             `Em batalha só pode haver ${R.maxCampo} campeão ou besta por jogador, e ele não volta para a mão depois de jogado. Só pode haver ${R.maxApoio} auxiliares na batalha.`,
             `Armas: só em campeões, e cada campeão carrega uma única arma. Itens: um por campeão, e até ${R.maxItensBesta} por besta.`,
@@ -194,6 +195,12 @@
         const antes = estado.log.length;
         Motor.encerrarTurno(estado);
         selecao = null;
+        if (estado.vencedor !== null) {
+            cortina = false;
+            $('cortina').hidden = true;
+            render();
+            return;
+        }
         const novos = estado.log.slice(antes).filter((t) => !/^Turno \d+: vez de/.test(t));
         setAviso(novos.join(' '), novos.length ? 'ok' : '');
         const encerramento = `${nome} encerrou o turno. Agora é a vez de ${estado.jogadores[estado.turno].nome}.`;
@@ -550,7 +557,7 @@
         if (!estado || estado.vencedor === null || fimMostrado) return;
         fimMostrado = true;
         $('fim-texto').textContent = estado.vencedor === -1
-            ? 'Empate! Desejam reiniciar a partida ou encerrá-la?'
+            ? `${estado.motivoEmpate || 'Empate!'} Desejam reiniciar a partida ou encerrá-la?`
             : `${estado.jogadores[estado.vencedor].nome} venceu!`;
         $('fim-novo').textContent = estado.vencedor === -1 ? 'Reiniciar partida' : 'Nova partida';
         $('fim-ver').textContent = estado.vencedor === -1 ? 'Encerrar e ver o tabuleiro' : 'Ver tabuleiro';

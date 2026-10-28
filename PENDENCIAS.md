@@ -54,6 +54,15 @@ e a redistribuição podem mudar a posse. A quantidade total e a unicidade são 
 
 ### Empate
 
+Critério confirmado: no offline e no multiplayer, depois de **pelo menos quatro
+redistribuições concluídas**, se todas as cartas da partida estiverem nos descartes
+ou na reserva central, o jogo termina empatado **antes de embaralhar novamente**.
+Não pode restar carta em mão, baralho, campo, apoio ou equipamentos em uso. A quarta
+redistribuição ainda é permitida; o empate ocorre quando o descarte total acontecer
+após ela (ou após uma redistribuição posterior). Não há contagem de três turnos
+pulados nem empate apenas por imunidades. A vitória por três campeões derrotados
+tem prioridade. O registro e o aviso de resultado mostram a causa do empate.
+
 O resultado empatado oferece jogar novamente ou encerrar. No online, todos precisam
 aceitar a revanche; se alguém encerrar, a partida termina. Uma revanche volta à mesma
 sala, para conferir representantes e confirmar prontidão antes de iniciar novamente.
@@ -61,9 +70,6 @@ No offline, reiniciar volta à configuração.
 
 ## Ainda falta definir
 
-- [ ] **Critério de empate por impasse:** falta estabelecer quando a estagnação ou
-  uma combinação de imunidades deve produzir empate. Não foi inventado um número
-  de turnos nem uma regra automática. O resultado empatado já tem o fluxo acima.
 - [ ] **Co-op:** regras específicas, balanceamento, distribuição, reciclagem,
   condições de vitória e habilidades de equipe ficam para uma etapa futura.
   O protótipo 2 humanos × 1 máquina / 4 × 2 foi preservado sem torná-lo definitivo.
@@ -87,6 +93,8 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [ ] Conferir captura de cartas Normais e retorno dos anexos dos outros universos.
 - [ ] Conferir Fuleco com dano, paralisia e bônus de defesa.
 - [ ] Esgotar os dois baralhos e conferir a redistribuição e a sobra central.
+- [ ] Após quatro redistribuições, descartar todas as cartas e conferir o empate
+  automático, sem novo embaralhamento, com as opções de revanche e encerramento.
 
 ## Melhorias opcionais
 

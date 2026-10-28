@@ -68,6 +68,7 @@ class Partida {
     // Logs internos de habilidades podem citar cartas compradas/escolhidas no baralho.
     // O registro público descreve a ação, sem revelar essas informações privadas.
     this.log.push(resposta.registroCombate || `${this.estado.jogadores[indice].nome} ${ROTULOS[dados.tipo]}.`);
+    if (this.estado.motivoEmpate) this.log.push(this.estado.motivoEmpate);
     if (redistribuiu) this.log.push(this.estado.log.findLast(l => l.startsWith('Os dois baralhos acabaram.')));
     if (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].eliminado) Motor.encerrarTurno(this.estado);
     this.log = this.log.slice(-100);
@@ -136,7 +137,7 @@ class Partida {
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
       voce, cooperativo: this.coop, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
-      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, pandora: e.pandora, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
+      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
         nome: j.nome, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado,
         maoTotal: j.mao.length, baralhoTotal: j.baralho.length,

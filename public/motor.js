@@ -13,6 +13,7 @@
         maxItensCampeao: 1,      // um item por campeão
         maxItensBesta: 3,        // até três itens por besta
         campeoesParaVencer: 3,   // vença três campeões do adversário
+        redistribuicoesParaEmpate: 4, // após esse total, todas as cartas descartadas encerram o duelo
         bonusRepresentante: 10   // defesa extra para criaturas do universo do representante (opcional)
     };
 
@@ -274,6 +275,13 @@
         return { ok: true };
     }
 
+    function impassePorDescarte(estado) {
+        if (estado.cooperativo || (estado.redistribuicoes || 0) < REGRAS.redistribuicoesParaEmpate) return false;
+        if (estado.jogadores.some(j => j.mao.length || j.baralho.length || j.campo.length || j.apoio.length)) return false;
+        const descartadas = estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length);
+        return descartadas === estado.tamanhoBaralho;
+    }
+
     function verificarFim(estado) {
         if (estado.vencedor !== null) return;
         if (estado.cooperativo) {
@@ -289,8 +297,12 @@
         if (perdeu[0] && perdeu[1]) estado.vencedor = -1;
         else if (perdeu[0]) estado.vencedor = 1;
         else if (perdeu[1]) estado.vencedor = 0;
+        else if (impassePorDescarte(estado)) {
+            estado.vencedor = -1;
+            estado.motivoEmpate = `Empate por impasse: todas as cartas foram descartadas após ${estado.redistribuicoes} redistribuições. Não haverá novo embaralhamento.`;
+        }
         if (estado.vencedor !== null) {
-            log(estado, estado.vencedor === -1 ? 'A partida terminou empatada.' : `${estado.jogadores[estado.vencedor].nome} venceu: derrotou ${REGRAS.campeoesParaVencer} campeões do adversário!`);
+            log(estado, estado.vencedor === -1 ? estado.motivoEmpate || 'A partida terminou empatada.' : `${estado.jogadores[estado.vencedor].nome} venceu: derrotou ${REGRAS.campeoesParaVencer} campeões do adversário!`);
         }
     }
 
@@ -396,7 +408,9 @@
 
     // ---------- baralho e turnos ----------
     function redistribuirDescartes(estado) {
-        if (estado.cooperativo || estado.jogadores.some(j => j.baralho.length)) return false;
+        if (estado.cooperativo) return false;
+        verificarFim(estado);
+        if (estado.vencedor !== null || estado.jogadores.some(j => j.baralho.length)) return false;
         const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(j => j.descarte)];
         if (cartas.length < 2) return false;
         const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / 2);
@@ -411,6 +425,7 @@
     }
 
     function podeComprar(estado, dono = estado.turno) {
+        if (estado.vencedor !== null || impassePorDescarte(estado)) return false;
         const j = estado.jogadores[dono];
         if (j.baralho.length) return true;
         if (estado.cooperativo) return j.descarte.length > 0;
@@ -423,6 +438,7 @@
         let compradas = 0;
         for (let k = 0; k < n; k++) {
             redistribuirDescartes(estado);
+            if (estado.vencedor !== null) break;
             if (!j.baralho.length) {
                 if (!estado.cooperativo || !j.descarte.length) break;
                 j.baralho = embaralhar(j.descarte);
@@ -579,6 +595,7 @@
             }
         }
         redistribuirDescartes(estado);
+        if (estado.vencedor !== null) return { ok: true };
         // Pula eliminados, inclusive quando o dano do início do turno elimina alguém.
         do {
             const ordem = estado.ordemTurnos || [0, 1];

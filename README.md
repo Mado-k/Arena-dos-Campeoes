@@ -151,8 +151,12 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
   seguinte. Cartas não são duplicadas; a posse pode mudar durante a partida.
   O co-op conserva sua reciclagem individual provisória.
 - Um empate oferece reiniciar ou encerrar. A revanche online exige concordância
-  de todos e volta à sala para confirmar representantes e prontidão. O critério
-  de empate por estagnação ainda precisa ser definido.
+  de todos e volta à sala para confirmar representantes e prontidão. No offline e
+  no multiplayer, após pelo menos quatro redistribuições, todas as cartas nos
+  descartes ou na reserva central causam empate antes de embaralhar novamente.
+  Não pode restar carta em mão ou em jogo. A quarta redistribuição é permitida;
+  não existe uma contagem adicional de três turnos pulados. O co-op continua
+  aguardando a definição das suas regras específicas.
 - O último pedido do index foi cortado em “e por fim,”: dossiê, seção 4, item c;
   também mencionado nas seções 10 e 13. A página inicial continua em
   `public/index.html`, `public/index.js` e `public/style.css`.

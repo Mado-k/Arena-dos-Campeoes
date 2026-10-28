@@ -23,6 +23,7 @@
         empate.className = 'escolha-online';
         empate.setAttribute('aria-label', 'Partida empatada');
         const votosEmpate = el('p', '', 'suave');
+        const motivoEmpate = el('p', '', 'suave');
         let respondeuEmpate = false;
         function responderEmpate(aceitar) {
             if (respondeuEmpate) return;
@@ -32,7 +33,7 @@
             });
             votosEmpate.textContent = aceitar ? 'Aguardando a decisão dos demais jogadores…' : 'Encerrando a partida…';
         }
-        empate.append(el('h2', 'Empate!'), el('p', 'Desejam jogar novamente ou encerrar a partida?'), votosEmpate,
+        empate.append(el('h2', 'Empate!'), motivoEmpate, el('p', 'Desejam jogar novamente ou encerrar a partida?'), votosEmpate,
             botao('Jogar novamente', () => responderEmpate(true)), botao('Encerrar partida', () => responderEmpate(false)));
         document.body.append(escolha, descarte, empate);
         socket.on('partida:revanche', dados => { votosEmpate.textContent = `${dados.votos} de ${dados.total} jogadores querem jogar novamente.`; });
@@ -320,6 +321,7 @@
             }, true, 'btn pequeno'));
             mesa.replaceChildren(tabuleiro, lateral);
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
+            motivoEmpate.textContent = estado.motivoEmpate || '';
             if (estado.vencedor === -1 && !empate.open) empate.showModal();
         }
         socket.on('partida:estado', proximo => {
