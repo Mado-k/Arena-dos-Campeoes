@@ -264,7 +264,10 @@ a versão 1.1 introduz o histórico. Cada versão começa recolhida e funciona t
 sem JavaScript. A preferência por movimento reduzido desativa a animação.
 
 Em cada atualização publicada, adicione uma entrada no início do histórico, sem
-códigos de commit e com descrições voltadas aos jogadores. Avance a versão pública
+códigos de commit e com descrições voltadas aos jogadores. Inclua no título um
+comentário curto sobre o tema, visível mesmo quando a versão estiver recolhida,
+como “Versão 1.0: Modos de jogo e revisão das cartas”. A versão 1.2 introduz esses
+resumos. Avance a versão pública
 em **0.1** para uma atualização pequena, **0.5** para média ou **1.0** para grande,
 sempre a partir da última versão publicada (por exemplo, 1.1 → 1.6 para uma média).
 A numeração pública do histórico é independente da versão técnica do pacote npm.
