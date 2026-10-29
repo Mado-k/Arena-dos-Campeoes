@@ -39,12 +39,6 @@
         }
         function animar(antes,estado){
             if(!antes||antes.estado.voce!==estado.voce||antes.estado.revisao===estado.revisao||window.matchMedia('(prefers-reduced-motion: reduce)').matches||!Element.prototype.animate)return;
-            const jogador=estado.jogadores[estado.voce];
-            const jogada=[...jogador.campo,...jogador.apoio].find(c=>antes.locais.get(String(c.uid))?.zona==='mao');
-            if(jogada){
-                const alvo=mesa.querySelector('.lado-ativo [data-carta="'+jogada.uid+'"]');
-                if(alvo){const r=alvo.getBoundingClientRect();if(r.top<100||r.bottom>innerHeight)alvo.scrollIntoView({block:'center',behavior:'instant'});}
-            }
             const depois=capturar(estado);if(!depois)return;
             const ajustar=r=>r?{...r,left:r.left,top:r.top-(window.scrollY-antes.scrollY),width:r.width,height:r.height}:null;
             for(const [uid,destino]of depois.locais){

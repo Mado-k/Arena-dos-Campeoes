@@ -2,6 +2,7 @@
 const {randomInt,randomBytes,createHash,timingSafeEqual}=require('node:crypto');
 const Partida=require('./partida');
 const IA=require('./public/ia');
+const RITMO=require('./public/ritmo');
 const MODOS=new Set(['multiplayer','coop']);
 const ALFABETO='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const hash=token=>createHash('sha256').update(token).digest('hex');
@@ -24,8 +25,8 @@ function mensagemInicio(err){
   return 'Não foi possível carregar as cartas do banco. Confira os Logs do serviço no Render para identificar a causa.';
 }
 async function carregarComPrazo(loader,prazo){let timer;try{return await Promise.race([Promise.resolve().then(loader),new Promise((_,r)=>{timer=setTimeout(()=>r(Object.assign(Error('Tempo esgotado'),{code:'TEMPO_CARTAS_ESGOTADO'})),prazo);})]);}finally{clearTimeout(timer);}}
-module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null,tempoIA=1200}={}){
-  const salas=new Map(),timers=new Map(),timersIA=new Map();
+module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null,tempoIA=RITMO.entreAcoesIA,tempoAvisoIA=RITMO.inicioIA}={}){
+  const salas=new Map(),timers=new Map(),timersIA=new Map(),iniciosIA=new WeakMap();
   const snapshot=sala=>({...sala,salvando:false,revanche:[...(sala.revanche||[])],iniciando:false,partida:sala.partida?.salvar()||null});
   async function persistir(sala){if(armazenamento)await armazenamento.salvar(snapshot(sala));}
   function pausa(sala){const terminou=sala.partida&&sala.partida.estado.vencedor!==null;io.to(sala.codigo).emit('partida:pausa',{pausada:!terminou&&sala.jogadores.some(j=>!j.conectado),ausentes:terminou?[]:sala.jogadores.filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
@@ -48,6 +49,9 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
   function agendarIA(sala){
     const p=sala.partida;
     if(timersIA.has(sala.codigo)||!p||!p.coop||p.estado.vencedor!==null||!p.estado.jogadores[p.estado.turno].maquina||sala.jogadores.some(j=>!j.conectado))return;
+    let inicio=iniciosIA.get(p);
+    if(!inicio||inicio.turno!==p.estado.numTurno){inicio={turno:p.estado.numTurno,ate:Date.now()+tempoAvisoIA};iniciosIA.set(p,inicio);}
+    const espera=Math.max(tempoIA,inicio.ate-Date.now());
     const timer=setTimeout(async()=>{
       timersIA.delete(sala.codigo);
       if(salas.get(sala.codigo)!==sala||sala.partida!==p||sala.jogadores.some(j=>!j.conectado))return;
@@ -59,7 +63,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
         if(sala.partida===p)atualizarPartida(sala);
       }catch(err){if(sala.partida===p)sala.partida=Partida.restaurar(antes);console.error('Falha ao salvar jogada da máquina:',err.code||err.message);}
       finally{sala.salvando=false;agendarIA(sala);}
-    },tempoIA);
+    },espera);
     timer.unref?.();timersIA.set(sala.codigo,timer);
   }
   const pronto=(async()=>{

@@ -117,6 +117,9 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
+- [x] Versão 2.35: ações preservam a rolagem; foco no campo da máquina somente
+  na troca de turno; IA aguarda o aviso sumir e mantém pausas de cerca de 2 s.
+
 - [x] Versão 2.2: Dino executa dano passivo ao encerrar cada turno próprio e é
   descartado depois da terceira execução; não acrescenta ataque ao campeão.
 

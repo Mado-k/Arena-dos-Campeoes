@@ -6,7 +6,7 @@ function memoria(){return {dados:new Map(),falhar:false,async carregar(){return 
 function esperar(c,nome,condicao=()=>true){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{c.off(nome,receber);reject(Error('Sem evento '+nome));},4000);function receber(d){if(!condicao(d))return;clearTimeout(timer);c.off(nome,receber);resolve(d);}c.on(nome,receber);});}
 const pedir=(c,nome,dados)=>new Promise((resolve,reject)=>c.timeout(4000).emit(nome,dados,(e,r)=>e?reject(e):resolve(r)));
 async function ambiente(t,store=memoria(),opcoes={}){
- const servidor=http.createServer(),io=new Server(servidor),controle=iniciar(io,async()=>cartas,{armazenamento:store,...opcoes}),clientes=[];await controle.pronto;
+ const servidor=http.createServer(),io=new Server(servidor),controle=iniciar(io,async()=>cartas,{armazenamento:store,tempoAvisoIA:0,...opcoes}),clientes=[];await controle.pronto;
  servidor.listen(0,'127.0.0.1');await once(servidor,'listening');let fechou=false;
  async function fechar(){if(fechou)return;fechou=true;clientes.forEach(c=>c.close());await new Promise(r=>io.close(r));controle.fechar();}
  t.after(fechar);
@@ -132,6 +132,14 @@ test('reinício durante o turno da IA retoma do último passo salvo após todos 
  const passo=esperar(h,'partida:estado',v=>v.revisao===2);
  assert((await pedir(outro,'sala:retomar',{...d.tokenB,modo:'coop'})).ok);await passo;
  assert.equal(store.dados.get(d.codigo).partida.revisao,2);
+});
+test('primeira jogada da máquina aguarda o prazo do aviso e as seguintes mantêm pausa própria', {timeout:12000},async t=>{
+ const a=await ambiente(t,memoria(),{tempoIA:30,tempoAvisoIA:180}),d=await duelo(a,'coop'),sala=a.controle.salas.get(d.codigo);
+ const passo=esperar(d.host,'partida:estado',v=>v.revisao===2);
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);
+ await new Promise(r=>setTimeout(r,90));assert.equal(sala.partida.revisao,1,'não joga enquanto o aviso está no prazo');
+ await passo;assert.equal(sala.partida.estado.acoes,1);
+ const seguinte=esperar(d.host,'partida:estado',v=>v.revisao===3);await seguinte;assert.equal(sala.partida.estado.acoes,0);
 });
 test('armazenamento MySQL usa parâmetros e serializa atualizações na ordem',async()=>{
  const linhas=new Map(),chamadas=[];const pool={async query(sql,args){chamadas.push({sql,args});if(sql.startsWith('SELECT'))return [[...linhas].map(([codigo,estado])=>({codigo,estado}))];if(sql.startsWith('INSERT'))linhas.set(args[0],args[1]);if(sql.startsWith('DELETE'))linhas.delete(args[0]);return [[]];}};

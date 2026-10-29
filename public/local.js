@@ -2,7 +2,7 @@
 (function(){
     'use strict';
     const $=id=>document.getElementById(id),eventos=new Map();
-    let modo=null,cartas=(window.CARTAS_OFFLINE||[]).map(Motor.normalizarCarta),partida=null,humanoAtual=0,timer,sessao=0;
+    let modo=null,cartas=(window.CARTAS_OFFLINE||[]).map(Motor.normalizarCarta),partida=null,humanoAtual=0,timer,sessao=0,ultimoTurnoIA=null;
     const disparar=(nome,dados)=>{for(const fn of eventos.get(nome)||[])fn(dados);};
     function voltar(){sessao++;clearTimeout(timer);partida=null;mesa.limpar();$('passar-local').hidden=true;$('config-local').hidden=false;document.body.classList.remove('em-partida');window.scrollTo(0,0);}
     function mostrar(){if(partida)disparar('partida:estado',partida.visao('local'+humanoAtual));}
@@ -11,8 +11,10 @@
         if(partida.estado.vencedor!==null){mostrar();return;}
         const indice=partida.estado.turno;
         if(partida.estado.jogadores[indice].maquina){
+            const chave=sessao+':'+partida.estado.numTurno;
+            const primeira=ultimoTurnoIA!==chave;ultimoTurnoIA=chave;
             mostrar();const geracao=sessao;
-            timer=setTimeout(()=>{if(geracao!==sessao||!partida)return;partida.passoComputador();proximo();},1100+Math.random()*300);return;
+            timer=setTimeout(()=>{if(geracao!==sessao||!partida)return;partida.passoComputador();proximo();},primeira?RITMO_ARENA.inicioIA:RITMO_ARENA.entreAcoesIA+Math.random()*250);return;
         }
         if(indice!==humanoAtual){humanoAtual=indice;mesa.limpar();$('vez-local').textContent='Vez de '+partida.estado.jogadores[indice].nome;$('passar-local').hidden=false;}
         else mostrar();

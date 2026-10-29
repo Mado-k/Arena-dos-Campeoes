@@ -321,3 +321,13 @@ Sem alvo ou quando anulado, não há dano, mas o prazo passa. A derrota da criat
 vinculada descarta Dino imediatamente. O efeito respeita proteções e pontua campeões.
 Fuleco amplia a aplicação para 8 de dano por 6 turnos, conservando esses valores.
 O registro público mostra dano, defesa restante, prazo e descarte nos três modos.
+
+## Rolagem e ritmo (versão 2.35)
+
+A mesa preserva a rolagem durante seleção, compra, jogadas e animações. O único
+foco automático durante a partida ocorre ao trocar para o turno de uma máquina,
+mostrando seu campo; suas ações seguintes não reposicionam a câmera.
+`public/ritmo.js` compartilha os tempos: aviso de turno de 4 segundos, primeira
+jogada após 4,5 segundos e pausas seguintes de 2 segundos (até 250 ms adicionais
+no Local). O servidor oferece `tempoIA` e `tempoAvisoIA` para testes com prazos
+curtos; o prazo inicial é preservado durante pausa e retomada na mesma instância.

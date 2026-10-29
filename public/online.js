@@ -40,7 +40,8 @@
             if (dados.indisponivel) jogarNovamente.disabled = true;
         });
         let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null, resultadoMostrado = false;
-        let resultadoPendente=false,timerResultado;
+        let resultadoPendente=false,timerResultado,rolagemTurnoAte=0,interacoesRolagem=0;
+        for(const evento of ['wheel','touchmove','pointerdown','keydown'])window.addEventListener(evento,()=>{interacoesRolagem++;},{passive:true});
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
         const turnos = criarAvisosTurno(() => agir('encerrar'));
@@ -104,10 +105,13 @@
         }
         function selecionar(uid) {
             selecionada = uid;
-            descarte.close();
-            render();
-            if (window.matchMedia('(max-width: 1000px)').matches) {
-                mesa.querySelector('.detalhe-online').scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+            if(descarte.open)descarte.close();
+            const painel=mesa.querySelector('.detalhe-online');
+            if(painel)painel.replaceWith(detalhe());else render();
+            for(const carta of mesa.querySelectorAll('[data-carta]')){
+                const marcada=carta.dataset.carta===String(uid);
+                carta.classList.toggle('selecionada',marcada);
+                if(carta.hasAttribute('aria-pressed'))carta.setAttribute('aria-pressed',String(marcada));
             }
         }
         function arte(base) {
@@ -319,6 +323,7 @@
         }
         function render() {
             if (!estado) return;
+            const posicao={x:scrollX,y:scrollY},preservar=!mesa.hidden;
             mesa.hidden = false;
             const terminou = estado.vencedor !== null;
             const tabuleiro = el('div', undefined, 'mesa');
@@ -393,6 +398,12 @@
                 if (estado.vencedor !== null || window.confirm('Sair encerra a partida para todos. Deseja continuar?')) aoSair();
             }, true, 'btn pequeno'));
             mesa.replaceChildren(tabuleiro, lateral);
+            if(preservar&&Date.now()>=rolagemTurnoAte){
+                const interacao=interacoesRolagem,geracao=sessao;
+                const restaurar=()=>window.scrollTo({left:posicao.x,top:posicao.y,behavior:'instant'});
+                restaurar();
+                requestAnimationFrame(()=>{if(geracao===sessao&&interacao===interacoesRolagem&&Date.now()>=rolagemTurnoAte)restaurar();});
+            }
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
             if (terminou && !resultadoMostrado && !resultadoPendente) mostrarResultado();
         }
@@ -402,7 +413,8 @@
                 resultadoPendente=true;clearTimeout(timerResultado);
                 timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},850);
             }
-            if (estado && proximo.vencedor === null && proximo.numTurno > estado.numTurno) {
+            const mudouTurno=estado&&proximo.vencedor===null&&proximo.numTurno>estado.numTurno;
+            if (mudouTurno) {
                 const nome = estado.jogadores[estado.turno].nome;
                 turnos.notificar(`${nome} encerrou o turno. Agora é a vez de ${proximo.jogadores[proximo.turno].nome}.`);
             }
@@ -414,8 +426,12 @@
             aoMostrar();
             render();
             movimentos.animar(antes,proximo);
+            if(mudouTurno&&proximo.jogadores[proximo.turno].maquina){
+                rolagemTurnoAte=Date.now()+900;
+                mesa.querySelector('[data-jogador="'+proximo.turno+'"] .campo-mesa')?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+            }
         });
         socket.on('partida:pausa', dados=>{pausada=Boolean(dados.pausada);render();});
-        return { pausar(){pausada=true;render();}, limpar() { movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
+        return { pausar(){pausada=true;render();}, limpar() { rolagemTurnoAte=0; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

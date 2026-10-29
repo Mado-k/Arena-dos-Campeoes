@@ -30,14 +30,14 @@
                 else if (!janela.open && ultimoAvisado !== numTurno) {
                     ultimoAvisado = numTurno;
                     janela.showModal();
-                    encerrar.focus();
+                    encerrar.focus({preventScroll:true});
                 }
             },
             notificar(texto) {
                 clearTimeout(timer);
                 mensagem.textContent = texto;
                 mensagem.hidden = false;
-                timer = setTimeout(() => { mensagem.hidden = true; }, 4000);
+                timer = setTimeout(() => { mensagem.hidden = true; }, RITMO_ARENA.avisoTurno);
             },
             limpar() {
                 janela.close();

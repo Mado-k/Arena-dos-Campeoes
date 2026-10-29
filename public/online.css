@@ -95,3 +95,8 @@
     .mao-com-pilhas { --largura-carta:120px; --altura-carta:220px; gap:8px; }
     .mao-com-pilhas [data-zona="mao"] .c-wrap { width:120px; flex-basis:120px; }
 }
+
+/* Atualizar cartas não deve deslocar a leitura do jogador. */
+.mesa-online { overflow-anchor:none; }
+.lado-online { scroll-margin-top:110px; }
+html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:auto; }
