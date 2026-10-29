@@ -61,6 +61,21 @@ test('falha ao salvar uma ação restaura o estado e a revisão, permitindo repe
  assert.deepEqual(sala.partida.salvar(),antes);assert.equal(sala.salvando,false);
  a.store.falhar=false;assert((await pedir(ativo,'partida:acao',{tipo:'comprar',revisao:0})).ok);assert.equal(sala.partida.revisao,1);
 });
+test('sair após o resultado preserva o tabuleiro e a retomada de quem continua consultando', {timeout:12000},async t=>{
+ const a=await ambiente(t),d=await duelo(a),sala=a.controle.salas.get(d.codigo);
+ sala.partida.estado.vencedor=0;
+ const esperado=sala.partida.visao(d.tokenB.jogadorId);
+ let encerrou=false;d.amigo.on('partida:encerrada',()=>{encerrou=true;});
+ const publicada=esperar(d.amigo,'sala',s=>s.jogadores.length===1);
+ assert((await pedir(d.host,'sala:sair',{})).ok);assert((await publicada).emPartida);
+ const estado=esperar(d.amigo,'partida:estado');d.amigo.emit('partida:sincronizar');
+ assert.deepEqual(await estado,esperado);assert.equal(encerrou,false);
+ assert.equal(a.store.dados.get(d.codigo).partida.estado.vencedor,0);
+ assert((await pedir(d.amigo,'partida:acao',{tipo:'comprar',revisao:0})).erro);
+ const pausa=esperar(d.amigo,'partida:pausa');d.amigo.emit('partida:sincronizar');
+ assert.equal((await pausa).pausada,false);
+ assert((await pedir(d.amigo,'sala:sair',{})).ok);assert(!a.controle.salas.has(d.codigo));
+});
 test('armazenamento MySQL usa parâmetros e serializa atualizações na ordem',async()=>{
  const linhas=new Map(),chamadas=[];const pool={async query(sql,args){chamadas.push({sql,args});if(sql.startsWith('SELECT'))return [[...linhas].map(([codigo,estado])=>({codigo,estado}))];if(sql.startsWith('INSERT'))linhas.set(args[0],args[1]);if(sql.startsWith('DELETE'))linhas.delete(args[0]);return [[]];}};
  const store=criarArmazenamento(pool);await Promise.all([store.salvar({codigo:'ABCDE',valor:1}),store.salvar({codigo:'ABCDE',valor:2})]);

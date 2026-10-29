@@ -13,6 +13,10 @@
 .escolha-online, .descarte-online { max-width: min(90vw, 700px); max-height: 80vh; overflow: auto; padding: 1.5rem; background: var(--painel); color: var(--texto); border: 1px solid var(--ouro); border-radius: 12px; }
 .escolha-online > .btn, .descarte-online > .btn { margin-top: 1rem; }
 .escolha-online::backdrop, .descarte-online::backdrop { background: #000b; }
+.resultado-partida { width: min(90vw, 480px); box-sizing: border-box; text-align: center; }
+.resultado-partida h2 { color: var(--ouro-claro); margin: 12px 0; }
+.resultado-botoes { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 24px; }
+.resultado-botoes .btn { flex: 1 1 160px; }
 @media (max-width: 560px) {
     .mesa-online .c-wrap, .mesa-online .slot-vazio { width: calc(50% - 4px); }
     .mesa-online .barra-botoes { flex-wrap: wrap; width: 100%; }

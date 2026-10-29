@@ -8,10 +8,11 @@
         if (classe) n.className = classe;
         return n;
     };
-    window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {} } = {}) {
+    window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {}, compartilhada = false } = {}) {
         const mesa = el('section', undefined, 'jogo mesa-online');
         mesa.hidden = true;
         mesa.setAttribute('aria-label', 'Mesa da partida online');
+        mesa.tabIndex = -1;
         document.querySelector('main').append(mesa);
         const escolha = document.createElement('dialog');
         escolha.className = 'escolha-online';
@@ -35,12 +36,36 @@
         }
         empate.append(el('h2', 'Empate!'), motivoEmpate, el('p', 'Desejam jogar novamente ou encerrar a partida?'), votosEmpate,
             botao('Jogar novamente', () => responderEmpate(true)), botao('Encerrar partida', () => responderEmpate(false)));
-        document.body.append(escolha, descarte, empate);
+        const resultado = document.createElement('dialog');
+        resultado.className = 'escolha-online resultado-partida';
+        resultado.setAttribute('aria-label', 'Resultado da partida');
+        const tituloResultado = el('h2');
+        const textoResultado = el('p', '', 'suave');
+        const botoesResultado = el('div', undefined, 'resultado-botoes');
+        botoesResultado.append(
+            botao('Ver tabuleiro', () => { resultado.close(); mesa.focus({ preventScroll: true }); }, true, 'btn'),
+            botao('Voltar ao lobby', () => { resultado.close(); aoSair(); }, true, 'btn primario'));
+        resultado.append(el('p', 'Partida encerrada', 'selo'), tituloResultado, textoResultado, botoesResultado);
+        document.body.append(escolha, descarte, empate, resultado);
         socket.on('partida:revanche', dados => { votosEmpate.textContent = `${dados.votos} de ${dados.total} jogadores querem jogar novamente.`; });
-        let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null;
+        let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null, resultadoMostrado = false;
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
         const turnos = criarAvisosTurno(() => agir('encerrar'));
+
+        function mostrarResultado() {
+            if (!estado || estado.vencedor === null || estado.vencedor === -1) return;
+            const venceu = estado.cooperativo ? estado.vencedor === estado.equipes[estado.voce] : estado.vencedor === estado.voce;
+            const equipe = estado.cooperativo && estado.jogadores.filter(j => !j.maquina).length > 1;
+            tituloResultado.textContent = compartilhada && !estado.cooperativo
+                ? estado.jogadores[estado.vencedor].nome + ' venceu!'
+                : venceu ? equipe ? 'Sua equipe venceu!' : 'Você venceu!'
+                : equipe ? 'Sua equipe foi derrotada' : 'Você perdeu';
+            textoResultado.textContent = 'Você pode consultar o tabuleiro e o registro da partida ou voltar ao lobby para jogar novamente.';
+            resultadoMostrado = true;
+            escolha.close(); descarte.close(); turnos.limpar();
+            if (!resultado.open) resultado.showModal();
+        }
 
         function ativo() {
             return estado && estado.turno === estado.voce && estado.vencedor === null && !ocupado && !pausada;
@@ -261,8 +286,9 @@
             acoes.append(el('span', `${estado.acoes}/${estado.acoesPorTurno}`));
             info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.cooperativo ? estado.tamanhoBaralho / 2 + ' por equipe, divididas entre os integrantes' : estado.todosContraTodos ? 'entre ' + estado.jogadores.length + ' participantes' : estado.tamanhoBaralho / 2 + ' por lado'}${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
-            controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn primario acao-compra'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
-            const instrucao = pausada ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou sair para preparar outra partida.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
+            if (terminou && estado.vencedor !== -1) controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario'));
+            else controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn primario acao-compra'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
+            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);
             dica.setAttribute('role', 'status');
@@ -323,9 +349,10 @@
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
             motivoEmpate.textContent = estado.motivoEmpate || '';
             if (estado.vencedor === -1 && !empate.open) empate.showModal();
+            if (terminou && estado.vencedor !== -1 && !resultadoMostrado) mostrarResultado();
         }
         socket.on('partida:estado', proximo => {
-            if (estado && proximo.numTurno > estado.numTurno) {
+            if (estado && proximo.vencedor === null && proximo.numTurno > estado.numTurno) {
                 const nome = estado.jogadores[estado.turno].nome;
                 turnos.notificar(`${nome} encerrou o turno. Agora é a vez de ${proximo.jogadores[proximo.turno].nome}.`);
             }
@@ -338,6 +365,6 @@
             render();
         });
         socket.on('partida:pausa', dados=>{pausada=Boolean(dados.pausada);render();});
-        return { pausar(){pausada=true;render();}, limpar() { sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); empate.close(); respondeuEmpate = false; votosEmpate.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
+        return { pausar(){pausada=true;render();}, limpar() { sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); empate.close(); resultado.close(); resultadoMostrado = false; respondeuEmpate = false; votosEmpate.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

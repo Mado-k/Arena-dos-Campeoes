@@ -29,7 +29,7 @@
             cb?.(null,res);
         }
     };
-    const mesa=criarMesaOnline(transporte,{aoMostrar(){$('config-local').hidden=true;document.body.classList.add('em-partida');},aoSair:voltar});
+    const mesa=criarMesaOnline(transporte,{compartilhada:true,aoMostrar(){$('config-local').hidden=true;document.body.classList.add('em-partida');},aoSair:voltar});
     const representantes=()=>cartas.filter(c=>Motor.norm(c.classe)==='representante');
     function resumo(){
         if(!modo)return;

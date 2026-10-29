@@ -28,7 +28,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
   const salas=new Map(),timers=new Map();
   const snapshot=sala=>({...sala,salvando:false,revanche:[...(sala.revanche||[])],iniciando:false,partida:sala.partida?.salvar()||null});
   async function persistir(sala){if(armazenamento)await armazenamento.salvar(snapshot(sala));}
-  function pausa(sala){io.to(sala.codigo).emit('partida:pausa',{pausada:sala.jogadores.some(j=>!j.conectado),ausentes:sala.jogadores.filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
+  function pausa(sala){const terminou=sala.partida&&sala.partida.estado.vencedor!==null;io.to(sala.codigo).emit('partida:pausa',{pausada:!terminou&&sala.jogadores.some(j=>!j.conectado),ausentes:terminou?[]:sala.jogadores.filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
   function publicar(sala){io.to(sala.codigo).emit('sala',publico(sala));pausa(sala);}
   function atualizarPartida(sala){pausa(sala);for(const j of sala.jogadores)if(j.conectado&&j.socketId)io.to(j.socketId).emit('partida:estado',sala.partida.visao(j.id));}
   async function removerSala(sala,motivo){
@@ -65,7 +65,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       socket.data.sala=null;socket.data.jogadorId=null;
       if(!sala||!j)return;
       socket.leave(sala.codigo);
-      if(sala.partida||sala.iniciando){
+      if((sala.partida&&sala.partida.estado.vencedor===null)||sala.iniciando){
         sala.partida=null;sala.iniciando=false;
         io.to(sala.codigo).emit('partida:encerrada',{motivo:'Um jogador abandonou a partida. Preparem uma nova partida.'});
       }

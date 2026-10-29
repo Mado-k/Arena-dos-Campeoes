@@ -87,11 +87,18 @@ Essa distribuição vale também no Local entre duas pessoas. Uma partida só co
 jogáveis distintas suficientes para o tamanho escolhido.
 
 Ao começar, o lobby fica com `hidden` e a mesa ocupa seu lugar na mesma página.
-Use **Sair da partida** para retornar à entrada; sair encerra a partida para os demais.
+Use **Sair da partida** para retornar à entrada; sair durante o jogo encerra a partida para os demais.
 Depois da segunda ação, uma janela central avisa que as ações acabaram e oferece
 **Encerrar turno**. Ao confirmar, os dois lados recebem um aviso central de quem
 encerrou e de quem joga em seguida. No Local, a cortina de troca também mostra
 essa informação.
+
+Vitória e derrota abrem uma janela central de resultado no Local, multiplayer e
+co-op, com **Ver tabuleiro** e **Voltar ao lobby**. Consultar o tabuleiro mantém as
+cartas e o registro disponíveis, sem permitir novas jogadas; **Ver resultado**
+reabre a janela. No Local, voltar ao lobby retorna à configuração. No online,
+retorna à entrada de salas e preserva o tabuleiro dos demais participantes que
+ainda quiserem consultá-lo. Empates mantêm as opções de revanche e encerramento.
 
 **O co-op permanece um protótipo:** o formato abaixo foi solicitado como solução
 provisória até a equipe definir as regras finais.
