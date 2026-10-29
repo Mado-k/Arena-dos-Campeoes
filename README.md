@@ -280,3 +280,14 @@ Como jogar em todos os menus apontam ao tutorial; o index mantém os modos e o c
 Os atalhos de elementos levam ao index com `?elemento=...#cartas` para abrir o
 catálogo filtrado. Endereços antigos `index.html#como-jogar` e `index.html#cj-...`
 são encaminhados pelo index para a seção correspondente no tutorial.
+
+## Mesa e animações (versão 1.9)
+
+`public/online.js` é a mesa compartilhada pelo Local, multiplayer e co-op.
+`public/movimentos.js` compara as visões recebidas e anima cartas entre mão, campo,
+apoio e descarte. Os movimentos usam versos genéricos; nenhum dado de mãos inimigas
+é solicitado ao servidor. A mão adversária mostra um verso por carta, com rolagem
+horizontal quando necessário. Compra e descarte ficam junto à mão; pilhas vazias
+mantêm a posição, sem desenho de cartas. O botão de compra fica acima da pilha.
+Em telas pequenas, as duas pilhas ficam abaixo da fileira da mão, nas extremidades.
+Movimento reduzido desativa os voos; limpar a mesa cancela animações pendentes.

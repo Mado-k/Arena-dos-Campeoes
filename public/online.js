@@ -13,6 +13,7 @@
         mesa.hidden = true;
         mesa.setAttribute('aria-label', 'Mesa da partida online');
         mesa.tabIndex = -1;
+        const movimentos = criarMovimentosMesa(mesa);
         document.querySelector('main').append(mesa);
         const escolha = document.createElement('dialog');
         escolha.className = 'escolha-online';
@@ -39,6 +40,7 @@
             if (dados.indisponivel) jogarNovamente.disabled = true;
         });
         let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null, resultadoMostrado = false;
+        let resultadoPendente=false,timerResultado;
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
         const turnos = criarAvisosTurno(() => agir('encerrar'));
@@ -200,6 +202,7 @@
         }
         function carta(c) {
             const b = botao('', () => selecionar(c.uid), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : ''));
+            b.dataset.carta = String(c.uid);
             b.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
             b.setAttribute('aria-label', c.base.nome);
             b.setAttribute('aria-pressed', String(c.uid === selecionada));
@@ -223,6 +226,7 @@
                     const equips = el('div', undefined, 'equips');
                     for (const eq of c.equip) {
                         const b = botao('+ ' + eq.base.nome, () => selecionar(eq.uid), true, 'equip' + (eq.uid === selecionada ? ' selecionada' : ''));
+                        b.dataset.carta = String(eq.uid);
                         b.dataset.elemento = Motor.norm(eq.base.elemento) || 'neutro';
                         equips.append(b);
                     }
@@ -242,10 +246,45 @@
             descarte.replaceChildren(el('h2', `Descarte de ${j.nome}`), zona('Cartas descartadas', j.descarte), botao('Fechar', () => descarte.close()));
             descarte.showModal();
         }
+        function verso() {
+            const c = el('div', undefined, 'carta-verso');
+            c.setAttribute('aria-hidden','true');c.append(el('span','A','verso-emblema'));return c;
+        }
+        function maoComPilhas(i) {
+            const j=estado.jogadores[i],sua=i===estado.voce;
+            const recuperaveis=d=>d.descarte.filter(c=>!Motor.descartePermanente(c)).length;
+            const podeComprar=j.baralhoTotal>0||(estado.cooperativo?recuperaveis(j)>0:!estado.jogadores.some(d=>d.baralhoTotal)&&estado.jogadores.reduce((n,d)=>n+recuperaveis(d),estado.reservaCentralTotal||0)>=estado.jogadores.filter(d=>!d.eliminado).length);
+            const area=el('div',undefined,'mao-com-pilhas');
+            const compra=el('section',undefined,'pilha-compra');compra.dataset.zona='baralho';
+            if(sua)compra.append(botao('Comprar carta',()=>agir('comprar'),ativo()&&estado.acoes>0&&podeComprar,'btn primario acao-compra'));
+            else compra.append(el('h4','Compra'));
+            const topo=el('div',undefined,'pilha-cartas');
+            if(j.baralhoTotal)topo.append(verso());else topo.append(el('span','Vazio','pilha-vazia'));
+            compra.append(topo,el('span',j.baralhoTotal+' carta(s)','pilha-contagem'));
+            let mao;
+            if(sua)mao=zona('Sua mão',j.mao);
+            else {
+                mao=el('section',undefined,'fileira-wrap mao-oculta');mao.append(el('h4','Mão de '+j.nome+' ('+j.maoTotal+')'));
+                const cartas=el('div',undefined,'fileira cartas-de-costas');
+                cartas.setAttribute('aria-label',j.maoTotal+' cartas de costas. Identidades ocultas.');
+                for(let k=0;k<j.maoTotal;k++)cartas.append(verso());
+                if(!j.maoTotal)cartas.append(el('span','Nenhuma carta.','suave'));
+                mao.append(cartas);
+            }
+            mao.dataset.zona='mao';
+            const descarteArea=el('section',undefined,'pilha-descarte');descarteArea.dataset.zona='descarte';
+            const abrir=botao('Ver descarte',()=>abrirDescarte(i),j.descarte.length>0,'btn pequeno');
+            descarteArea.append(abrir);
+            const monte=el('div',undefined,'pilha-cartas');
+            if(j.descarte.length)monte.append(verso());else monte.append(el('span','Vazio','pilha-vazia'));
+            descarteArea.append(monte,el('span',j.descarte.length+' carta(s)','pilha-contagem'));
+            area.append(compra,mao,descarteArea);return area;
+        }
         function lado(i) {
             const j = estado.jogadores[i], sua = i === estado.voce;
             const aliada = estado.equipes[i] === estado.equipes[estado.voce];
             const n = el('section', undefined, 'lado lado-online' + (sua ? ' lado-ativo' : '') + (j.eliminado ? ' lado-eliminado' : ''));
+            n.dataset.jogador = String(i);
             if (!aliada) n.classList.add('lado-adversario');
             if ((estado.cooperativo || estado.todosContraTodos) && !sua) n.classList.add('lado-publico');
             if ((estado.cooperativo || estado.todosContraTodos) && !aliada && i === alvoSelecionado) n.classList.add('lado-alvo');
@@ -263,17 +302,14 @@
             pips.setAttribute('aria-hidden', 'true');
             for (let k = 0; k < Motor.REGRAS.campeoesParaVencer; k++) pips.append(el('span', undefined, 'pip' + (k < j.derrotados ? ' cheio' : '')));
             derrotados.append(el('span', 'Campeões derrotados'), pips, el('strong', `${j.derrotados}/${Motor.REGRAS.campeoesParaVencer}`));
-            const pilhas = el('div', undefined, 'pilhas');
-            pilhas.append(el('span', `Mão: ${j.maoTotal}`), el('span', `Baralho: ${j.baralhoTotal}`), botao(`Descarte: ${j.descarte.length}`, () => abrirDescarte(i), true, ''));
-            cab.append(quem, derrotados, pilhas);
+            cab.append(quem, derrotados);
             const campo = el('div', undefined, 'campo-mesa');
             campo.append(
                 zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta', campo: true }),
                 zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true, campo: true })
             );
             n.append(cab, campo);
-            if (sua) n.append(zona('Sua mão', j.mao));
-            else n.append(el('p', `Mão ${aliada ? 'do aliado' : 'do adversário'} escondida (${j.maoTotal} cartas).`, 'mao-escondida'));
+            n.append(maoComPilhas(i));
             return n;
         }
         function render() {
@@ -292,7 +328,7 @@
             info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.cooperativo ? estado.tamanhoBaralho / 2 + ' por equipe, divididas entre os integrantes' : estado.todosContraTodos ? 'entre ' + estado.jogadores.length + ' participantes' : estado.tamanhoBaralho / 2 + ' por lado'}${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
             if (terminou) controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario'));
-            else controles.append(botao('Comprar carta', () => agir('comprar'), ativo() && estado.acoes > 0, 'btn primario acao-compra'), botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
+            else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
             const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);
@@ -353,9 +389,14 @@
             }, true, 'btn pequeno'));
             mesa.replaceChildren(tabuleiro, lateral);
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
-            if (terminou && !resultadoMostrado) mostrarResultado();
+            if (terminou && !resultadoMostrado && !resultadoPendente) mostrarResultado();
         }
         socket.on('partida:estado', proximo => {
+            const antes = movimentos.capturar(estado);
+            if(antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+                resultadoPendente=true;clearTimeout(timerResultado);
+                timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},520);
+            }
             if (estado && proximo.vencedor === null && proximo.numTurno > estado.numTurno) {
                 const nome = estado.jogadores[estado.turno].nome;
                 turnos.notificar(`${nome} encerrou o turno. Agora é a vez de ${proximo.jogadores[proximo.turno].nome}.`);
@@ -367,8 +408,9 @@
             if (!alvos.includes(alvoSelecionado)) alvoSelecionado = alvos.includes(estado.alvo) ? estado.alvo : alvos[0] ?? null;
             aoMostrar();
             render();
+            movimentos.animar(antes,proximo);
         });
         socket.on('partida:pausa', dados=>{pausada=Boolean(dados.pausada);render();});
-        return { pausar(){pausada=true;render();}, limpar() { sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
+        return { pausar(){pausada=true;render();}, limpar() { movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

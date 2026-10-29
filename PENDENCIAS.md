@@ -117,6 +117,9 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
+- [x] Versão 1.9: mãos ocultas com versos, pilhas de compra/descarte junto à mão e
+  animações de compra, jogada e descarte, respeitando movimento reduzido.
+
 - [x] Tutorial em página própria, com instruções dos modos, regras e controles;
   links Como jogar atualizados e inicial sem o guia completo.
 

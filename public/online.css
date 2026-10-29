@@ -46,3 +46,29 @@
 .ordem-turnos .turno-atual { color: var(--ouro-claro); font-weight: 700; }
 
 .conexao-jogo { position:sticky; top:0; z-index:110; margin:0; padding:12px 20px; text-align:center; color:var(--ouro-claro); background:var(--painel); border-bottom:1px solid var(--ouro); }
+
+/* Mãos e pilhas: os versos nunca contêm a identidade de cartas ocultas. */
+.mao-com-pilhas { display:grid; grid-template-columns:96px minmax(0,1fr) 96px; gap:12px; align-items:start; }
+.mao-com-pilhas > section { min-width:0; margin:0; }
+.mao-com-pilhas [data-zona="mao"] h4 { text-align:center; }
+.mao-com-pilhas [data-zona="mao"] .fileira { flex-wrap:nowrap; overflow-x:auto; padding:8px 2px 14px; min-height:100px; }
+.mao-com-pilhas [data-zona="mao"] .c-wrap { flex:0 0 145px; width:145px; }
+.pilha-compra,.pilha-descarte { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.pilha-compra h4 { margin:0; color:var(--suave); font-size:.8rem; }
+.pilha-compra .btn,.pilha-descarte .btn { width:100%; padding:9px 4px; font-size:.75rem; white-space:normal; }
+.pilha-cartas { width:62px; height:86px; display:grid; place-items:center; }
+.pilha-contagem { font-size:.75rem; color:var(--suave); text-align:center; }
+.carta-verso { position:relative; flex:0 0 58px; width:58px; height:82px; display:grid; place-items:center; border:1px solid var(--ouro); border-radius:8px; background:repeating-linear-gradient(45deg,#24202b 0px,#24202b 5px,#19171f 5px,#19171f 10px); box-shadow:0 2px 6px #0006; }
+.carta-verso::before { content:''; position:absolute; inset:5px; border:1px solid #e8b04a66; border-radius:5px; }
+.verso-emblema { color:var(--ouro-claro); font-family:var(--fonte-titulo); font-weight:800; font-size:1.4rem; }
+.pilha-cartas .carta-verso { box-shadow:3px 3px 0 #34303e,5px 5px 0 #121216; }
+.pilha-vazia { font-size:.75rem; color:var(--suave); }
+.cartas-de-costas { justify-content:safe center; }
+.carta-em-movimento { position:fixed; left:0; top:0; z-index:120; pointer-events:none; will-change:transform; }
+@media(max-width:600px){
+    .mao-com-pilhas { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+    .mao-com-pilhas > [data-zona="mao"] { grid-column:1/-1; grid-row:1; }
+    .mao-com-pilhas > [data-zona="baralho"] { grid-column:1; grid-row:2; }
+    .mao-com-pilhas > [data-zona="descarte"] { grid-column:2; grid-row:2; }
+    .pilha-compra .btn,.pilha-descarte .btn { max-width:145px; }
+}
