@@ -107,7 +107,7 @@
                 });
                 socket.on('sessao',dados=>{sessaoSalva=dados;identidade=dados.jogadorId;try{sessionStorage.setItem(chaveSessao,JSON.stringify(dados));localStorage.setItem(chaveBackup,JSON.stringify(dados));}catch{/* ignora */}$('retomar-sessao').hidden=true;});
                 socket.on('sala',mostrarSala);
-                socket.on('partida:encerrada',dados=>{mesa.limpar();if(dados.final){limparSessao();voltarParaEntrada(dados.motivo,'erro');}else{aviso(dados.motivo,dados.empate?'':'erro');$('sala-aviso').textContent=dados.motivo;}});
+                socket.on('partida:encerrada',dados=>{mesa.limpar();if(dados.final){limparSessao();voltarParaEntrada(dados.motivo,'erro');}else{aviso(dados.motivo,(dados.empate||dados.revanche)?'':'erro');$('sala-aviso').textContent=dados.motivo;}});
                 socket.on('partida:pausa',dados=>{conexao(dados.pausada?'Partida pausada. Aguardando '+dados.ausentes.join(', ')+'. A reconexão preserva as cartas e o turno; prazo de '+Math.ceil(dados.prazoMs/60000)+' minutos.':'');});
                 socket.on('disconnect',()=>{if(sessaoSalva){mesa.pausar();conexao('Conexão interrompida. Reconectando automaticamente; sua partida está preservada.');}});
                 socket.on('connect',()=>{retomar().catch(()=>conexao('Não foi possível recuperar agora. Tentando reconectar…'));});

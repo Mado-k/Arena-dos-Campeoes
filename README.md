@@ -94,11 +94,17 @@ encerrou e de quem joga em seguida. No Local, a cortina de troca também mostra
 essa informação.
 
 Vitória e derrota abrem uma janela central de resultado no Local, multiplayer e
-co-op, com **Ver tabuleiro** e **Voltar ao lobby**. Consultar o tabuleiro mantém as
+co-op, com **Ver tabuleiro**, **Voltar ao lobby** e **Jogar novamente**. Consultar o tabuleiro mantém as
 cartas e o registro disponíveis, sem permitir novas jogadas; **Ver resultado**
 reabre a janela. No Local, voltar ao lobby retorna à configuração. No online,
 retorna à entrada de salas e preserva o tabuleiro dos demais participantes que
-ainda quiserem consultá-lo. Empates mantêm as opções de revanche e encerramento.
+ainda quiserem consultá-lo. Empates oferecem as mesmas três opções.
+
+**Jogar novamente** inicia uma nova partida Local contra máquinas com a mesma
+configuração. Entre pessoas no mesmo dispositivo, cada jogador confirma a revanche.
+No multiplayer e co-op online, todos os humanos precisam aceitar; então o grupo
+volta à mesma sala para conferir representantes e prontidão. Enquanto aguarda,
+o tabuleiro final continua disponível. Se alguém sair, prepare outra sala.
 
 **O co-op permanece um protótipo:** o formato abaixo foi solicitado como solução
 provisória até a equipe definir as regras finais.

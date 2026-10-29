@@ -70,6 +70,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
         io.to(sala.codigo).emit('partida:encerrada',{motivo:'Um jogador abandonou a partida. Preparem uma nova partida.'});
       }
       sala.jogadores=sala.jogadores.filter(x=>x!==j);
+      if(sala.partida){sala.revanche=new Set();io.to(sala.codigo).emit('partida:revanche',{indisponivel:true});}
       if(!sala.jogadores.length)return removerSala(sala,'A sala foi encerrada.');
       if(sala.anfitriao===j.id)sala.anfitriao=sala.jogadores[0].id;
       sala.jogadores.forEach(x=>{x.pronto=false;});sala.atualizadoEm=Date.now();
@@ -162,12 +163,14 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
     socket.on('partida:sincronizar',()=>{const sala=salaAtual();if(jogadorAtual(sala)&&sala.partida)atualizarPartida(sala);});
     tratar('partida:revanche',async(aceitar,responder)=>{
       const sala=salaAtual(),j=jogadorAtual(sala);
-      if(!j||sala.partida?.estado.vencedor!==-1)return responder({erro:'A partida não terminou empatada.'});
+      if(!j||!sala.partida||sala.partida.estado.vencedor===null)return responder({erro:'A partida ainda não terminou.'});
+      if(sala.jogadores.length!==sala.partida.ids.length)return responder({erro:'Um jogador saiu. Volte ao lobby para preparar outra partida.'});
       if(typeof aceitar!=='boolean')return responder({erro:'Resposta inválida.'});
       sala.revanche=sala.revanche||new Set();if(aceitar)sala.revanche.add(j.id);
       if(!aceitar||sala.revanche.size===sala.jogadores.length){
+        const empatou=sala.partida.estado.vencedor===-1;
         sala.partida=null;sala.revanche=new Set();sala.jogadores.forEach(x=>{x.pronto=false;});
-        io.to(sala.codigo).emit('partida:encerrada',{empate:true,motivo:aceitar?'Todos aceitaram jogar novamente. Confiram os representantes e fiquem prontos.':'A partida empatada foi encerrada.'});
+        io.to(sala.codigo).emit('partida:encerrada',{empate:empatou,revanche:aceitar,motivo:aceitar?'Todos aceitaram jogar novamente. Confiram os representantes e fiquem prontos.':'A partida foi encerrada.'});
         await persistir(sala);publicar(sala);
       }else{await persistir(sala);io.to(sala.codigo).emit('partida:revanche',{votos:sala.revanche.size,total:sala.jogadores.length});}
       responder({ok:true});

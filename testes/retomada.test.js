@@ -12,10 +12,10 @@ async function ambiente(t,store=memoria(),opcoes={}){
  t.after(fechar);
  return {store,controle,fechar,async cliente(){const c=conectar('http://127.0.0.1:'+servidor.address().port,{transports:['websocket'],reconnection:false});clientes.push(c);await once(c,'connect');return c;}};
 }
-async function duelo(a){
+async function duelo(a,modo='multiplayer'){
  const host=await a.cliente(),amigo=await a.cliente(),sa=esperar(host,'sessao');
- const criado=await pedir(host,'sala:criar',{modo:'multiplayer',nome:'A',tamanhoBaralho:20}),tokenA=await sa,sb=esperar(amigo,'sessao');
- assert((await pedir(amigo,'sala:entrar',{modo:'multiplayer',nome:'B',codigo:criado.sala.codigo})).ok);const tokenB=await sb;
+ const criado=await pedir(host,'sala:criar',{modo,nome:'A',tamanhoBaralho:20}),tokenA=await sa,sb=esperar(amigo,'sessao');
+ assert((await pedir(amigo,'sala:entrar',{modo,nome:'B',codigo:criado.sala.codigo})).ok);const tokenB=await sb;
  await pedir(host,'sala:pronto',true);await pedir(amigo,'sala:pronto',true);
  const estados=[esperar(host,'partida:estado'),esperar(amigo,'partida:estado')];assert((await pedir(host,'partida:iniciar',{})).ok);const visoes=await Promise.all(estados);
  return {host,amigo,tokenA,tokenB,codigo:criado.sala.codigo,visoes};
@@ -75,6 +75,30 @@ test('sair após o resultado preserva o tabuleiro e a retomada de quem continua 
  const pausa=esperar(d.amigo,'partida:pausa');d.amigo.emit('partida:sincronizar');
  assert.equal((await pausa).pausada,false);
  assert((await pedir(d.amigo,'sala:sair',{})).ok);assert(!a.controle.salas.has(d.codigo));
+});
+for(const modo of ['multiplayer','coop'])for(const vencedor of [0,1,-1])test(`revanche após resultado ${vencedor} no ${modo} exige todos e volta à mesma sala`,{timeout:12000},async t=>{
+ const a=await ambiente(t),d=await duelo(a,modo),sala=a.controle.salas.get(d.codigo);
+ assert((await pedir(d.host,'partida:revanche',true)).erro,'rejeita durante partida');
+ sala.partida.estado.vencedor=vencedor;
+ const anterior=sala.partida.salvar(),votou=esperar(d.amigo,'partida:revanche');
+ assert((await pedir(d.host,'partida:revanche',true)).ok);assert.equal((await votou).votos,1);
+ assert((await pedir(d.host,'partida:revanche',true)).ok);assert.equal(sala.revanche.size,1);
+ assert.deepEqual(sala.partida.salvar(),anterior,'preserva tabuleiro enquanto aguarda');
+ assert.equal(a.store.dados.get(d.codigo).revanche.length,1);
+ const fim=esperar(d.host,'partida:encerrada'),lobby=esperar(d.amigo,'sala',x=>!x.emPartida);
+ assert((await pedir(d.amigo,'partida:revanche',true)).ok);assert((await fim).revanche);
+ const nova=await lobby;assert.equal(nova.codigo,d.codigo);assert(nova.jogadores.every(j=>!j.pronto));
+ assert.equal(sala.partida,null);assert.equal(a.store.dados.get(d.codigo).partida,null);
+ await pedir(d.host,'sala:pronto',true);await pedir(d.amigo,'sala:pronto',true);
+ assert((await pedir(d.host,'partida:iniciar',{})).ok);assert.equal(sala.partida.revisao,0);
+ assert(sala.partida.estado.jogadores.every(j=>j.derrotados===0&&j.mao.length===3));
+});
+test('revanche fica indisponível se alguém voltar ao lobby antes da confirmação',{timeout:12000},async t=>{
+ const a=await ambiente(t),d=await duelo(a),sala=a.controle.salas.get(d.codigo);sala.partida.estado.vencedor=0;
+ assert((await pedir(d.amigo,'partida:revanche',true)).ok);
+ const cancelou=esperar(d.amigo,'partida:revanche',x=>x.indisponivel);
+ assert((await pedir(d.host,'sala:sair',{})).ok);assert((await cancelou).indisponivel);
+ assert((await pedir(d.amigo,'partida:revanche',true)).erro);assert(sala.partida);
 });
 test('armazenamento MySQL usa parâmetros e serializa atualizações na ordem',async()=>{
  const linhas=new Map(),chamadas=[];const pool={async query(sql,args){chamadas.push({sql,args});if(sql.startsWith('SELECT'))return [[...linhas].map(([codigo,estado])=>({codigo,estado}))];if(sql.startsWith('INSERT'))linhas.set(args[0],args[1]);if(sql.startsWith('DELETE'))linhas.delete(args[0]);return [[]];}};

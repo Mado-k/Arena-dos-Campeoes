@@ -22,7 +22,14 @@
         timeout(){return this;},
         emit(nome,dados,cb){
             if(nome==='partida:sincronizar'){mostrar();return;}
-            if(nome==='partida:revanche'){voltar();cb?.(null,{ok:true});return;}
+            if(nome==='partida:revanche'){
+                if(!partida||partida.estado.vencedor===null){cb?.(null,{erro:'A partida ainda não terminou.'});return;}
+                if(!dados){voltar();cb?.(null,{ok:true});return;}
+                const reiniciar=()=>{sessao++;clearTimeout(timer);mesa.limpar();$('comecar-local').click();cb?.(null,{ok:true});};
+                if(modo==='pessoas')confirmarRevanche(aceitou=>{if(aceitou)reiniciar();else cb?.(null,{erro:'Revanche não aceita. Você pode consultar o tabuleiro ou voltar ao lobby.'});});
+                else reiniciar();
+                return;
+            }
             if(nome!=='partida:acao'||!partida)return;
             const res=partida.agir('local'+humanoAtual,dados);
             if(res.ok)proximo();
@@ -30,6 +37,22 @@
         }
     };
     const mesa=criarMesaOnline(transporte,{compartilhada:true,aoMostrar(){$('config-local').hidden=true;document.body.classList.add('em-partida');},aoSair:voltar});
+    function confirmarRevanche(concluir){
+        const dialogo=document.createElement('dialog');dialogo.className='escolha-online resultado-partida';
+        dialogo.setAttribute('aria-label','Confirmar revanche');
+        const titulo=document.createElement('h2'),texto=document.createElement('p');
+        texto.textContent='Passe o dispositivo para este jogador confirmar se deseja jogar novamente.';
+        const aceitar=document.createElement('button'),recusar=document.createElement('button');
+        aceitar.type=recusar.type='button';aceitar.className='btn primario';recusar.className='btn';
+        aceitar.textContent='Aceitar revanche';recusar.textContent='Não jogar';
+        let indice=0;
+        const atualizar=()=>{titulo.textContent=partida.estado.jogadores[indice].nome+': aceita a revanche?';};
+        function terminar(aceitou){dialogo.close();dialogo.remove();concluir(aceitou);}
+        aceitar.onclick=()=>{if(++indice===partida.ids.length)terminar(true);else atualizar();};
+        recusar.onclick=()=>terminar(false);dialogo.addEventListener('cancel',evento=>{evento.preventDefault();terminar(false);});
+        const botoes=document.createElement('div');botoes.className='resultado-botoes';botoes.append(aceitar,recusar);
+        dialogo.append(titulo,texto,botoes);document.body.append(dialogo);atualizar();dialogo.showModal();
+    }
     const representantes=()=>cartas.filter(c=>Motor.norm(c.classe)==='representante');
     function resumo(){
         if(!modo)return;

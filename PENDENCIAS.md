@@ -117,9 +117,12 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
-- [x] Janela de vitória/derrota no Local, multiplayer e co-op, com Ver tabuleiro
-  e Voltar ao lobby. O resultado pode ser reaberto; sair após o fim não fecha
+- [x] Janela de vitória/derrota/empate no Local, multiplayer e co-op, com Ver tabuleiro,
+  Voltar ao lobby e Jogar novamente. O resultado pode ser reaberto; sair após o fim não fecha
   o tabuleiro dos demais jogadores online.
+- [x] Revanche após vitória, derrota ou empate. No online exige todos os humanos e
+  retorna à mesma sala; no Local entre pessoas exige confirmação de cada jogador.
+  Contra máquinas no Local, reinicia com a mesma configuração.
 - [x] Local substitui Offline: 1 a 4 humanos contra igual número de máquinas, ou
   2 a 4 humanos entre si no mesmo dispositivo. Mãos separadas e cortina na troca.
 - [x] No Local entre três ou quatro pessoas, todos contra todos: perde quem tiver
