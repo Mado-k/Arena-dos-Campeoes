@@ -754,3 +754,6 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 @media (max-width: 560px) {
     .topo nav a.destaque { padding: 5px 10px; }
 }
+
+/* Um convite visível antes dos modos de partida habituais. */
+.modo-iniciante { grid-column:1 / -1; border-color:var(--ouro); }

@@ -5,6 +5,13 @@
 Arena dos Campeões é um jogo de cartas, desenvolvido por um grupo movido por mim e mais 2 amigos do Ensino Médio.
 Arena dos Campeões is a card game, made by me and a group of more 2 friends of mine at highschool.
 
+As cartas são inspiradas em memes em geral, nacionalidades e culturas, críticas
+sociais relacionadas ao meio ambiente e mitologias. Esses temas orientam a criação
+de personagens, nomes, artes e habilidades do jogo.
+
+The cards draw inspiration from memes, nationalities and cultures, social commentary
+on environmental issues, and mythologies.
+
 Nós usamos a linguagem MySQL para armazenar as cartas do nosso jogo e JavaScript, para executar o nosso jogo com fluidez em uma aplicação web.
 
 We used MySQL language to storage the cards of our game and JavaScript, to execute our game clean at a web application.
@@ -472,3 +479,113 @@ buscar até duas; se houver só uma, ela é suficiente para a Grávida permanece
 Sem nenhuma metálica no baralho de compra, a própria Grávida é descartada. Continua
 exigindo uma criatura vinculada e espaço em apoio. Anulação impede a habilidade
 de entrada; remover a anulação depois não dispara a busca retroativamente.
+
+### Imagem das cartas no tabuleiro completo (2.500)
+
+As cartas da mesa completa passam a 120 × 200 pixels, com área de imagem de
+84 pixels de altura (antes, 27,5). Imagens cadastradas são exibidas inteiras,
+sem recorte; cartas sem imagem continuam mostrando sua inicial. Os campos,
+mãos, espaços vazios e pilhas acompanham o tamanho, com assentos de 400 × 1000
+pixels. Pilhas têm 90 × 150 pixels. A orientação normal dos textos é preservada,
+inclusive nas laterais, e o foco no duelo mantém suas dimensões anteriores.
+
+### Orientação completa e retorno da visualização (2.510)
+
+Todos os textos dos campos seguem a orientação normal da página: nomes,
+representantes, pontuação, zonas, mãos, botões, equipamentos e contagens.
+Os campos são espelhados pela organização das zonas, sem girar o painel inteiro.
+Nas quatro posições individuais, os campos laterais se organizam horizontalmente
+em direção ao centro. Só as artes das cartas acompanham a posição do participante.
+
+A visualização guarda a rolagem da página, da janela da arena e das fileiras das
+mãos durante seleções, jogadas, atualizações e abertura/fechamento de diálogos.
+Ao passar a vez para uma máquina, espera o aviso desaparecer e acompanha seu
+campo. Depois da sequência de máquinas, restaura a posição anterior quando a vez
+volta a uma pessoa, ou quando a partida termina. Se o usuário navegar manualmente,
+o acompanhamento e o retorno pendentes são cancelados. Pausa, saída e nova partida
+também cancelam os temporizadores. Atualizações que apenas repetem o estado de
+presença não apagam a posição guardada. Posições são limitadas naturalmente à
+área disponível se a remoção de campos eliminados reduzir o tabuleiro.
+No Local com passagem do dispositivo, cada humano guarda sua posição de
+visualização separadamente e a retoma após confirmar sua vez. A mesa privada
+continua oculta durante a passagem; sair ou começar outra partida limpa as posições.
+
+### Confirmação de turno, arenas e iniciantes (2.535)
+
+Em todos os modos, cada nova vez humana abre “É a sua vez”. O aviso só fecha em
+OK; Escape e a passagem do tempo não confirmam. Enquanto ele estiver aberto, a
+mesa não envia ações do jogador. Os demais clientes recebem o aviso temporário de
+encerramento. A confirmação é local à interface e não altera a revisão da partida.
+
+No 2v2, Arena 1 contém os participantes 0 e 1; Arena 2 contém 2 e 3. Os aliados
+continuam sendo 0/2 e 1/3. O sorteio escolhe uma das arenas e seu primeiro
+participante; os dois de cada arena jogam em sequência antes da próxima. Ordem,
+arena inicial e identificadores ficam no estado compartilhado e persistido. O Local
+também inicia corretamente se a primeira vez sorteada for de uma máquina.
+O adversário espelhado é o alvo inicial; a escolha de outro adversário continua
+permitida. Os destaques refletem quem joga e o alvo atual, inclusive no co-op,
+sem acrescentar regras definitivas a esse modo.
+
+`iniciantes.html` oferece uma partida ensaiada com cinco cartas únicas por lado,
+incluindo três na mão inicial. O jogador recebe Marie Curie Zumbi, Fuleco,
+Batsopra Bolha, Cobertor e Zord Fenrir; a máquina começa com Gaiamon, Hércules e
+Doce Hera na mão, e tem duas cartas de reserva. São atributos reais do catálogo.
+O roteiro ensina invocação, apoio, compra, combinação de defesa, arma, ataque e
+vitória por três campeões em 13 passos curtos. A máquina faz jogadas ensaiadas
+legais; o jogador não pode gastar ações fora da etapa sugerida. Seguir o roteiro
+garante sua vitória sem alterar atributos ou inventar cartas. Não há ranking,
+persistência ou efeito sobre partidas normais. O mínimo e os totais dos lobbies
+normais continuam iguais; o conjunto de dez cartas é exclusivo do treino.
+
+O destaque indica a carta ou botão da etapa. “Mostrar onde clicar” é uma navegação
+solicitada pelo jogador; os demais deslocamentos mantêm as regras de retorno.
+Jogar novamente reinicia o roteiro. O treino é acessível na homepage e nas duas
+extremidades do tutorial. As inspirações temáticas do jogo estão descritas no
+início deste README.
+
+### Ações no campo, pilhas e eliminação voluntária (2.560)
+
+O contador fica imediatamente ao lado do nome em cada campo. Mostra as ações
+restantes do participante da vez e zero disponíveis para quem aguarda, mantendo
+o total por turno no indicador. O contador global foi removido da barra superior.
+As próprias pilhas são botões acessíveis por clique, toque e teclado: compra
+despacha a ação normal `comprar`; descarte abre a consulta pública sem ação, mesmo
+vazio. Pilhas adversárias de compra continuam sem interação e sem identidades.
+Os botões Comprar carta e Ver descarte continuam como alternativas.
+
+`eliminar` usa `Motor.eliminarCarta`, custa uma ação e aceita somente a criatura
+do próprio dono em batalha durante sua vez. O cliente pede confirmação; cancelar
+não gasta ação. A morte aplica descarte de equipamentos e auxiliares vinculados,
+fim de Pandora e heranças normais, com pontuação e encerramento automáticos.
+Campeão soma uma derrota ao próprio dono; besta não pontua. A terceira derrota
+pode eliminar o dono, encerrar o duelo ou avançar o mata-mata. A ação é validada,
+publicada e persistida pelo controlador como as demais. A IA normal não recebe
+uma nova preferência por eliminar suas criaturas.
+
+O treino agora tem 18 etapas e usa Guss Deus do Design no lugar de Fenrir como
+reserva. Ensina compra clicando na pilha, contador junto ao nome, eliminação da
+própria Marie Curie, consulta gratuita de seus quatro descartes e entrada de Guss.
+Termina com dois ataques e uma vitória real por três campeões adversários, com
+uma derrota própria. Continua com dez cartas únicas e atributos reais. A etapa
+de consulta é uma confirmação local do guia, sem mudar ações ou revisão do jogo.
+
+No ajuste visual 2.565, o indicador junto ao nome tem fonte maior e em negrito,
+fundo e borda contrastantes e marcadores de 12 pixels. O participante da vez recebe
+fundo e borda dourados; marcadores preenchidos indicam ações restantes e os vazados,
+ações gastas. As regras e a contagem permanecem iguais em todos os modos.
+No ajuste 2.570, os selos de vez e confronto compartilham a mesma fonte, peso,
+altura mínima e espaçamento interno do contador de ações, preservando suas cores.
+No ajuste 2.575, o nome usa o mesmo tamanho de fonte, sem fundo ou moldura, e o
+selo de vez passa à paleta escura e dourada do contador da vez. “Joga agora” mantém
+o verde e o tamanho padronizado.
+No ajuste 2.580, texto, números, marcadores e espaçamentos do indicador de
+campeões derrotados foram ampliados proporcionalmente em 20%. A contagem não mudou.
+
+### Tutorial revisado (2.585)
+
+O tutorial foi conferido com os controles das páginas de jogo e organizado por
+assunto no índice. Abrange turno com OK, treino de 18 etapas, modos e lobby,
+representantes, ações e pilhas, combate e eliminação, arenas e alvos, habilidades
+e estados, máquinas e dificuldades, mata-mata e espectadores, retomada e
+visualização, catálogo, changelog e resultados/revanche. As habilidades completas
+de cada carta continuam disponíveis pelo catálogo e pelo painel da partida.

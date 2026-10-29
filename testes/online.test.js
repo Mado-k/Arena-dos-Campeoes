@@ -63,6 +63,7 @@ test('equipamentos recebem estado de habilidade; perguntas não gastam ações',
   j.campo = [campeao]; campeao.equip = [arma];
   assert.equal(p.visao('p0').jogadores[0].campo[0].equip[0].habilidade.tipo, 'ativa');
   const busca = selecionar('n035'); j.campo = [busca];
+  const opcoesBusca=[selecionar('n012'),selecionar('n018')];j.baralho.push(...opcoesBusca);
   const antes = structuredClone(p.estado);
   const res = p.agir('p0', { tipo: 'habilidade', uid: busca.uid, revisao: 0 });
   assert(res.pergunta);

@@ -4,9 +4,10 @@
     const $=id=>document.getElementById(id),eventos=new Map();
     let modo=null,cartas=(window.CARTAS_OFFLINE||[]).map(Motor.normalizarCarta),partida=null,humanoAtual=0,timer,sessao=0,ultimoTurnoIA=null;
     const configuracoesHumanos=[],representantesDasMaquinas=new Map();
+    const vistasHumanos=new Map();
     let carregandoCartas=true;
     const disparar=(nome,dados)=>{for(const fn of eventos.get(nome)||[])fn(dados);};
-    function voltar(){sessao++;clearTimeout(timer);partida=null;mesa.limpar();$('passar-local').hidden=true;$('config-local').hidden=false;document.body.classList.remove('em-partida');window.scrollTo(0,0);}
+    function voltar(){sessao++;clearTimeout(timer);vistasHumanos.clear();partida=null;mesa.limpar();$('passar-local').hidden=true;$('config-local').hidden=false;document.body.classList.remove('em-partida');window.scrollTo(0,0);}
     function mostrar(){if(partida)disparar('partida:estado',partida.visao('local'+humanoAtual));}
     function proximo(){
         if(!partida)return;
@@ -18,7 +19,7 @@
             mostrar();const geracao=sessao;
             timer=setTimeout(()=>{if(geracao!==sessao||!partida)return;partida.passoComputador();proximo();},primeira?RITMO_ARENA.inicioIA:RITMO_ARENA.entreAcoesIA+Math.random()*250);return;
         }
-        if(indice!==humanoAtual){humanoAtual=indice;mesa.limpar();$('vez-local').textContent='Vez de '+partida.estado.jogadores[indice].nome;$('passar-local').hidden=false;}
+        if(indice!==humanoAtual){vistasHumanos.set(humanoAtual,mesa.capturarVista());humanoAtual=indice;mesa.limpar();$('vez-local').textContent='Vez de '+partida.estado.jogadores[indice].nome;$('passar-local').hidden=false;}
         else mostrar();
     }
     const transporte={
@@ -142,15 +143,15 @@
     }
     function escolher(tipo){modo=tipo;for(const t of ['maquina','pessoas'])$('modo-'+t).setAttribute('aria-pressed',String(t===tipo));$('opcoes-local').hidden=false;$('campo-dificuldade-local').hidden=tipo!=='maquina';atualizarFormato();}
     $('modo-maquina').onclick=()=>escolher('maquina');$('modo-pessoas').onclick=()=>escolher('pessoas');$('quantidade-local').onchange=formularios;$('maquinas-equipe-local').onchange=formularios;$('baralho-local').onchange=resumo;$('formato-local').onchange=atualizarFormato;
-    $('confirmar-local').onclick=()=>{$('passar-local').hidden=true;mostrar();};
+    $('confirmar-local').onclick=()=>{$('passar-local').hidden=true;mostrar();mesa.restaurarVista(vistasHumanos.get(humanoAtual));};
     $('comecar-local').onclick=()=>{
         $('erro-local').textContent='';
         try{
             const jogadores=[...$('participantes-local').querySelectorAll('fieldset')].map((f,i)=>({id:'local'+i,nome:f.querySelector('input').value.trim()||'Jogador '+(i+1),representante:f.querySelector('select').value||null}));
             partida=new Partida(jogadores,cartas,formato()==='coop'?'coop':'local',Number($('baralho-local').value),{dificuldade:$('dificuldade-local').value,formato:formato()==='2v2'?'2v2':'livre',maquinas:formato()==='coop'?0:maquinas(),...(formato()==='coop'?{vagasEquipe:tamanhoEquipe(),representantesMaquinas:chavesMaquinas().map(representanteMaquina)}:{})});
-            humanoAtual=partida.estado.turno;sessao++;
-            if(jogadores.length>1){mesa.limpar();$('config-local').hidden=true;$('vez-local').textContent='Vez de '+partida.estado.jogadores[humanoAtual].nome;$('passar-local').hidden=false;}
-            else mostrar();
+            vistasHumanos.clear();humanoAtual=partida.estado.jogadores[partida.estado.turno].maquina?0:partida.estado.turno;sessao++;
+            if(jogadores.length>1&&!partida.estado.jogadores[partida.estado.turno].maquina){mesa.limpar();$('config-local').hidden=true;$('vez-local').textContent='Vez de '+partida.estado.jogadores[humanoAtual].nome;$('passar-local').hidden=false;}
+            else proximo();
         }catch(err){partida=null;$('erro-local').textContent=err.message;}
     };
     (async()=>{

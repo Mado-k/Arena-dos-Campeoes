@@ -1,7 +1,7 @@
 // Avisos compartilhados pelas mesas offline e online.
 (function () {
     'use strict';
-    window.criarAvisosTurno = function (aoEncerrar) {
+    window.criarAvisosTurno = function (aoEncerrar, { aoConfirmar = () => {}, preservarVista = acao => acao() } = {}) {
         const janela = document.createElement('dialog');
         janela.className = 'aviso-acoes';
         janela.setAttribute('aria-label', 'Suas ações acabaram');
@@ -20,10 +20,26 @@
         mensagem.hidden = true;
         mensagem.setAttribute('role', 'status');
         mensagem.setAttribute('aria-live', 'polite');
-        document.body.append(janela, mensagem);
-        let ultimoAvisado = null, timer;
+        const inicio=document.createElement('dialog');
+        inicio.className='aviso-acoes aviso-sua-vez';inicio.setAttribute('aria-label','É a sua vez');
+        const tituloInicio=document.createElement('h2');tituloInicio.textContent='É a sua vez!';
+        const textoInicio=document.createElement('p'),ok=document.createElement('button');
+        ok.type='button';ok.className='btn primario';ok.textContent='OK';
+        inicio.append(tituloInicio,textoInicio,ok);
+        inicio.addEventListener('cancel',evento=>evento.preventDefault());
+        document.body.append(janela, mensagem, inicio);
+        let ultimoAvisado = null, timer, turnoConfirmado=null, turnoPendente=null;
+        ok.addEventListener('click',()=>preservarVista(()=>{turnoConfirmado=turnoPendente;inicio.close();aoConfirmar();}));
         return {
-            atualizar({ acoes, suaVez, numTurno, vencedor, ocupado = false }) {
+            atualizar({ acoes, suaVez, numTurno, vencedor, ocupado = false, nome = '' }) {
+                if(!suaVez||vencedor!==null){inicio.close();turnoPendente=null;}
+                else if(acoes>0&&turnoConfirmado!==numTurno){
+                    clearTimeout(timer);mensagem.hidden=true;janela.close();
+                    turnoPendente=numTurno;
+                    tituloInicio.textContent=nome&&nome!=='Você'?`É a sua vez, ${nome}!`:'É a sua vez!';
+                    textoInicio.textContent=`Você tem ${acoes} ${acoes===1?'ação disponível':'ações disponíveis'}. Confirme para começar a jogar.`;
+                    if(!inicio.open){inicio.showModal();ok.focus({preventScroll:true});}
+                }
                 const acabou = suaVez && acoes === 0 && vencedor === null;
                 encerrar.disabled = ocupado;
                 if (!acabou) janela.close();
@@ -39,8 +55,10 @@
                 mensagem.hidden = false;
                 timer = setTimeout(() => { mensagem.hidden = true; }, RITMO_ARENA.avisoTurno);
             },
+            aguardandoConfirmacao(){return inicio.open;},
             limpar() {
                 janela.close();
+                inicio.close();turnoConfirmado=null;turnoPendente=null;
                 ultimoAvisado = null;
                 mensagem.hidden = true;
                 clearTimeout(timer);

@@ -74,7 +74,7 @@ test('2v2 solo coloca uma máquina aliada, duas adversárias e premia a equipe c
  assert(e.equipes2v2&&e.cooperativo&&!e.todosContraTodos);assert.equal(e.torneio,null);
  assert.deepEqual(e.equipes,[0,1,0,1]);assert.deepEqual(M.adversarios(e,0),[1,3]);
  assert.throws(()=>new Partida(pessoas(1),cartas,'local',20,{formato:'2v2',maquinas:4}),/quatro/);
- campo(p,0);campo(p,1,0);campo(p,3,0);e.jogadores[1].derrotados=e.jogadores[3].derrotados=2;
+ e.turno=0;campo(p,0);campo(p,1,0);campo(p,3,0);e.jogadores[1].derrotados=e.jogadores[3].derrotados=2;
  assert(p.agir('p0',{tipo:'atacar',alvo:2,revisao:0}).erro);
  assert(p.agir('p0',{tipo:'atacar',alvo:1,revisao:0}).ok);assert.equal(p.estado.vencedor,null);
  assert(p.agir('p0',{tipo:'atacar',alvo:3,revisao:1}).ok);assert.equal(p.estado.vencedor,0);

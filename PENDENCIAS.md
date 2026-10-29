@@ -194,7 +194,7 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 - [x] Botão Encerrar turno maior e destacado durante a vez, com brilho suave ao acabar as ações e respeito a movimento reduzido.
 
-## Preparação das equipes no Local — rascunho 2.460
+## Preparação das equipes no Local — 2.460
 
 - [x] Quantidade inicial de cartas em cada ficha, abaixo do bônus dos humanos.
 - [x] Adversárias acima das pessoas, com nome, representante e cartas; controles junto à equipe correspondente.
@@ -228,3 +228,69 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 - [x] Bloco de texto das cartas na orientação normal da página, preservando posições e artes.
 - [x] Grávida dos Robôs passiva ao entrar em apoio, com busca automática sem segunda ação; sem metálica, a própria auxiliar é descartada.
 - [x] Busca respeita Fuleco, anulação e vínculo com criatura; não repete em turnos seguintes.
+
+## Imagem das cartas — 2.500
+
+- [x] Cartas do tabuleiro completo ampliadas para 120 × 200, com área de imagem de 84 pixels de altura.
+- [x] Imagens inteiras, sem recorte, com campos e pilhas ajustados e leitura na orientação da página.
+- [x] Foco no duelo preservado; prévia preparada para revisão.
+
+O catálogo público consultado ainda não contém imagens cadastradas. As cartas
+continuam exibindo suas iniciais até que as artes sejam adicionadas.
+
+## Orientação e retorno da visualização — 2.510
+
+- [x] Todos os textos dos campos na orientação da página, incluindo nomes, rótulos, botões, equipamentos e contagens.
+- [x] Campos espelhados por layout; artes mantêm a orientação para o centro.
+- [x] Posição da página, da arena e das mãos preservada nas atualizações.
+- [x] Acompanhamento automático começa após o aviso e retorna ao ponto anterior quando a vez volta a uma pessoa.
+- [x] Navegação manual tem prioridade e cancela deslocamentos pendentes; limpeza e pausa cancelam temporizadores.
+- [x] No Local entre pessoas, posição de cada participante guardada separadamente e restaurada após a passagem do dispositivo.
+
+
+## Turnos, arenas e iniciantes — 2.535
+
+- [x] “É a sua vez” com OK obrigatório nos modos Local, multiplayer, co-op e treino; demais participantes mantêm o aviso de encerramento.
+- [x] Identificação das arenas 2v2, sorteio inicial e ordem agrupada por arena, incluindo início por máquinas no Local.
+- [x] Destaque do jogador e adversário atual no 2v2 e co-op, preservando a escolha de alvo existente.
+- [x] Partida para iniciantes com dez cartas únicas, atributos reais, 13 etapas guiadas e vitória ensaiada.
+- [x] Links na homepage e no início/final do tutorial; README atualizado com as inspirações das cartas.
+- [x] Testes do roteiro, conservação das dez cartas, sorteio das arenas e restauração de estado.
+
+No 2v2, a escolha de alvo existente é preservada. Regras definitivas do co-op
+continuam reservadas para etapa futura.
+
+## Ações, pilhas e eliminação — 2.560
+
+- [x] Contador de ações junto ao nome de todos os participantes, inclusive máquinas; removido da barra global.
+- [x] Compra direta pela pilha com custo de uma ação, consulta gratuita do descarte e alternativas de teclado/botões.
+- [x] Eliminação voluntária apenas da criatura do próprio dono em batalha, na sua vez, com uma ação e confirmação.
+- [x] Campeão soma derrota ao dono; besta não pontua; equipamentos e auxiliares vinculados descartados automaticamente.
+- [x] Efeitos de morte e terceira derrota aplicam regras normais; servidor reverte a ação se a gravação falhar.
+- [x] Treino com 18 etapas pratica essas interações e substitui Marie por Guss, mantendo dez cartas e vitória garantida pelo roteiro.
+
+
+## Visibilidade das ações — 2.565
+
+- [x] Indicadores maiores, números em negrito, fundo contrastante e marcadores ampliados.
+- [x] Destaque dourado para o participante da vez, mantendo o contador junto ao nome.
+
+## Selos da vez — 2.570
+
+- [x] “Sua vez” e “Joga agora” ampliados para a mesma tipografia e altura do indicador de ações.
+
+## Nome e cor da vez — 2.575
+
+- [x] Nome apenas com o mesmo tamanho de fonte dos indicadores, sem fundo ou moldura.
+- [x] “Sua vez” na paleta escura e dourada do contador; “Joga agora” mantém o verde.
+
+## Pontuação legível — 2.580
+
+- [x] “Campeões derrotados”, números, marcadores e espaçamentos ampliados em 20%, sem mudar as regras.
+
+## Revisão do tutorial — 2.585
+
+- [x] Conferidos controles da mesa, pilhas, eliminação, indicadores, resultados e retorno da visualização.
+- [x] Incluídos OK de início de turno, treino de 18 etapas, arenas, seleção de alvos e dificuldades.
+- [x] Completadas prontidão, convite, reconexão, espectadores, habilidades, estados e representantes.
+- [x] Incluídos catálogo, filtros, detalhes e changelog; índice ampliado com os assuntos disponíveis.

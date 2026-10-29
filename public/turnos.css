@@ -31,3 +31,4 @@
     pointer-events: none;
 }
 .aviso-turno[hidden] { display: none; }
+.aviso-sua-vez .btn { min-width:120px; min-height:48px; }

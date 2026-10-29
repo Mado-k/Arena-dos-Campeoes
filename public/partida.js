@@ -10,9 +10,10 @@ const ACOES = {
   apoio: (e, d) => Motor.colocarApoio(e, d.uid),
   equipar: (e, d) => Motor.equipar(e, d.uid),
   atacar: (e) => Motor.atacar(e),
+  eliminar: (e, d) => Motor.eliminarCarta(e,d.uid),
   habilidade: (e, d) => Motor.executarHabilidade(e, d.uid, d.escolha)
 };
-const ROTULOS = { comprar: 'comprou uma carta', encerrar: 'encerrou o turno', invocar: 'colocou uma criatura em batalha', apoio: 'colocou um auxiliar em apoio', equipar: 'equipou uma carta', atacar: 'atacou', habilidade: 'executou uma habilidade' };
+const ROTULOS = { comprar: 'comprou uma carta', encerrar: 'encerrou o turno', invocar: 'colocou uma criatura em batalha', apoio: 'colocou um auxiliar em apoio', equipar: 'equipou uma carta', atacar: 'atacou', eliminar:'eliminou sua criatura em batalha', habilidade: 'executou uma habilidade' };
 
 class Partida {
   static tamanhoCoop(total, humanos) {
@@ -61,10 +62,11 @@ class Partida {
       config.comeca = 0;
       config.ordemTurnos = Array.from({length:tamanhoEquipe},(_,i)=>[i,i+tamanhoEquipe]).flat();
     } else if (formato === '2v2') config.equipes = [0,1,0,1];
-    if (this.local && maquinas) config.comeca = 0;
+    if (this.local && maquinas && formato!=='2v2') config.comeca = 0;
     this.estado = Motor.novoJogo(config, cartas);
     this.revisao = 0;
     this.log = ['Partida iniciada. Cada jogador recebe três cartas e tem duas ações por turno.'];
+    if(this.estado.arenas2v2)this.log.push(`Arena ${this.estado.arenaInicial} começa por sorteio. Os dois participantes de cada arena jogam em sequência.`);
   }
 
   agir(id, dados) {
@@ -77,7 +79,7 @@ class Partida {
     if (this.estado.jogadores[indice].eliminado) return { erro: 'Você foi eliminado. Acompanhe a partida até o fim.' };
     if (this.estado.torneio?.aguardando.includes(indice)) return { erro: 'Você aguarda o próximo duelo do mata-mata.' };
     if (indice !== this.estado.turno) return { erro: 'Aguarde seu turno.' };
-    if (['invocar', 'apoio', 'equipar', 'habilidade'].includes(dados.tipo)) {
+    if (['invocar', 'apoio', 'equipar', 'habilidade', 'eliminar'].includes(dados.tipo)) {
       if (!Number.isSafeInteger(dados.uid)) return { erro: 'Carta inválida.' };
       const loc = Motor.localizar(this.estado, dados.uid);
       if (!loc || loc.dono !== indice) return { erro: 'Escolha uma carta sua.' };
@@ -98,7 +100,7 @@ class Partida {
     this.revisao++;
     // Logs internos de habilidades podem citar cartas compradas/escolhidas no baralho.
     // O registro público descreve a ação, sem revelar essas informações privadas.
-    this.log.push(resposta.registroCombate || resposta.registroHabilidade || `${this.estado.jogadores[indice].nome} ${ROTULOS[dados.tipo]}.`);
+    this.log.push(resposta.registroCombate || resposta.registroEliminacao || resposta.registroHabilidade || `${this.estado.jogadores[indice].nome} ${ROTULOS[dados.tipo]}.`);
     if (this.estado.vencedor === null && (this.estado.jogadores[this.estado.turno].eliminado || this.estado.torneio?.aguardando.includes(this.estado.turno))) Motor.encerrarTurno(this.estado);
     this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
     if (this.estado.motivoEmpate) this.log.push(this.estado.motivoEmpate);
@@ -150,7 +152,7 @@ class Partida {
     const e = this.estado;
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
-      voce, cooperativo: e.cooperativo, equipes2v2: Boolean(e.equipes2v2), torneio: e.torneio ? structuredClone(e.torneio) : null, todosContraTodos: Boolean(e.todosContraTodos), dificuldade: this.dificuldade, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
+      voce, cooperativo: e.cooperativo, equipes2v2: Boolean(e.equipes2v2), arenas2v2:e.arenas2v2?structuredClone(e.arenas2v2):null, arenaInicial:e.arenaInicial??null, torneio: e.torneio ? structuredClone(e.torneio) : null, todosContraTodos: Boolean(e.todosContraTodos), dificuldade: this.dificuldade, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
       acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, danoPandora: e.danoPandora || 10, pandoraUsos: e.pandoraUsos || 0, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
         nome: j.nome, bonusCampeao: j.bonusCampeao || 0, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,

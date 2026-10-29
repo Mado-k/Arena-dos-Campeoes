@@ -24,6 +24,7 @@
                 <p class="selo">Aprenda a jogar</p>
                 <h1>Tutorial</h1>
                 <p class="suave sub">Regras, funcionamento da partida e o que cada botão faz.</p>
+                <a class="btn primario" href="iniciantes.html">Partida para iniciantes</a>
             </div>
 
             <nav class="indice" aria-label="Neste guia">
@@ -36,7 +37,14 @@
                 <a href="#cj-tela">A tela da partida</a>
                 <a href="#cj-elementos">Elementos</a>
                 <a href="#cj-preparar">Preparar a partida</a>
+                <a href="#cj-iniciantes">Partida para iniciantes</a>
+                <a href="#cj-arenas">Arenas e alvos</a>
+                <a href="#cj-maquinas">Máquinas e dificuldades</a>
+                <a href="#cj-torneio">Mata-mata e espectadores</a>
+                <a href="#cj-visualizacao">Visualização da mesa</a>
+                <a href="#cj-estados">Estados das cartas</a>
                 <a href="#cj-cartas-especiais">Cartas especiais</a>
+                <a href="#cj-catalogo">Catálogo e changelog</a>
                 <a href="#cj-resultado">Resultado e revanche</a>
             </nav>
 
@@ -49,14 +57,17 @@
 
             <article id="cj-turno" class="bloco">
                 <h3>2. O seu turno: 2 ações</h3>
+                <p>Quando sua vez chega, aparece <strong>“É a sua vez”</strong>. Clique em <strong>OK</strong> para começar: o aviso permanece até a confirmação. Os demais jogadores veem o encerramento do turno anterior. No Local entre pessoas, confirme primeiro <strong>Mostrar minha mão</strong> ao receber o dispositivo e depois OK.</p>
                 <p>Em cada turno você pode fazer <strong>duas ações</strong>. Cada ação gasta uma das duas e pode ser:</p>
                 <div class="cartoes">
                     <div class="cartao"><h4>Atacar</h4><p>Sua criatura em batalha ataca a criatura em batalha do adversário.</p></div>
                     <div class="cartao"><h4>Comprar</h4><p>Pegue uma carta do topo do seu baralho. No Local entre pessoas e no multiplayer, quando os baralhos de todos os participantes ativos acabam, os descartes são reunidos, embaralhados e divididos igualmente. As cartas que sobrarem ficam no centro; o critério de empate é verificado antes da nova distribuição.</p></div>
                     <div class="cartao"><h4>Usar habilidade</h4><p>Selecione uma carta sua e clique em “Executar habilidade”. O jogo faz o efeito sozinho.</p></div>
                     <div class="cartao"><h4>Jogar uma carta</h4><p>Coloque em batalha, em apoio, equipe uma criatura ou lance um feitiço.</p></div>
+                    <div class="cartao"><h4>Eliminar sua criatura</h4><p>Selecione seu campeão ou besta em batalha, clique em “Eliminar carta” e confirme. Custa <strong>1 ação</strong>. A criatura, seus equipamentos e auxiliares vinculados vão ao descarte. Se for campeão, soma uma derrota na <strong>sua própria contagem</strong>; a terceira faz você perder o duelo ou ser eliminado. Bestas não alteram essa contagem.</p></div>
                 </div>
-                <p class="nota">Quando as ações acabam, clique em “Encerrar turno”. Se você tentar algo que as regras não permitem, o jogo explica o motivo e <strong>não gasta a ação</strong>.</p>
+                <p class="nota">As ações disponíveis aparecem ao lado do nome de cada participante, no próprio campo. Quem aguarda a vez mostra zero ações disponíveis agora. Quando as ações acabam, clique em “Encerrar turno”. Se você tentar algo que as regras não permitem, o jogo explica o motivo e <strong>não gasta a ação</strong>.</p>
+                <p>No contador de quem está jogando, os marcadores <strong>preenchidos</strong> representam ações restantes; os <strong>vazados</strong>, ações gastas. Você pode repetir ações permitidas, como dois ataques ou duas compras. Também pode encerrar antes de gastar todas: ações restantes não se acumulam. No treino guiado, siga a etapa indicada antes de passar a vez.</p>
             </article>
 
             <article id="cj-classes" class="bloco">
@@ -68,6 +79,7 @@
                     <div class="cartao"><h4>Item</h4><p>Equipado em campeões (1) ou bestas (até 3). Dá defesa e efeitos extras.</p></div>
                     <div class="cartao"><h4>Auxiliar</h4><p>Fica em apoio (máximo de 2) e ajuda com habilidades. Só pode ser jogado se você já tiver um campeão ou besta em batalha.</p></div>
                     <div class="cartao"><h4>Feitiço</h4><p>É lançado da mão e vai para o descarte. Seu dano, duração e limite de usos seguem a descrição da habilidade; algumas cartas podem ser recuperadas.</p></div>
+                    <div class="cartao"><h4>Representante</h4><p>Escolha opcional antes da partida. Concede os bônus descritos à sua criatura; não ocupa o campo de batalha nem funciona como a vida do jogador. Invocadores não têm uma barra de vida: a derrota é contada pelos campeões perdidos.</p></div>
                 </div>
             </article>
 
@@ -79,7 +91,7 @@
                     <li>Cada campeão carrega <strong>uma única arma</strong>.</li>
                     <li>Cada besta aceita <strong>até três itens</strong>.</li>
                     <li>É obrigatório ter um <strong>campeão ou besta em batalha antes de jogar auxiliares</strong>. Só pode haver <strong>dois auxiliares</strong> na batalha por jogador. Quando seu campeão ou besta é derrotado, <strong>os auxiliares vinculados também são derrotados e vão para o descarte</strong>.</li>
-                    <li>Depois de jogado na mesa, um campeão ou uma besta <strong>não volta para a mão</strong> (só uma habilidade pode permitir isso).</li>
+                    <li>Depois de jogado na mesa, um campeão ou uma besta <strong>não volta para a mão</strong> por uma ação comum. Kitsune 100% tem uma exceção de uso único; efeitos como a captura de Heimdall seguem a descrição própria.</li>
                     <li>Cada campeão aceita <strong>um único item</strong>.</li>
                 </ol>
             </article>
@@ -89,6 +101,7 @@
                 <p>Campeões e bestas usam <strong>ATQ</strong> (ataque) e <strong>DEF</strong> (defesa). Auxiliares não possuem vida nem recebem dano ou ataques diretos, mas podem ser removidos ou anulados por efeitos. Quando você ataca, a defesa da criatura do adversário diminui pelo seu ataque total (ataque da criatura + armas e itens + bônus de habilidades).</p>
                 <p>Se ela sobreviver, <strong>contra-ataca</strong>. Uma criatura sem defesa é derrotada e vai para o descarte. Armas e itens equipados vão junto.</p>
                 <p>No jogo, o botão de atacar já mostra quanto dano o golpe vai causar.</p>
+                <p>Se o primeiro golpe derrotar a criatura, ela não contra-ataca. Confira o <strong>Registro da partida</strong> para ver dano de ataque, dano de contra-ataque e defesa restante de ambos. Imunidades e proteções podem impedir dano ou efeitos; a descrição da carta e o registro explicam essas condições.</p>
             </article>
 
             <article id="cj-habilidades" class="bloco">
@@ -98,7 +111,9 @@
                     <div class="cartao"><h4><span class="tipo-hab passiva">● Passiva</span></h4><p>Funciona sozinha quando a situação acontece (dobro de dano contra um tipo, imunidades, dano por turno...). <strong>Não gasta ação</strong>.</p></div>
                 </div>
                 <p>A <strong>Grávida dos Robôs</strong> busca uma carta metálica automaticamente ao entrar em apoio, sem outra ação. Se não houver carta metálica no baralho de compra, a própria Grávida vai para o descarte.</p>
+                <p>Jogar ou equipar a carta continua custando uma ação. A habilidade passiva funciona sem cobrar uma ação adicional.</p>
                 <p class="nota">Efeitos em andamento (veneno, paralisia, recarga...) aparecem como etiquetas na carta. Cartas de uso único, como feitiços, são usadas direto da mão.</p>
+                <p>O botão pode ter um nome específico, como <strong>Copiar habilidade</strong> ou <strong>Buscar um campeão</strong>. Ao precisar escolher uma carta ou alvo, selecione uma opção na janela; <strong>Cancelar</strong> fecha a escolha sem executar nem gastar a ação. Recargas, limites de uso e o lugar exigido para a carta aparecem no painel. Armas e itens equipados podem ser selecionados pelo botão com <strong>“+ nome da carta”</strong> abaixo da criatura.</p>
             </article>
 
             <article id="cj-tela" class="bloco">
@@ -108,21 +123,22 @@
                     <li><strong>Mãos adversárias</strong>: mostram a quantidade de cartas viradas de costas, sem revelar identidades. As pilhas de compra também ficam de costas e desaparecem quando vazias. O botão Comprar carta fica acima da pilha, junto à mão; o descarte aparece na outra extremidade.</li>
                     <li><strong>Animações</strong>: acompanhe as cartas da compra para a mão, da mão para o campo ou apoio e para o descarte. A preferência por movimento reduzido desativa essas animações.</li>
                     <li><strong>Sua mão</strong>: só aparece depois que o jogador confirma a troca de vez (no modo Local com mais de uma pessoa).</li>
-                    <li><strong>Painel da carta</strong>: ao clicar em uma carta, você lê a descrição completa e vê os botões disponíveis.</li>
+                    <li><strong>Painel da carta</strong>: ao clicar em uma carta, você lê a descrição completa, como funciona, atributos, bônus, estados e botões disponíveis. Cartas sem arte exibem a inicial do nome.</li>
                     <li><strong>Executar habilidade</strong>: usa a habilidade ativa da carta selecionada.</li>
                     <li><strong>Atacar</strong>, <strong>Colocar em batalha</strong> e <strong>Equipar</strong>: as ações de jogar a carta.</li>
-                    <li><strong>Comprar carta</strong>: gasta 1 ação para comprar uma carta.</li>
+                    <li><strong>Comprar carta</strong>: clique diretamente na pilha de compra ou no botão. Compra uma carta imediatamente e gasta 1 ação, apenas na sua vez.</li>
                     <li><strong>Encerrar turno</strong>: passa a vez ao adversário. Quando é a vez da máquina, a página mostra o campo dela; ela aguarda o aviso desaparecer e joga com pausas entre ações. Selecionar, comprar ou jogar cartas não muda sua posição na página.</li>
-                    <li><strong>Campeões derrotados</strong>: contador de 0 a 3 de cada jogador.</li>
+                    <li><strong>Campeões derrotados</strong>: contador de 0 a 3 das derrotas daquele jogador. Marcadores vermelhos mostram os campeões que ele já perdeu; não são pontos de vitória ganhos por ele.</li>
                     <li><strong>Reconexão online</strong>: se alguém perder a conexão, a partida pausa por até dez minutos. Reabra no mesmo navegador para retomar sua mão e seu turno.</li>
-                    <li><strong>Descarte</strong>: toque no botão para ver as cartas descartadas.</li>
-                    <li><strong>Registro</strong>: lista tudo o que aconteceu na partida.</li>
+                    <li><strong>Descarte</strong>: clique na própria pilha ou no botão para consultar as cartas de qualquer participante, sem gastar ação. Uma pilha vazia também pode ser consultada.</li>
+                    <li><strong>Registro da partida</strong>: mostra ações, combate, efeitos públicos, redistribuições e eliminação voluntária. Informações de mãos adversárias e da ordem dos baralhos permanecem ocultas.</li>
                 </ul>
                 <p class="nota">O representante é opcional e deve ser escolhido antes da partida. Dá +10 de defesa às criaturas do universo dele. D007 também recupera 1 ponto de defesa do seu campeão ou besta no início do seu turno, até o máximo.</p>
             </article>
 
             <article id="cj-elementos" class="bloco">
                 <h3>8. Elementos (tipos das cartas)</h3>
+                <p><strong>Classe</strong> define o papel da carta; <strong>elemento</strong> é seu tipo, como fogo ou metálico. <strong>Universo</strong> e <strong>origem</strong> são outras características que habilidades podem usar. Por exemplo, “universo Normal” é diferente de um elemento.</p>
                 <p class="suave">Clique em um elemento para ver as cartas dele.</p>
                 <div class="chips" id="guia-elemento">
                     <a class="chip" data-elemento="fogo" href="index.html?elemento=fogo#cartas">Fogo</a>
@@ -147,19 +163,56 @@
                 </div>
                 <p class="nota">O anfitrião escolhe 20, 30 ou 40 cartas no lobby. O total aumenta quando necessário para dividir igualmente, com pelo menos cinco por participante, contando as três da mão inicial. Por exemplo: 20 cartas com três pessoas viram 21, sete por pessoa. O lobby mostra o total ajustado e quantas cartas cada pessoa ou máquina terá. Se o catálogo não tiver cartas únicas suficientes, escolha um total menor. Humanos e máquinas têm duas ações; no co-op, os turnos se alternam entre os lados. Cada participante é eliminado ao perder três campeões, e a equipe perde quando todos os seus participantes forem eliminados.</p>
                 <p>No online, a desconexão inesperada pausa a partida por até dez minutos. Reabra no mesmo navegador para retomar; se fechou a aba, use Retomar partida. Todos precisam se reconectar para continuar. Usar Sair da partida enquanto ainda disputa o jogo é abandono e encerra a partida para os demais. Quem foi eliminado no mata-mata pode sair ou assistir à próxima rodada sem interromper quem continua jogando.</p>
+                <p>No lobby online, <strong>Copiar convite</strong> copia um link com o código da sala. Quem recebe também pode entrar digitando o código. <strong>Estou pronto</strong> vira <strong>Cancelar</strong> para retirar a prontidão. O anfitrião usa <strong>Iniciar partida</strong> quando todos estiverem prontos; mudanças na configuração exigem nova confirmação. <strong>Sair da sala</strong>, antes de começar, deixa o lobby. Se não carregar a lista de representantes, use <strong>Carregar representantes</strong> para tentar novamente. A opção de retomada pode aparecer como <strong>Retomar última partida</strong> ou <strong>Retomar partida de [nome]</strong>, no navegador que guardou a sessão.</p>
             </article>
 
-            <article class="bloco">
+            <article id="cj-iniciantes" class="bloco destaque-bloco">
+                <h3>Partida para iniciantes: aprenda na prática</h3>
+                <p>Na homepage ou nos botões deste tutorial, abra <strong>Partida para iniciantes</strong> e clique em <strong>Começar treino</strong>. São dez cartas únicas, cinco por invocador, com três na mão inicial. O treino é ensaiado para você vencer seguindo <strong>18 etapas curtas</strong>; a máquina começa com três campeões fracos na mão.</p>
+                <p>A carta ou botão da etapa fica em destaque. Use <strong>Mostrar onde clicar</strong> para encontrar a próxima ação. Você pratica campeão, apoio, compra pela pilha, equipamento, ataques, eliminação voluntária e consulta gratuita do descarte. Marie Curie Zumbi começa forte; Fuleco e Cobertor ensinam uma combinação de defesa. Depois, você elimina sua própria campeã, assume uma derrota, confere os descartes e continua com Guss Deus do Design até vencer.</p>
+                <p>Tentativas fora da etapa não gastam ação. Ao chegar sua vez, confirme OK. Depois de abrir o descarte, use <strong>Fechar</strong> para continuar. No fim, <strong>Jogar novamente</strong> reinicia o treino e <strong>Jogar no Local</strong> abre os desafios normais. Se reabrir a página, comece um novo treino.</p>
+            </article>
+
+            <article id="cj-arenas" class="bloco">
+                <h3>Arenas, equipes e escolha de alvo</h3>
+                <p>No <strong>2v2</strong>, as posições 1 e 2 compõem a Arena 1; as posições 3 e 4, a Arena 2. São adversários dentro de cada arena: os aliados continuam nas posições 1/3 e 2/4. A arena inicial e seu primeiro invocador são <strong>sorteados</strong>. Os dois participantes de uma arena jogam em sequência antes dos dois da outra.</p>
+                <p>As etiquetas <strong>Arena 1</strong> e <strong>Arena 2</strong> identificam os campos; <strong>Vez da Arena</strong> informa o turno. No 2v2 e no co-op, os campos de quem joga e do adversário atual ficam destacados com <strong>Joga agora</strong> e <strong>Adversário do turno</strong>. O selo <strong>Sua vez</strong> identifica sua oportunidade de agir.</p>
+                <p>Quando disponível, use <strong>Adversário alvo</strong> ou <strong>Máquina alvo</strong> antes de atacar ou lançar um efeito ofensivo. No 2v2, o alvo inicial é o adversário espelhado, mas você pode escolher o outro rival. No mata-mata individual, <strong>Seu adversário</strong> é fixo naquele confronto. Em equipes, cada invocador mantém mão, campo e derrotas próprios; a equipe só perde quando todos os seus integrantes forem eliminados. Quem foi eliminado não realiza novas ações; os aliados vivos continuam jogando.</p>
+            </article>
+
+            <article id="cj-maquinas" class="bloco">
                 <h3>Como as máquinas jogam</h3>
                 <p>As máquinas dão preferência a jogar cartas, usar habilidades ou atacar antes de comprar. Podem gastar <strong>uma ação de compra direta por turno</strong>; habilidades que compram cartas continuam valendo normalmente. Os jogadores humanos mantêm as duas ações usuais.</p>
-                <p>A máquina só encerra quando suas ações acabam ou não há uma jogada permitida. Ela pode repetir ataques e outras jogadas. Durante a partida, acompanha ações visíveis para ajustar sua defesa e coordenar alvos com os aliados, sem consultar mãos ocultas. Essa adaptação é mantida ao reconectar e reinicia ao jogar novamente.</p>
+                <p>Nas partidas normais, a máquina encerra quando suas ações acabam ou não encontra outra jogada automática disponível; ela não elimina a própria criatura apenas para gastar ações. Pode repetir ataques e outras jogadas. Durante a partida, acompanha ações visíveis para ajustar sua defesa e coordenar alvos com os aliados, sem consultar mãos ocultas. Essa adaptação é mantida ao reconectar e reinicia ao jogar novamente. No treino, a máquina segue o roteiro de aprendizado.</p>
+                <p><strong>Fácil</strong> explora escolhas simples; <strong>Normal</strong> equilibra ataque e preparo; <strong>Difícil</strong> avalia também os riscos do campo. Todos mantêm as mesmas duas ações e as regras das cartas. Escolha a dificuldade antes de iniciar.</p>
             </article>
 
-            <article class="bloco">
+            <article id="cj-torneio" class="bloco">
                 <h3>Mata-mata, final e mesa</h3>
                 <p>No individual, ataques e habilidades dirigidos ao adversário ficam limitados ao seu confronto. Um classificado aguarda os demais duelos e não joga enquanto espera. Na nova rodada, os classificados mantêm mãos, campos e equipamentos e começam com zero campeões derrotados.</p>
                 <p>As cartas dos eliminados são recolhidas e divididas igualmente entre os baralhos de compra dos classificados. A sobra fica no centro. Cartas permanentemente descartadas, como Pandora após seu terceiro uso, não retornam. As mãos permanecem privadas, inclusive para espectadores.</p>
+                <p>Ao começar a próxima rodada depois da sua eliminação, o multiplayer oferece <strong>Assistir</strong> ou <strong>Sair da sala</strong>. Assistir permite acompanhar os classificados sem revelar suas mãos; sair nessa condição não encerra o confronto dos sobreviventes.</p>
                 <p>Com quatro participantes, a mesa individual tem quatro posições voltadas ao centro. No 2v2, os aliados ficam lado a lado, diante dos rivais. Nos demais formatos, seu campo fica junto aos outros na mesa, organizado por confrontos, com seu adversário na posição espelhada. Os campos dos eliminados saem da área de batalha; na final, permanecem apenas os classificados. Use Focar no duelo ou Ver tabuleiro completo conforme sua tela. Um clique ou toque seleciona a carta e mostra sua descrição completa no painel; dois cliques ou toques consecutivos jogam uma carta da sua mão, respeitando as regras de invocação, apoio, equipamentos e feitiços. Os botões do painel também continuam disponíveis.</p>
+            </article>
+
+            <article id="cj-visualizacao" class="bloco">
+                <h3>Leitura e posição da mesa</h3>
+                <p>Todos os textos do tabuleiro completo seguem a orientação normal da página. Os campos ficam espelhados e apenas as artes das cartas se voltam para o centro.</p>
+                <p>Jogar cartas e consultar detalhes preservam sua posição. Quando a tela acompanha as máquinas, ela volta ao ponto anterior assim que a vez retorna a uma pessoa. Se você mover a tela manualmente, essa escolha tem prioridade. No Local entre pessoas, cada participante retoma sua própria posição depois de confirmar a passagem do dispositivo.</p>
+                <p><strong>Ver tabuleiro completo</strong> mostra todos os campos ativos; deslize para explorar a mesa e as mãos. <strong>Focar no duelo</strong> concentra a visualização no confronto. Um toque seleciona para leitura; dois cliques ou toques consecutivos jogam a carta da sua mão. Esse atalho não ataca com cartas já em campo: use os botões do painel. Pilhas e botões também podem ser acionados pelo teclado após receberem foco.</p>
+            </article>
+
+            <article id="cj-estados" class="bloco">
+                <h3>Estados, recargas e habilidades bloqueadas</h3>
+                <ul class="lista-funcoes">
+                    <li><strong>Veneno e queimadura:</strong> causam o dano indicado no início do turno do dono da criatura afetada.</li>
+                    <li><strong>Paralisia:</strong> impede ataques e habilidades da criatura durante o prazo indicado. Outras ações permitidas, como comprar, continuam disponíveis.</li>
+                    <li><strong>Confusão:</strong> pode fazer a criatura atacar a si mesma no início do turno; acompanhe o efeito no registro.</li>
+                    <li><strong>Zumbificada:</strong> indica redução de defesa pela habilidade. Enquanto esse estado estiver presente, a criatura não pode ser zumbificada novamente.</li>
+                    <li><strong>Peixe ou habilidade anulada:</strong> outro efeito bloqueia a habilidade. O painel informa o motivo. Habilidades que disparam ao lançar uma carta não são executadas retroativamente quando a anulação termina.</li>
+                    <li><strong>Recarga:</strong> mostra quantos turnos próprios faltam para poder usar a habilidade de novo.</li>
+                    <li><strong>Efeitos ×2, reserva de defesa e turnos restantes:</strong> identificam combinações como Fuleco, a herança de Fenrir e a duração do Dino. Veja a carta selecionada para conferir os valores atuais.</li>
+                </ul>
             </article>
 
             <article id="cj-cartas-especiais" class="bloco">
@@ -170,8 +223,19 @@
                     <li><strong>Zord Fenrir:</strong> ao ser derrotado, reserva +100 de defesa para o próximo campeão do dono. Uma besta não consome essa reserva. O bônus aparece na mesa e aumenta a defesa atual e máxima do campeão.</li>
                     <li><strong>Oni Zumbi:</strong> dobra o ataque base quando estiver com um item equipado. Bestas continuam sem poder equipar armas.</li>
                     <li><strong>Fuleco:</strong> enquanto está em apoio, dobra os valores numéricos das habilidades das outras cartas do dono, como dano periódico, bônus e duração. Não dobra o ataque básico, o número de ações nem os limites de uso.</li>
+                    <li><strong>Kitsune 100%:</strong> pode retornar à mão uma vez por partida, levando consigo equipamentos e auxiliares vinculados. É a exceção de retorno voluntário indicada pela carta.</li>
+                    <li><strong>Heimdall:</strong> captura cartas adversárias do universo Normal em jogo para a mão do seu dono. Anexos de outros universos voltam à mão do dono anterior; captura não conta como derrota.</li>
+                    <li><strong>Hércules:</strong> dobra cumulativamente o ataque a cada três turnos próprios em batalha.</li>
+                    <li><strong>Guss Deus do Design:</strong> copia a habilidade da criatura adversária e aplica a cópia imediatamente, respeitando suas condições.</li>
                 </ul>
                 <p class="nota">Consulte a carta selecionada para conferir sua habilidade completa, condições e limites. Só campeões derrotados contam para a vitória, inclusive quando a derrota é causada por uma habilidade.</p>
+            </article>
+
+            <article id="cj-catalogo" class="bloco">
+                <h3>Consultar todas as cartas e mudanças do jogo</h3>
+                <p>Na homepage, clique em <strong>Ver as cartas</strong> para abrir o <a href="index.html#cartas">catálogo completo</a>. Busque por nome ou habilidade e combine os filtros de <strong>classe, elemento, universo e origem</strong>. <strong>Limpar</strong> remove a busca e os filtros; <strong>Mostrar mais cartas</strong> amplia a lista e <strong>Esconder as cartas</strong> recolhe o catálogo.</p>
+                <p>Clique em uma carta do catálogo para ler seus atributos e habilidade completos. Os exemplos deste tutorial ajudam a começar; o catálogo e o painel da partida apresentam as condições específicas de todas as cartas.</p>
+                <p>No <a href="changelog.html">Changelog</a>, veja a versão atual e clique no título de uma versão para abrir ou recolher suas mudanças.</p>
             </article>
 
             <article id="cj-resultado" class="bloco">
@@ -182,6 +246,7 @@
             </article>
 
             <div class="centro fecho">
+                <a class="btn primario" href="iniciantes.html">Praticar na partida para iniciantes</a>
                 <a class="btn primario" href="index.html#modos">Entendi, quero jogar</a>
             </div>
         </section>

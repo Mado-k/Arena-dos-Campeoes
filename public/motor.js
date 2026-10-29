@@ -110,6 +110,8 @@
     function indiceOponente(estado, dono = estado.turno) {
         const opcoes = adversarios(estado, dono);
         if (dono === estado.turno && opcoes.includes(estado.alvo)) return estado.alvo;
+        const espelhado=estado.arenas2v2?.find(a=>a.includes(dono))?.find(i=>i!==dono);
+        if(opcoes.includes(espelhado))return espelhado;
         return opcoes.find(i => estado.jogadores[i].campo.length) ?? opcoes[0] ?? -1;
     }
     const outro = (estado) => estado.jogadores[indiceOponente(estado)];
@@ -579,6 +581,10 @@
         const equipes = config.equipes || config.nomes.map((_,i)=>i);
         const cooperativo = Boolean(config.equipes) && !config.todosContraTodos;
         const participantes = config.nomes.map((_, i) => i);
+        const arenas2v2=config.equipes2v2?[[0,1],[2,3]]:null;
+        const primeiro=arenas2v2?(participantes.includes(config.comeca)?config.comeca:Math.floor(Math.random()*4)):null;
+        const arenaInicial=arenas2v2?arenas2v2.findIndex(a=>a.includes(primeiro)):null;
+        const ordemArenas=arenas2v2?[arenas2v2[arenaInicial],arenas2v2[1-arenaInicial]].flatMap(a=>a[0]%2===primeiro%2?a:[...a].reverse()):null;
         const baralhos = participantes.map(() => []);
         if (cooperativo || config.todosContraTodos) {
             // Cada participante começa com um campeão, evitando mãos sem como entrar em batalha.
@@ -603,7 +609,7 @@
         if (baralhos.some(b => b.length < REGRAS.minimoCartasPorJogador)) throw Object.assign(new Error('Cada participante precisa de pelo menos cinco cartas no total, incluindo a mão inicial.'), { code: 'CARTAS_INSUFICIENTES' });
         const estado = {
             tamanhoBaralho: total,
-            cooperativo, equipes2v2: Boolean(config.equipes2v2), torneio: config.torneio ? {rodada:1,...montarRodada(participantes)} : null, todosContraTodos: Boolean(config.todosContraTodos), equipes, ordemTurnos: config.ordemTurnos || participantes,
+            cooperativo, equipes2v2: Boolean(config.equipes2v2), arenas2v2, arenaInicial:arenaInicial===null?null:arenaInicial+1, torneio: config.torneio ? {rodada:1,...montarRodada(participantes)} : null, todosContraTodos: Boolean(config.todosContraTodos), equipes, ordemTurnos: config.ordemTurnos || ordemArenas || participantes,
             jogadores: participantes.map((i) => ({
                 nome: config.nomes[i],
                 equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
@@ -613,7 +619,7 @@
                 derrotados: 0,
                 bonusCampeao: 0
             })),
-            turno: participantes.includes(config.comeca) ? config.comeca : Math.floor(Math.random() * participantes.length),
+            turno: participantes.includes(config.comeca) ? config.comeca : primeiro??Math.floor(Math.random() * participantes.length),
             numTurno: 1,
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
@@ -682,6 +688,19 @@
     // todas as ações do turno custam 1 das 2 ações
     function semAcoes(estado) {
         return estado.acoes <= 0 ? erro('Você não tem mais ações neste turno.') : null;
+    }
+
+    function eliminarCarta(estado, uid) {
+        const e=fim(estado)||semAcoes(estado);if(e)return e;
+        const j=atual(estado),inst=j.campo.find(c=>c.uid===uid);
+        if(!inst||!ehCriatura(inst))return erro('Só é possível eliminar seu próprio campeão ou besta em batalha.');
+        const nome=inst.base.nome,campeao=ehCampeao(inst);
+        estado.acoes=Math.max(0,estado.acoes-1);
+        morrer(estado,estado.turno,inst);
+        const texto=`${j.nome} eliminou voluntariamente ${nome}. ${campeao?`Conta uma derrota de campeão para ${j.nome}: ${j.derrotados}/${REGRAS.campeoesParaVencer}.`:'A derrota de uma besta não altera a contagem de campeões.'}`;
+        log(estado,texto);
+        verificarPresenca(estado);verificarFim(estado);redistribuirDescartes(estado);
+        return {ok:true,registroEliminacao:texto};
     }
 
     // ---------- ações do turno ----------
@@ -1297,7 +1316,7 @@
         REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, descartePermanente, podeComprar, fatorHabilidade, tamanhoParaParticipantes,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
-        comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,
+        comprarAcao, eliminarCarta, invocar, colocarApoio, equipar, lancarFeitico, atacar,
         executarHabilidade, usarHabilidade: executarHabilidade
     };
 
