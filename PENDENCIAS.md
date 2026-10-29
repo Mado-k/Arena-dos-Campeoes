@@ -68,9 +68,9 @@ tem prioridade. O registro e o aviso de resultado mostram a causa do empate.
 O resultado empatado oferece jogar novamente ou encerrar. No online, todos precisam
 aceitar a revanche; se alguém encerrar, a partida termina. Uma revanche volta à mesma
 sala, para conferir representantes e confirmar prontidão antes de iniciar novamente.
-No Local, reiniciar volta à configuração. Entre três ou quatro pessoas, a
-redistribuição espera todos os baralhos ativos vazios e divide os descartes entre
-os sobreviventes, reservando no centro as cartas que sobrarem.
+No Local, reiniciar reutiliza a configuração e pede confirmação dos humanos
+quando houver revanche entre pessoas. No mata-mata, cada duelo recicla seus
+próprios descartes quando os dois baralhos daquele confronto acabam.
 
 ## Ainda falta definir
 
@@ -144,8 +144,8 @@ Após o próximo deploy, conferir as novidades desta revisão:
   Contra máquinas no Local, reinicia com a mesma configuração.
 - [x] Local substitui Offline: 1 a 4 humanos contra igual número de máquinas, ou
   2 a 4 humanos entre si no mesmo dispositivo. Mãos separadas e cortina na troca.
-- [x] No Local entre três ou quatro pessoas, todos contra todos: perde quem tiver
-  três campeões derrotados; vence o último participante. Eliminados não jogam mais.
+- [x] Individual Local e online com rivais fixos e espelhados, mata-mata e final.
+  Perder três campeões elimina; o classificado aguarda os demais confrontos.
 - [x] Pelo menos cinco cartas totais por participante, incluindo a mão inicial de três,
   em todos os modos; cartas únicas e aumento automático do total quando necessário.
 - [x] Fácil, Normal e Difícil antes da partida contra máquinas, sem vantagens de
@@ -180,3 +180,16 @@ Após o próximo deploy, conferir as novidades desta revisão:
   e conferir que depois não sai do descarte, nem por embaralhamento ou habilidade.
 - [ ] Derrotar Fenrir, conferir a reserva de +100, invocar uma besta e depois um
   campeão: só o campeão recebe e consome a herança.
+
+## Formatos e mesa confirmados nesta atualização
+
+- [x] Quatro posições voltadas ao centro no individual; duas duplas frente a frente no 2v2. Foco no duelo para telas menores e mesa completa disponível.
+- [x] Solo: um humano contra uma a quatro máquinas no individual; no 2v2, um humano e uma máquina contra outras duas, quatro invocadores no total.
+- [x] Individual com adversário fixo, folga em quantidade ímpar, classificados aguardando e final. Contadores zerados na nova rodada, preservando mãos e campos.
+- [x] Cartas dos eliminados divididas entre os baralhos dos classificados, sobras no centro e descarte permanente preservado.
+- [x] Eliminados online podem assistir ou sair sem interromper a disputa dos classificados; mãos adversárias continuam privadas.
+- [x] Máquinas escolhem representante disponível ou nenhum em todos os formatos.
+- [x] Seletor 2v2 no lobby multiplayer e na configuração Local; quatro participantes obrigatórios, com primeira e terceira pessoas aliadas.
+- [x] Nova métrica de versão: 0.005 por recurso; o changelog identifica os onze recursos desta atualização (2.405).
+
+- [x] Botão Encerrar turno maior e destacado durante a vez, com brilho suave ao acabar as ações e respeito a movimento reduzido.

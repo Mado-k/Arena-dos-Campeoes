@@ -35,6 +35,7 @@
     }
 
     let representantes = [];
+    let cartasDisponiveis = null, alterandoBaralho = false;
     let carregandoRepresentantes = true;
     const seletorRepresentante = $('representante');
 
@@ -44,6 +45,7 @@
             if (!r.ok) throw new Error('Falha ao carregar representantes.');
             const lista = await r.json();
             if (!Array.isArray(lista)) throw new Error('Lista de cartas inválida.');
+            cartasDisponiveis = new Set(lista.filter(c => Motor.norm(c.classe) !== 'representante').map(c => c.codigo ? `codigo:${String(c.codigo).trim().toLowerCase()}` : c.numero != null ? `numero:${c.numero}` : `nome:${Motor.norm(c.nome)}`)).size;
             representantes = lista.filter(c => Motor.norm(c.classe) === 'representante').map(Motor.normalizarCarta);
             seletorRepresentante.replaceChildren(new Option('Sem representante', ''), ...representantes.map(c => new Option(c.nome, c.codigo)));
             carregandoRepresentantes = false;
@@ -155,7 +157,7 @@
         mostrarSala(resp.sala);
     }
 
-    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value), ...(modo==='coop'?{dificuldade:$('dificuldade').value}:{}) }));
+    $('criar').addEventListener('click', () => abrirSala('sala:criar', { ...(modo==='coop'?{dificuldade:$('dificuldade').value}:{}) }));
 
     function tentarEntrar() {
         const c = limpar(codigo.value);
@@ -178,18 +180,31 @@
         cabeca.hidden = Boolean(sala.emPartida);
         document.querySelector('main').classList.toggle('em-partida', Boolean(sala.emPartida));
         $('sala-codigo').textContent = sala.codigo;
-        $('sala-baralho').textContent = modo === 'coop'
-            ? `${sala.dificuldade === 'facil' ? 'Fácil' : sala.dificuldade === 'dificil' ? 'Difícil' : 'Normal'} · ${sala.jogadores.length} de ${sala.max} jogadores · ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe · mãos privadas${sala.tamanhoBaralho !== sala.tamanhoBaralhoEscolhido ? ' · Total ajustado automaticamente para garantir pelo menos 5 cartas por participante, incluindo a mão inicial.' : ''}`
-            : `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por jogador · sem repetição`;
+        const anfitriao = sala.anfitriao === (identidade || socket.id);
+        if ($('formato-sala')) {
+            $('formato-sala').value=sala.formato||'livre';
+            $('formato-sala').disabled=!anfitriao||sala.iniciando||sala.emPartida;
+            $('formato-descricao').textContent=sala.formato==='2v2'?'Quatro pessoas. A primeira e a terceira formam uma dupla; a segunda e a quarta formam a outra.':'Com quatro participantes, enfrente quem estiver à sua frente. Os vencedores disputam a final; com três, um participante tem folga na primeira rodada.';
+        }
+        const quantidade = sala.cartasPorParticipante;
+        const insuficiente = cartasDisponiveis !== null && sala.tamanhoBaralho > cartasDisponiveis;
+        $('tamanho-baralho').value = String(sala.tamanhoBaralhoEscolhido);
+        $('tamanho-baralho').disabled = !anfitriao || sala.iniciando || sala.emPartida || alterandoBaralho;
+        $('sala-baralho').textContent = `${sala.tamanhoBaralho} cartas no total · ${quantidade} por participante · sem repetição`;
+        $('sala-distribuicao').textContent = `${modo === 'coop' ? `${sala.jogadores.length} jogador(es) + ${sala.maquinas} máquina(s)` : sala.jogadores.length < sala.min ? `Prévia para ${sala.min} jogadores; atualizada quando alguém entrar` : `${sala.jogadores.length} jogadores`} · Cada pessoa${modo === 'coop' ? ' e máquina' : ''} começa com 3 cartas na mão e ${quantidade - 3} na compra.${sala.tamanhoBaralho !== sala.tamanhoBaralhoEscolhido ? ` Total escolhido: ${sala.tamanhoBaralhoEscolhido}; ajustado para ${sala.tamanhoBaralho} para dividir igualmente e garantir pelo menos 5 cartas por participante.` : ''}`;
+        $('sala-catalogo').hidden = !insuficiente;
+        $('sala-catalogo').textContent = insuficiente ? `A divisão exige ${sala.tamanhoBaralho} cartas únicas, mas o catálogo tem ${cartasDisponiveis}. O anfitrião precisa escolher um total menor para iniciar.` : '';
 
         const lista = $('jogadores');
         lista.replaceChildren();
 
-        for (const j of sala.jogadores) {
+        for (const [indice,j] of sala.jogadores.entries()) {
             const li = el('li', 'jogador');
             const nome = el('span', 'nome', j.nome);
+            if(sala.formato==='2v2')nome.append(el('small',null,`Equipe ${indice%2+1}`));
             const rep = representantes.find(r => r.codigo === j.representante);
             nome.append(el('small', null, rep ? rep.nome : 'Sem representante'));
+            nome.append(el('small', null, `${quantidade} cartas no início (3 na mão + ${quantidade - 3} na compra)`));
             if (j.id === (identidade || socket.id)) nome.append(el('small', null, '(você)'));
             if (j.id === sala.anfitriao) nome.append(el('small', null, 'anfitrião'));
             li.append(
@@ -201,7 +216,7 @@
         }
         for (let i = sala.jogadores.length; i < sala.max; i++) {
             const li = el('li', 'jogador slot-vazio');
-            li.append(el('span', 'nome', modo === 'coop' ? 'Vaga disponível (opcional)' : 'Aguardando jogador…'));
+            li.append(el('span', 'nome', modo === 'coop' || i >= sala.min ? 'Vaga disponível (opcional)' : 'Aguardando jogador…'));
             lista.append(li);
         }
 
@@ -222,7 +237,7 @@
         else if (prontos === total) texto = modo === 'coop' ? `Todos prontos! O anfitrião pode iniciar ${total} jogador(es) × ${sala.maquinas} máquina(s).` : 'Todos prontos! O anfitrião pode iniciar a partida.';
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
-        $('iniciar').disabled = pedidoInicio || sala.anfitriao !== (identidade || socket.id) || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida || sala.jogadores.some(j=>!j.conectado);
+        $('iniciar').disabled = pedidoInicio || alterandoBaralho || insuficiente || sala.anfitriao !== (identidade || socket.id) || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida || sala.jogadores.some(j=>!j.conectado);
         $('pronto').disabled = sala.iniciando || sala.emPartida || carregandoRepresentantes;
     }
 
@@ -236,6 +251,26 @@
         conexao('');
         aviso(texto || '', tipo);
     }
+
+    $('formato-sala')?.addEventListener('change', async () => {
+        const formato=$('formato-sala').value;$('formato-sala').disabled=true;
+        const res=await pedir('sala:formato',formato);
+        if(res?.erro)$('sala-erro').textContent=res.erro;
+        if(salaAtual)mostrarSala(res?.sala||salaAtual);
+    });
+
+    $('tamanho-baralho').addEventListener('change', async () => {
+        if (!salaAtual || alterandoBaralho) return;
+        const total = Number($('tamanho-baralho').value);
+        alterandoBaralho = true;
+        $('sala-erro').textContent = '';
+        mostrarSala(salaAtual);
+        const res = await pedir('sala:baralho', total);
+        alterandoBaralho = false;
+        if (res?.erro) $('sala-erro').textContent = res.erro;
+        if (res?.sala) mostrarSala(res.sala);
+        else if (salaAtual) mostrarSala(salaAtual);
+    });
 
     $('iniciar').addEventListener('click', async () => {
         if (pedidoInicio) return;

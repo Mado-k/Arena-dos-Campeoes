@@ -57,11 +57,13 @@ O servidor precisa estar acessível aos convidados; não compartilhe a porta do 
 
 ## Modo Local
 
-Abra **Local** na página inicial e escolha **Player vs máquina** (1 a 4 pessoas,
-com uma máquina por pessoa) ou **Player vs player** (2 a 4 pessoas no mesmo
-dispositivo). Cada pessoa escolhe seu representante antes de começar. A cortina de
-troca de vez oculta a mão até o próximo jogador confirmar. Com três ou quatro
-pessoas competindo entre si, vence o último participante que não perdeu três campeões.
+Abra **Local** e escolha **Player vs máquina** ou **Player vs player**. No
+individual solo, selecione de uma a quatro máquinas; no 2v2 solo, você e uma
+máquina enfrentam outras duas. A opção Equipe contra máquinas preserva uma a
+quatro pessoas contra igual número de máquinas. Entre pessoas no mesmo aparelho,
+escolha individual com duas a quatro ou 2v2 com quatro. Cada humano escolhe seu
+representante antes de começar. A cortina de troca de vez protege a próxima mão.
+O individual com mais de dois participantes usa mata-mata e final.
 
 O Local usa a cópia embutida das cartas quando o servidor está indisponível.
 O endereço antigo `offline.html` redireciona para `local.html`. O controlador
@@ -112,7 +114,9 @@ o tabuleiro final continua disponível. Se alguém sair, prepare outra sala.
 **O co-op permanece um protótipo:** o formato abaixo foi solicitado como solução
 provisória até a equipe definir as regras finais.
 
-O duelo tem dois jogadores. O co-op aceita **de 1 a 4 pessoas**, com **uma máquina
+O multiplayer aceita **de 2 a 4 pessoas**: duelo com duas, todos contra todos com
+três ou quatro, com rivais fixos e espelhados, semifinal e final. Há também 2v2
+com exatamente quatro humanos, nas equipes `[0, 1, 0, 1]`. O co-op aceita **de 1 a 4 pessoas**, com **uma máquina
 por pessoa presente no lobby**. Não há seletor de formato: o anfitrião pode iniciar
 sozinho ou esperar convidados. Ao entrar ou sair alguém, a contagem de máquinas é
 atualizada e todos precisam confirmar prontidão novamente. Após o início, a
@@ -124,13 +128,45 @@ executa automaticamente todas as máquinas consecutivas até chegar a um humano
 ativo. Cada participante tem mão, campo, auxiliares, equipamentos, descarte e
 baralho individuais. Mesmo os aliados não veem sua mão.
 
-Metade das cartas únicas vai para cada equipe, dividida entre os integrantes sem
-repetições. Com 40 cartas: no 1 × 1 são 20 por participante; no 2 × 2, 10; no 3 × 3,
-a divisão por equipe é 7/7/6; no 4 × 4, são 5 por participante. Se a sala foi criada
-com 20 cartas e chega a três pessoas, o total sobe para 30; com quatro, sobe para
-40. Cada participante recebe pelo menos cinco cartas no total, incluindo as três
-da mão inicial. O lobby informa o ajuste e recalcula o total quando alguém sai.
-A mão inicial de cada participante inclui um campeão distinto.
+No Local contra máquinas, o seletor de formato oferece: individual com um humano
+contra uma a quatro máquinas; 2v2 com um humano e uma máquina contra outras duas;
+e o co-op provisório com uma a quatro pessoas. No Local entre pessoas, escolha
+individual com duas a quatro pessoas ou 2v2 com quatro. Cada máquina sorteia um
+representante disponível ou a opção sem representante antes da distribuição.
+
+No mata-mata, com quatro invocadores, os confrontos são `0 × 2` e `1 × 3`.
+Quantidade ímpar gera folga. O vencedor de um confronto aguarda, com seus turnos
+pulados, até os outros confrontos terminarem. Na rodada seguinte os classificados
+mantêm mãos, campos e equipamentos, zeram os campeões derrotados e recebem nos
+baralhos de compra uma divisão igual das cartas recolhidas dos eliminados. Sobras
+ficam no centro; descartes permanentes não retornam. A reciclagem durante cada
+duelo usa só os descartes daquele confronto e não depende do baralho do outro.
+O estado do chaveamento é salvo junto com a partida para retomada após reinício.
+Eliminados online recebem a opção de assistir ou sair ao iniciar a próxima rodada;
+sua saída/desconexão não pausa nem encerra a disputa entre os classificados.
+
+A mesa de quatro usa posições voltadas ao centro; no 2v2, as duplas ficam frente
+a frente. No celular, o foco no duelo mantém os detalhes acessíveis e a opção
+Mesa completa permite explorar o tabuleiro. O verso azul escuro e dourado é
+compartilhado por mãos ocultas, pilhas e animações, sem revelar identidades.
+
+O anfitrião escolhe 20, 30 ou 40 cartas **dentro do lobby**. O total é arredondado
+para cima até permitir a mesma quantidade inteira para cada participante,
+incluindo máquinas, e no mínimo cinco cartas para cada um. Por exemplo, 20 cartas
+para três pessoas vira 21 (7 por pessoa); 30 para quatro vira 32 (8 por pessoa).
+Cada participante recebe três cartas na mão; o restante fica em seu baralho de
+compra. A escolha do anfitrião e o total efetivo aparecem separados, e entradas
+ou saídas recalculam a divisão a partir da escolha original. Alterar o total ou
+a composição da sala cancela a prontidão de todos.
+
+No co-op, cada equipe recebe metade do total, e todos os integrantes começam com
+a mesma quantidade. Com três humanos e três máquinas, a escolha de 20 sobe para
+30 (5 por participante); a escolha de 40 exige 42 (7 por participante). O catálogo
+atual tem 40 cartas jogáveis distintas: neste último caso o lobby avisa para
+escolher um total menor. O servidor recusa catálogos insuficientes, sem duplicar
+cartas nem reduzir silenciosamente a escolha. A distribuição real só ocorre no
+início da partida; o lobby mostra apenas a prévia. Em grupos de três ou quatro
+humanos e no co-op, cada mão inicial inclui um campeão distinto.
 
 Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
 As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
@@ -197,7 +233,7 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
 - Hércules dobra cumulativamente a cada três turnos próprios. Kitsune retorna uma
   vez por partida com equipamentos e auxiliares; Dino sai junto com sua criatura;
   n025 mantém a proteção divina e Guss aplica a habilidade copiada imediatamente.
-- No Local e no multiplayer, a reciclagem espera os dois baralhos vazios, reúne
+- No Local e no multiplayer, a reciclagem espera os baralhos do confronto vazios, reúne
   os descartes e divide igualmente. Uma sobra fica no centro para a redistribuição
   seguinte. Cartas não são duplicadas; a posse pode mudar durante a partida.
   O co-op conserva sua reciclagem individual provisória.
@@ -223,9 +259,9 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
   do campeão; a reserva e sua aplicação aparecem na mesa e no registro.
 
 
-No Local entre três ou quatro pessoas, a redistribuição espera os baralhos de todos
-os participantes ativos acabarem, reúne os descartes e divide entre os sobreviventes;
-o restante fica no centro. A mesma condição de impasse vale após quatro redistribuições.
+No mata-mata Local e online, a redistribuição durante uma rodada espera os dois
+baralhos daquele confronto acabarem e usa os descartes desse duelo; a sobra fica
+no centro. Ao passar de rodada, as cartas dos eliminados vão aos classificados. A mesma condição de impasse vale após quatro redistribuições.
 A página inicial (`public/index.html`, `public/index.js` e `public/style.css`) apresenta
 os modos atuais, e `public/tutorial.html` reúne todas as instruções; o pedido antigo que chegou cortado deixou de ser uma pendência.
 
@@ -305,8 +341,9 @@ da largura e altura das cartas da mão, em ambos os lados. A mão mantém seu ta
 Auxiliares exigem um campeão ou besta em batalha, validado pelo motor e pela interface.
 
 `Partida.passoComputador()` aplica uma única jogada ou encerra o turno da máquina.
-O Local agenda esses passos com pausas de 1,1 a 1,4 segundo; o co-op online agenda
-um passo a cada 1,2 segundo, salvando e publicando cada estado antes de continuar.
+O Local agenda esses passos com pausas de 2 a 2,25 segundos; o co-op online agenda
+um passo a cada 2 segundos, salvando e publicando cada estado antes de continuar.
+A primeira jogada aguarda 4,5 segundos, depois do aviso de turno de 4 segundos.
 Desconexões pausam a sequência; a retomada continua do último passo salvo. Timers
 são cancelados ao encerrar a sala/servidor. `jogarComputador()` continua disponível
 sem pausas para testes e simulações. Animações duram cerca de 760 ms e respeitam
@@ -331,3 +368,25 @@ mostrando seu campo; suas ações seguintes não reposicionam a câmera.
 jogada após 4,5 segundos e pausas seguintes de 2 segundos (até 250 ms adicionais
 no Local). O servidor oferece `tempoIA` e `tempoAvisoIA` para testes com prazos
 curtos; o prazo inicial é preservado durante pausa e retomada na mesma instância.
+
+## Diagnóstico de criação de salas
+
+Socket.IO pode conectar mesmo que a recuperação de sessões no banco tenha falhado.
+A inicialização das salas responde aos pedidos com erro e código explícitos; após
+uma falha, um novo pedido tenta recuperar as sessões novamente. Se a recuperação
+exceder seis segundos, o pedido é recusado sem criar sala tardiamente. Aguarde a
+recuperação terminar e tente novamente. Uma sessão salva com conteúdo inválido
+é ignorada e registrada no log, sem impedir as demais nem apagar o registro original.
+
+Se a criação falhar no Render, procure `Não foi possível recuperar as sessões:`
+ou `Falha na sala:` nos Logs. `ER_TABLEACCESS_DENIED_ERROR` indica permissões na
+tabela `arena_sessoes`; `ETIMEDOUT` indica conexão com o banco. A rota `/cartas`
+pode funcionar normalmente enquanto a tabela de sessões falha. Não é necessário
+apagar cartas, sessões ou o banco para aplicar a correção do tratamento desses erros.
+
+## Versões do jogo
+
+A partir da versão 2.405, o changelog usa incrementos de 0.005 por recurso
+identificado na atualização. A versão 2.405 reúne onze recursos (+0.055 sobre a
+2.35), incluindo as correções de salas e distribuição que estavam em rascunho.
+O changelog descreve o comportamento para os jogadores, sem códigos de commit.

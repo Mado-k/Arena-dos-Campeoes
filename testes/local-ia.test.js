@@ -14,19 +14,18 @@ for(const n of [2,3,4])test(`Local com ${n} pessoas separa mãos e distribui sem
  const p=new Partida(pessoas(n),catalogo,'local',20),e=p.estado;
  assert.equal(e.jogadores.length,n);assert.equal(e.jogadores.filter(j=>j.maquina).length,0);
  assert(e.jogadores.every(j=>j.mao.length+j.baralho.length>=5));
- assert.equal(new Set(todas(e).map(c=>c.base.codigo)).size,20);
+ assert.equal(new Set(todas(e).map(c=>c.base.codigo)).size,Math.ceil(20/n)*n);
  for(let i=0;i<n;i++){const v=p.visao('p'+i);for(let j=0;j<n;j++)assert.equal(v.jogadores[j].mao.length,j===i?3:0);}
 });
-test('Local todos contra todos elimina, descarta recursos, pula turnos e só premia o último jogador',()=>{
+test('Local mata-mata elimina, pula quem aguarda e classifica os dois vencedores para a final',()=>{
  const p=new Partida(pessoas(4),catalogo,'local',20),e=p.estado;e.turno=0;
- for(let i=0;i<4;i++){const j=e.jogadores[i],c=j.mao.shift();j.campo=[c];c.defesa=c.defesaMax=1;c.ataqueBase=i===0?100:0;if(i)j.derrotados=2;}
+ for(let i=0;i<4;i++){const j=e.jogadores[i],c=j.mao.shift();j.campo=[c];c.defesa=c.defesaMax=1;c.ataqueBase=i<2?100:0;if(i>=2)j.derrotados=2;}
  function agir(i,d){return p.agir('p'+i,{...d,revisao:p.revisao});}
- assert(agir(0,{tipo:'atacar',alvo:3}).ok);assert.equal(p.estado.vencedor,null);assert(p.estado.jogadores[3].eliminado);
- assert.equal(p.estado.jogadores[3].mao.length,0);assert.equal(p.estado.jogadores[3].baralho.length,0);
- assert(!M.adversarios(p.estado).includes(3));
- assert(agir(0,{tipo:'atacar',alvo:2}).ok);assert(agir(0,{tipo:'encerrar'}).ok);assert.equal(p.estado.turno,1);
- assert(agir(1,{tipo:'encerrar'}).ok);assert.equal(p.estado.turno,0);
- assert(agir(0,{tipo:'atacar',alvo:1}).ok);assert.equal(p.estado.vencedor,0);
+ assert(agir(0,{tipo:'atacar',alvo:2}).ok);assert.equal(p.estado.vencedor,null);assert(p.estado.jogadores[2].eliminado);
+ assert.equal(p.estado.jogadores[2].mao.length,0);assert.equal(p.estado.jogadores[2].baralho.length,0);
+ assert(p.estado.torneio.aguardando.includes(0));assert.equal(p.estado.turno,1);
+ assert(agir(1,{tipo:'atacar',alvo:3}).ok);assert.equal(p.estado.torneio.rodada,2);
+ assert.deepEqual(p.estado.torneio.duelos,[[0,1]]);assert.equal(p.estado.vencedor,null);
  assert.equal(todas(p.estado).length,20);assert.equal(new Set(todas(p.estado).map(c=>c.uid)).size,20);
 });
 test('estado completo pode ser restaurado sem compartilhar referências nem perder revisão',()=>{

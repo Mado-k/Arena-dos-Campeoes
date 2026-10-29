@@ -58,8 +58,8 @@
 .pilha-compra .btn,.pilha-descarte .btn { width:100%; padding:9px 4px; font-size:.75rem; white-space:normal; }
 .pilha-cartas { width:62px; height:86px; display:grid; place-items:center; }
 .pilha-contagem { font-size:.75rem; color:var(--suave); text-align:center; }
-.carta-verso { position:relative; flex:0 0 58px; width:58px; height:82px; display:grid; place-items:center; border:1px solid var(--ouro); border-radius:8px; background:repeating-linear-gradient(45deg,#24202b 0px,#24202b 5px,#19171f 5px,#19171f 10px); box-shadow:0 2px 6px #0006; }
-.carta-verso::before { content:''; position:absolute; inset:5px; border:1px solid #e8b04a66; border-radius:5px; }
+.carta-verso { position:relative; flex:0 0 58px; width:58px; height:82px; display:grid; place-items:center; border:1px solid var(--ouro); border-radius:8px; background:linear-gradient(135deg,#233d47,#152a33); box-shadow:0 2px 6px #0006; }
+.carta-verso::before { content:''; position:absolute; inset:4px; border:1px solid #84918c99; border-radius:5px; }
 .verso-emblema { color:var(--ouro-claro); font-family:var(--fonte-titulo); font-weight:800; font-size:1.4rem; }
 .pilha-cartas .carta-verso { box-shadow:3px 3px 0 #34303e,5px 5px 0 #121216; }
 .pilha-vazia { font-size:.75rem; color:var(--suave); }
@@ -100,3 +100,80 @@
 .mesa-online { overflow-anchor:none; }
 .lado-online { scroll-margin-top:110px; }
 html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:auto; }
+
+/* Mesas inspiradas nos modelos: posições individuais ou duplas frente a frente. */
+.carta-verso { border:2px solid #d5b541; outline:1px solid #111b21; outline-offset:-5px; }
+.carta-verso .verso-emblema { font-size:0 !important; width:22%; aspect-ratio:1; border:1px solid #71879188; border-radius:50%; position:relative; }
+.carta-verso .verso-emblema::before,.carta-verso .verso-emblema::after { content:''; position:absolute; background:#71879188; inset:49% 15%; }
+.carta-verso .verso-emblema::after { inset:15% 49%; }
+.arena-janela { overflow:auto; max-width:100%; border:1px solid var(--borda); border-radius:16px; background:radial-gradient(ellipse at center,#203b35 0,#121f25 65%,#0e141e 100%); scrollbar-width:thin; }
+.arena-completa { position:relative; margin:0 auto; width:1500px; height:1320px; }
+.arena-completa .assento { position:absolute; width:360px; height:560px; }
+.arena-completa .assento-sul { left:570px; top:750px; }
+.arena-completa .assento-norte { left:570px; top:10px; transform:rotate(180deg); }
+.arena-completa .assento-oeste { left:105px; top:410px; transform:rotate(90deg); }
+.arena-completa .assento-leste { left:1035px; top:410px; transform:rotate(-90deg); }
+.arena-equipes { display:grid; grid-template-columns:repeat(2,360px); gap:48px 24px; justify-content:center; width:780px; height:auto; padding:16px; }
+.arena-equipes .assento { position:relative; inset:auto; transform:none; }
+.arena-equipes .assento-norte { transform:rotate(180deg); }
+.arena-completa .lado { height:100%; box-sizing:border-box; padding:8px; background:#111b24bb; }
+.arena-completa .cab { min-height:40px; padding:0; margin:0 0 6px; gap:3px; }
+.arena-completa .cab .quem { gap:4px; }
+.arena-completa .cab .quem strong { font-size:.85rem; }
+.arena-completa .cab .rep,.arena-completa .derrotados { font-size:.65rem; }
+.arena-completa .campo-mesa { margin:0; padding:0; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.arena-completa .campo-mesa .fileira-wrap { width:100%; margin:0; }
+.arena-completa .fileira-wrap h4 { font-size:.6rem; margin:3px 0; }
+.arena-completa .fileira { gap:5px; padding:2px; justify-content:safe center; }
+.arena-completa .c-wrap,.arena-completa .slot-vazio { width:54px; flex:0 0 54px; }
+.arena-completa .carta-online { width:54px; height:78px; min-height:78px; padding:4px; font-size:.55rem; overflow:hidden; }
+.arena-completa .carta-online .c-arte { height:27px; }
+.arena-completa .carta-online .c-nome { font-size:.55rem; }
+.arena-completa .carta-online .c-desc,.arena-completa .carta-online .c-topo,.arena-completa .carta-online .tipo-hab,.arena-completa .carta-online .etqs { display:none; }
+.arena-completa .carta-online .c-stats { font-size:.55rem; margin:2px 0; }
+.arena-completa .campo-mesa .carta-online { display:block; flex:none; }
+.arena-completa .lado-adversario .campo-mesa .c-arte img { transform:none; }
+.arena-completa .equips { max-height:24px; overflow:auto; }
+.arena-completa .equips .equip { font-size:.5rem; padding:2px; }
+.arena-completa .slot-vazio { min-height:78px; height:78px; font-size:.55rem; }
+.arena-completa .mao-com-pilhas { --largura-carta:54px; --altura-carta:78px; gap:4px; }
+.arena-completa .mao-com-pilhas [data-zona="mao"] .fileira { min-height:78px; padding:2px; }
+.arena-completa .mao-com-pilhas [data-zona="mao"] .c-wrap { width:54px; flex-basis:54px; }
+.arena-completa .mao-com-pilhas .pilha-cartas,.arena-completa .mao-com-pilhas .pilha-cartas .carta-verso { width:48px; height:70px; }
+.arena-completa .pilha-compra .btn,.arena-completa .pilha-descarte .btn { font-size:.6rem; padding:3px; width:auto; }
+.arena-completa .pilha-compra .acao-compra { min-height:30px; padding:6px 9px; }
+.arena-completa .pilha-compra,.arena-completa .pilha-descarte { gap:4px; }
+.arena-completa .pilha-contagem,.arena-completa .pilha-compra h4 { font-size:.55rem; }
+.arena-completa .mao-com-pilhas > [data-zona="mao"] { grid-row:1; }
+.arena-completa .mao-com-pilhas > [data-zona="baralho"],.arena-completa .mao-com-pilhas > [data-zona="descarte"] { grid-row:2; }
+.arena-opcoes { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.arena-completa .lado-aguardando { border-style:dashed; }
+/* Foco preserva a leitura e os controles sem exigir uma mesa larga no celular. */
+.arena-foco .arena-completa { width:auto; height:auto; padding:12px; display:flex; flex-direction:column; gap:12px; }
+.arena-foco .arena-completa .assento { position:relative; inset:auto; width:100%; max-width:600px; height:auto; margin:auto; transform:none; }
+.arena-foco .assento-norte { order:0; }
+.arena-foco .assento-sul { order:2; }
+.arena-foco .assento-oeste,.arena-foco .assento-leste { display:none; }
+.arena-foco .assento[data-ativo="true"],.arena-foco .arena-equipes .assento { display:block; }
+.arena-foco .assento .lado { display:flex; flex-direction:column; }
+.arena-foco .assento .lado > .cab { order:0; }
+.arena-foco .assento .lado > .campo-mesa { order:1; }
+.arena-foco .assento .lado > .mao-com-pilhas { order:2; }
+.arena-foco .assento .lado-adversario > .mao-com-pilhas { order:1; }
+.arena-foco .assento .lado-adversario > .campo-mesa { order:2; flex-direction:column-reverse; }
+.arena-foco .arena-completa .carta-online { width:110px; height:170px; min-height:170px; font-size:.7rem; }
+.arena-foco .arena-completa .carta-online .c-nome { font-size:.75rem; }
+.arena-foco .arena-completa .carta-online .c-stats { font-size:.7rem; }
+.arena-foco .arena-completa .carta-online .c-desc { display:block; font-size:.65rem; }
+.arena-foco .arena-completa .carta-online .c-arte { height:45px; }
+.arena-foco .arena-completa .mao-com-pilhas { --largura-carta:110px; --altura-carta:170px; }
+.arena-foco .arena-completa .c-wrap,.arena-foco .arena-completa .mao-com-pilhas [data-zona="mao"] .c-wrap { width:110px; flex-basis:110px; }
+@media(min-width:1700px){.mesa-online:has(.arena-janela){max-width:1800px;}}
+
+/* Encerrar turno permanece evidente durante a vez do jogador. */
+.acao-encerrar { min-height:48px; padding:12px 22px; font-size:1rem; font-weight:800; border-width:2px; }
+.acao-encerrar:enabled { box-shadow:0 0 0 3px #e8b04a26,0 5px 18px #e8b04a24; }
+.acao-encerrar:focus-visible { outline:3px solid var(--ouro-claro); outline-offset:4px; }
+.acao-encerrar.acoes-esgotadas:enabled { animation:lembrar-encerrar 1.8s ease-in-out infinite; }
+@keyframes lembrar-encerrar { 50% { box-shadow:0 0 0 6px #e8b04a40,0 5px 22px #e8b04a40; } }
+@media(prefers-reduced-motion:reduce){.acao-encerrar.acoes-esgotadas:enabled{animation:none;}}

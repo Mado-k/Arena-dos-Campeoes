@@ -1,6 +1,7 @@
 // Salas e sessões retomáveis. O token privado nunca entra no estado público.
 const {randomInt,randomBytes,createHash,timingSafeEqual}=require('node:crypto');
 const Partida=require('./partida');
+const Motor=require('./public/motor');
 const IA=require('./public/ia');
 const RITMO=require('./public/ritmo');
 const MODOS=new Set(['multiplayer','coop']);
@@ -8,9 +9,12 @@ const ALFABETO='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const hash=token=>createHash('sha256').update(token).digest('hex');
 const limparNome=nome=>String(nome||'').replace(/[\u0000-\u001f]/g,'').trim().slice(0,20);
 function novoCodigo(salas){let codigo;do{codigo=Array.from({length:5},()=>ALFABETO[randomInt(ALFABETO.length)]).join('');}while(salas.has(codigo));return codigo;}
-function publico(sala){return {
-  codigo:sala.codigo,modo:sala.modo,dificuldade:sala.dificuldade,
-  tamanhoBaralho:sala.modo==='coop'?Partida.tamanhoCoop(sala.tamanhoBaralho,sala.jogadores.length):sala.tamanhoBaralho,
+function publico(sala){
+  const participantes=sala.modo==='coop'?sala.jogadores.length*2:Math.max(sala.min,sala.jogadores.length);
+  const total=Motor.tamanhoParaParticipantes(sala.tamanhoBaralho,participantes);
+  return {
+  codigo:sala.codigo,modo:sala.modo,dificuldade:sala.dificuldade,formato:sala.formato||'livre',
+  tamanhoBaralho:total,participantes,cartasPorParticipante:total/participantes,
   tamanhoBaralhoEscolhido:sala.tamanhoBaralho,maquinas:sala.modo==='coop'?sala.jogadores.length:0,
   max:sala.max,min:sala.min,anfitriao:sala.anfitriao,iniciando:Boolean(sala.iniciando),emPartida:Boolean(sala.partida),
   jogadores:sala.jogadores.map(j=>({id:j.id,nome:j.nome,pronto:j.pronto,conectado:j.conectado,representante:j.representante||null}))
@@ -24,12 +28,21 @@ function mensagemInicio(err){
   if(err.code==='ER_NO_SUCH_TABLE')return 'A tabela de cartas não existe no banco configurado. Prepare a tabela e execute o seed.js nesse banco.';
   return 'Não foi possível carregar as cartas do banco. Confira os Logs do serviço no Render para identificar a causa.';
 }
-async function carregarComPrazo(loader,prazo){let timer;try{return await Promise.race([Promise.resolve().then(loader),new Promise((_,r)=>{timer=setTimeout(()=>r(Object.assign(Error('Tempo esgotado'),{code:'TEMPO_CARTAS_ESGOTADO'})),prazo);})]);}finally{clearTimeout(timer);}}
-module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null,tempoIA=RITMO.entreAcoesIA,tempoAvisoIA=RITMO.inicioIA}={}){
+function mensagemSessoes(err){
+  if(err.code==='TEMPO_SESSOES_ESGOTADO')return 'O servidor ainda está recuperando as salas. Aguarde alguns segundos e tente novamente.';
+  if(['ER_TABLEACCESS_DENIED_ERROR','ER_DBACCESS_DENIED_ERROR'].includes(err.code))return 'O banco negou acesso à tabela de sessões (arena_sessoes). Confira as permissões do usuário do banco nos Logs do Render.';
+  if(['ETIMEDOUT','ECONNREFUSED','ENOTFOUND','EAI_AGAIN','PROTOCOL_CONNECTION_LOST'].includes(err.code))return 'O servidor está conectado, mas não conseguiu acessar o banco de sessões. Confira a conexão com o Aiven nos Logs do Render e tente novamente.';
+  if(['HANDSHAKE_SSL_ERROR','SELF_SIGNED_CERT_IN_CHAIN','UNABLE_TO_VERIFY_LEAF_SIGNATURE','CERT_HAS_EXPIRED','ER_ACCESS_DENIED_ERROR','ER_BAD_DB_ERROR'].includes(err.code))return mensagemInicio(err);
+  return 'Não foi possível preparar ou salvar as salas no banco. Confira os Logs do Render e tente novamente.';
+}
+async function carregarComPrazo(loader,prazo,codigo='TEMPO_CARTAS_ESGOTADO'){let timer;try{return await Promise.race([Promise.resolve().then(loader),new Promise((_,r)=>{timer=setTimeout(()=>r(Object.assign(Error('Tempo esgotado'),{code:codigo})),prazo);})]);}finally{clearTimeout(timer);}}
+module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null,tempoInicializacao=6000,tempoIA=RITMO.entreAcoesIA,tempoAvisoIA=RITMO.inicioIA}={}){
   const salas=new Map(),timers=new Map(),timersIA=new Map(),iniciosIA=new WeakMap();
   const snapshot=sala=>({...sala,salvando:false,revanche:[...(sala.revanche||[])],iniciando:false,partida:sala.partida?.salvar()||null});
+  const espectador=(sala,j)=>Boolean(sala.partida?.estado.torneio && sala.partida.estado.jogadores[sala.partida.ids.indexOf(j.id)]?.eliminado);
+  const presentes=sala=>sala.jogadores.filter(j=>!espectador(sala,j));
   async function persistir(sala){if(armazenamento)await armazenamento.salvar(snapshot(sala));}
-  function pausa(sala){const terminou=sala.partida&&sala.partida.estado.vencedor!==null;io.to(sala.codigo).emit('partida:pausa',{pausada:!terminou&&sala.jogadores.some(j=>!j.conectado),ausentes:terminou?[]:sala.jogadores.filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
+  function pausa(sala){const terminou=sala.partida&&sala.partida.estado.vencedor!==null;io.to(sala.codigo).emit('partida:pausa',{pausada:!terminou&&presentes(sala).some(j=>!j.conectado),ausentes:terminou?[]:presentes(sala).filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
   function publicar(sala){io.to(sala.codigo).emit('sala',publico(sala));pausa(sala);}
   function atualizarPartida(sala){pausa(sala);for(const j of sala.jogadores)if(j.conectado&&j.socketId)io.to(j.socketId).emit('partida:estado',sala.partida.visao(j.id));}
   async function removerSala(sala,motivo){
@@ -39,7 +52,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
   }
   function agendar(sala){
     clearTimeout(timers.get(sala.codigo));
-    const ausentes=sala.jogadores.filter(j=>!j.conectado);
+    const ausentes=presentes(sala).filter(j=>!j.conectado);
     if(!ausentes.length){timers.delete(sala.codigo);return;}
     const prazo=Math.max(0,Math.min(...ausentes.map(j=>j.desconectadoEm+tempoReconexao))-Date.now());
     const timer=setTimeout(()=>{removerSala(sala,'O prazo para reconectar terminou. A partida foi encerrada.').catch(err=>console.error('Falha ao encerrar sessão:',err.code||err.message));},prazo);
@@ -48,13 +61,13 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
   function cancelarIA(sala){clearTimeout(timersIA.get(sala.codigo));timersIA.delete(sala.codigo);}
   function agendarIA(sala){
     const p=sala.partida;
-    if(timersIA.has(sala.codigo)||!p||!p.coop||p.estado.vencedor!==null||!p.estado.jogadores[p.estado.turno].maquina||sala.jogadores.some(j=>!j.conectado))return;
+    if(timersIA.has(sala.codigo)||!p||p.estado.vencedor!==null||!p.estado.jogadores[p.estado.turno].maquina||presentes(sala).some(j=>!j.conectado))return;
     let inicio=iniciosIA.get(p);
     if(!inicio||inicio.turno!==p.estado.numTurno){inicio={turno:p.estado.numTurno,ate:Date.now()+tempoAvisoIA};iniciosIA.set(p,inicio);}
     const espera=Math.max(tempoIA,inicio.ate-Date.now());
     const timer=setTimeout(async()=>{
       timersIA.delete(sala.codigo);
-      if(salas.get(sala.codigo)!==sala||sala.partida!==p||sala.jogadores.some(j=>!j.conectado))return;
+      if(salas.get(sala.codigo)!==sala||sala.partida!==p||presentes(sala).some(j=>!j.conectado))return;
       if(sala.salvando){agendarIA(sala);return;}
       const antes=p.salvar();sala.salvando=true;
       try{
@@ -66,19 +79,29 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
     },espera);
     timer.unref?.();timersIA.set(sala.codigo,timer);
   }
-  const pronto=(async()=>{
+  const recuperarSessoes=async()=>{
     if(!armazenamento)return;
     for(const dados of await armazenamento.carregar()){
-      if(!MODOS.has(dados.modo)||!Array.isArray(dados.jogadores)||!dados.jogadores.length)continue;
+      if(!dados||!MODOS.has(dados.modo)||!Array.isArray(dados.jogadores)||!dados.jogadores.length)continue;
       if(Date.now()-(dados.atualizadoEm||0)>24*60*60*1000){await armazenamento.excluir(dados.codigo);continue;}
-      const sala={...dados,salvando:false,iniciando:false,revanche:new Set(dados.revanche||[]),partida:dados.partida?Partida.restaurar(dados.partida):null};
-      sala.jogadores.forEach(j=>{j.conectado=false;j.socketId=null;j.desconectadoEm=Date.now();});
-      salas.set(sala.codigo,sala);agendar(sala);
+      if(salas.has(dados.codigo))continue;
+      try{
+        const sala={...dados,max:4,salvando:false,iniciando:false,revanche:new Set(dados.revanche||[]),partida:dados.partida?Partida.restaurar(dados.partida):null};
+        sala.jogadores.forEach(j=>{j.conectado=false;j.socketId=null;j.desconectadoEm=Date.now();});
+        salas.set(sala.codigo,sala);agendar(sala);
+      }catch{console.error('Sessão salva inválida ignorada:',dados.codigo);}
     }
-  })();
-  pronto.catch(err=>console.error('Não foi possível recuperar as sessões:',err.code||err.message));
+  };
+  let inicializacao=null,falhou=false;
+  function prepararSalas(){
+    if(!inicializacao||falhou){
+      falhou=false;inicializacao=recuperarSessoes();
+      inicializacao.catch(err=>{falhou=true;console.error('Não foi possível recuperar as sessões:',err.code||err.message);});
+    }
+    return inicializacao;
+  }
+  const pronto=prepararSalas();
   io.on('connection',socket=>{
-    socket.use((_,next)=>pronto.then(()=>next(),()=>next(Error('Não foi possível recuperar as partidas. Tente novamente.'))));
     const resposta=cb=>typeof cb==='function'?cb:()=>{};
     const salaAtual=()=>salas.get(socket.data.sala);
     const jogadorAtual=sala=>sala?.jogadores.find(j=>j.id===socket.data.jogadorId&&j.socketId===socket.id);
@@ -87,7 +110,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       socket.data.sala=null;socket.data.jogadorId=null;
       if(!sala||!j)return;
       socket.leave(sala.codigo);
-      if((sala.partida&&sala.partida.estado.vencedor===null)||sala.iniciando){
+      if((sala.partida&&sala.partida.estado.vencedor===null&&!espectador(sala,j))||sala.iniciando){
         cancelarIA(sala);sala.partida=null;sala.iniciando=false;
         io.to(sala.codigo).emit('partida:encerrada',{motivo:'Um jogador abandonou a partida. Preparem uma nova partida.'});
       }
@@ -108,7 +131,21 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       publicar(sala);
     }
     let operacoes=Promise.resolve();
-    function tratar(evento,fn){socket.on(evento,(dados,cb)=>{operacoes=operacoes.then(async()=>{const responder=resposta(cb);try{await fn(dados,responder);}catch(err){console.error('Falha na sala:',err.code||err.message);responder({erro:'Não foi possível salvar a sessão. Tente novamente.'});}});});}
+    function tratar(evento,fn){
+      socket.on(evento,(dados,cb)=>{
+        operacoes=operacoes.then(async()=>{
+          const responder=resposta(cb);
+          try{
+            // A falha de inicialização precisa chegar ao callback do navegador.
+            await carregarComPrazo(prepararSalas,tempoInicializacao,'TEMPO_SESSOES_ESGOTADO');
+            await fn(dados,responder);
+          }catch(err){
+            console.error('Falha na sala:',err.code||err.message);
+            responder({erro:mensagemSessoes(err),codigo:err.code||'SESSOES_INDISPONIVEIS'});
+          }
+        });
+      });
+    }
     tratar('sala:criar',async(dados,responder)=>{
       const nome=limparNome(dados?.nome);if(!MODOS.has(dados?.modo))return responder({erro:'Modo de jogo inválido.'});
       if(!nome)return responder({erro:'Escolha um apelido.'});
@@ -116,7 +153,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       if(![20,30,40].includes(total))return responder({erro:'Escolha 20, 30 ou 40 cartas no total.'});
       if(!IA.NIVEIS.includes(dificuldade))return responder({erro:'Dificuldade inválida.'});
       await sair();
-      const sala={codigo:novoCodigo(salas),modo:dados.modo,dificuldade,tamanhoBaralho:total,max:dados.modo==='coop'?4:2,min:dados.modo==='coop'?1:2,anfitriao:socket.id,jogadores:[],atualizadoEm:Date.now()};
+      const sala={codigo:novoCodigo(salas),modo:dados.modo,formato:'livre',dificuldade,tamanhoBaralho:total,max:4,min:dados.modo==='coop'?1:2,anfitriao:socket.id,jogadores:[],atualizadoEm:Date.now()};
       salas.set(sala.codigo,sala);await entrar(sala,nome);responder({ok:true,sala:publico(sala)});
     });
     tratar('sala:entrar',async(dados,responder)=>{
@@ -142,8 +179,27 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       socket.emit('sessao',{codigo:sala.codigo,token:dados.token,jogadorId:j.id,nome:j.nome,modo:sala.modo});
       publicar(sala);if(sala.partida)atualizarPartida(sala);agendarIA(sala);responder({ok:true,sala:publico(sala)});
     });
+    tratar('sala:formato',async(formato,responder)=>{
+      const sala=salaAtual(),j=jogadorAtual(sala);
+      if(!j||sala.anfitriao!==j.id||sala.modo!=='multiplayer')return responder({erro:'Só o anfitrião do multiplayer pode escolher o formato.'});
+      if(sala.partida||sala.iniciando)return responder({erro:'Escolha o formato antes de iniciar.'});
+      if(!['livre','2v2'].includes(formato))return responder({erro:'Formato inválido.'});
+      sala.formato=formato;sala.min=formato==='2v2'?4:2;sala.jogadores.forEach(x=>{x.pronto=false;});
+      await persistir(sala);publicar(sala);responder({ok:true,sala:publico(sala)});
+    });
+    tratar('sala:baralho',async(total,responder)=>{
+      const sala=salaAtual(),j=jogadorAtual(sala);
+      if(!j||sala.anfitriao!==j.id)return responder({erro:'Só o anfitrião pode alterar o total de cartas.'});
+      if(sala.partida||sala.iniciando)return responder({erro:'Altere o total de cartas antes de iniciar a partida.'});
+      if(![20,30,40].includes(total))return responder({erro:'Escolha 20, 30 ou 40 cartas no total.'});
+      if(sala.tamanhoBaralho!==total){
+        sala.tamanhoBaralho=total;sala.jogadores.forEach(x=>{x.pronto=false;});sala.atualizadoEm=Date.now();
+        await persistir(sala);publicar(sala);
+      }
+      responder({ok:true,sala:publico(sala)});
+    });
     tratar('sala:pronto',async(valor,responder)=>{
-      const sala=salaAtual(),j=jogadorAtual(sala);if(!j||sala.partida||sala.iniciando)return;
+      const sala=salaAtual(),j=jogadorAtual(sala);if(!j||sala.partida||sala.iniciando)return responder({erro:'Não é possível alterar a prontidão fora de uma sala disponível.'});
       j.pronto=Boolean(valor);sala.atualizadoEm=Date.now();await persistir(sala);publicar(sala);responder({ok:true});
     });
     tratar('sala:representante',async(codigo,responder)=>{
@@ -163,7 +219,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
         if(!sala.iniciando||!salas.has(sala.codigo)||ids!==sala.jogadores.map(x=>x.id).join(',')||sala.jogadores.some(x=>!x.conectado)){
           sala.iniciando=false;publicar(sala);return responder({erro:'Os jogadores da sala mudaram. Tente novamente.'});
         }
-        sala.partida=new Partida(sala.jogadores,cartas,sala.modo,sala.tamanhoBaralho,{dificuldade:sala.dificuldade});
+        sala.partida=new Partida(sala.jogadores,cartas,sala.modo,sala.tamanhoBaralho,{dificuldade:sala.dificuldade,formato:sala.formato||'livre'});
         sala.revanche=new Set();sala.iniciando=false;sala.atualizadoEm=Date.now();await persistir(sala);publicar(sala);atualizarPartida(sala);responder({ok:true});
       }catch(err){sala.partida=null;sala.iniciando=false;publicar(sala);console.error('Não foi possível iniciar a partida:',err.code||err.message);responder({erro:mensagemInicio(err),codigo:err.code||'FALHA_INICIO_PARTIDA'});}
     });
@@ -171,7 +227,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
     tratar('partida:acao',async(dados,responder)=>{
       const agora=Date.now();if(agora-janela>1000){janela=agora;quantidade=0;}if(++quantidade>30)return responder({erro:'Muitas ações. Aguarde um instante.'});
       const sala=salaAtual(),j=jogadorAtual(sala);if(!j||!sala.partida)return responder({erro:'Não há partida em andamento.'});
-      if(sala.jogadores.some(x=>!x.conectado))return responder({erro:'A partida está pausada. Aguardando reconexão.'});
+      if(presentes(sala).some(x=>!x.conectado))return responder({erro:'A partida está pausada. Aguardando reconexão.'});
       if(sala.salvando)return responder({erro:'Aguardando a confirmação da ação anterior.'});
       const antes=sala.partida.salvar(),res=sala.partida.agir(j.id,dados);
       if(res.ok){

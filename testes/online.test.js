@@ -168,7 +168,7 @@ test('API: mesma origem, Codespaces, Live Server e hospedagem', () => {
 async function ambiente(t, loader = async () => cartas, opcoes) {
   const servidor = http.createServer();
   const io = new Server(servidor);
-  iniciarSalas(io, loader, opcoes);
+  const controle=iniciarSalas(io, loader, opcoes);
   servidor.listen(0, '127.0.0.1'); await once(servidor, 'listening');
   const clientes = [];
   t.after(async () => { clientes.forEach(c => c.close()); await new Promise(r => io.close(r)); });
@@ -176,7 +176,7 @@ async function ambiente(t, loader = async () => cartas, opcoes) {
     const c = conectar('http://127.0.0.1:' + servidor.address().port, { transports: ['websocket'], reconnection: false });
     clientes.push(c); await once(c, 'connect'); return c;
   }
-  return { cliente };
+  return { cliente, controle };
 }
 const pedir = (c, evento, dados) => new Promise((resolve, reject) => c.timeout(4000).emit(evento, dados, (e, r) => e ? reject(e) : resolve(r)));
 function esperar(c, evento, condicao = () => true) { return new Promise((resolve, reject) => {
@@ -244,8 +244,8 @@ test('falha do banco não deixa a sala presa ao iniciar', { timeout: 12000 }, as
 });
 
 for (const caso of [
-  { nome: 'banco vazio', loader: async () => [], codigo: 'CARTAS_INSUFICIENTES', mensagem: /0 cartas jogáveis.*seed\.js/ },
-  { nome: 'somente representantes', loader: async () => cartas.filter(c => c.classe === 'representante'), codigo: 'CARTAS_INSUFICIENTES', mensagem: /0 cartas jogáveis/ },
+  { nome: 'banco vazio', loader: async () => [], codigo: 'CARTAS_INSUFICIENTES', mensagem: /catálogo tem 0/ },
+  { nome: 'somente representantes', loader: async () => cartas.filter(c => c.classe === 'representante'), codigo: 'CARTAS_INSUFICIENTES', mensagem: /catálogo tem 0/ },
   { nome: 'certificado Aiven', loader: async () => { throw Object.assign(Error('detalhe privado'), { code: 'HANDSHAKE_SSL_ERROR' }); }, codigo: 'HANDSHAKE_SSL_ERROR', mensagem: /certificado.*Aiven/ }
 ]) test('início recusado mostra causa e permite tentar de novo: ' + caso.nome, { timeout: 12000 }, async t => {
   const a = await ambiente(t, caso.loader);
@@ -313,4 +313,103 @@ test('lobby co-op reduz máquinas e ajusta para 30 cartas se a quarta pessoa sai
   assert.equal(menor.maquinas,3);assert.equal(menor.jogadores.length,3);assert.equal(menor.tamanhoBaralho,30);assert(menor.jogadores.every(j=>!j.pronto));
   const novo=await a.cliente(),resp=await pedir(novo,'sala:entrar',{modo:'coop',nome:'Novo',codigo:r.sala.codigo});
   assert(resp.ok);assert.equal(resp.sala.maquinas,4);assert.equal(resp.sala.tamanhoBaralho,40);
+});
+
+for(const n of [2,3,4]) test(`lobby multiplayer com ${n} pessoas: anfitrião ajusta cartas, divisão inteira e início privado`, {timeout:12000}, async t=>{
+  const a=await ambiente(t),host=await a.cliente(),todos=[host];
+  const criado=await pedir(host,'sala:criar',{modo:'multiplayer',nome:'Host'}),codigo=criado.sala.codigo;
+  assert.equal(criado.sala.max,4);assert.equal(criado.sala.cartasPorParticipante,20);
+  assert((await pedir(host,'sala:baralho',20)).ok);
+  for(let i=1;i<n;i++){
+    await pedir(host,'sala:pronto',true);
+    const c=await a.cliente();todos.push(c);
+    const r=await pedir(c,'sala:entrar',{modo:'multiplayer',nome:'Pessoa '+i,codigo});
+    assert(r.ok);assert.equal(r.sala.tamanhoBaralho,Math.ceil(20/(i+1))*(i+1));
+    assert.equal(r.sala.cartasPorParticipante,r.sala.tamanhoBaralho/(i+1));
+    assert(r.sala.jogadores.every(j=>!j.pronto));assert(!JSON.stringify(r.sala).includes('token'));
+  }
+  assert((await pedir(todos[1],'sala:baralho',30)).erro);
+  assert((await pedir(host,'sala:baralho',21)).erro);
+  for(const c of todos)await pedir(c,'sala:pronto',true);
+  const mudou=esperar(todos[1],'sala',s=>s.tamanhoBaralhoEscolhido===30);
+  const r=await pedir(host,'sala:baralho',30),publica=await mudou;
+  const total=Math.ceil(30/n)*n;
+  assert.equal(r.sala.tamanhoBaralho,total);assert.deepEqual(publica,r.sala);
+  assert(r.sala.jogadores.every(j=>!j.pronto));
+  assert((await pedir(host,'partida:iniciar',{})).erro);
+  for(const c of todos)await pedir(c,'sala:pronto',true);
+  const igual=await pedir(host,'sala:baralho',30);assert(igual.sala.jogadores.every(j=>j.pronto));
+  const estados=todos.map(c=>esperar(c,'partida:estado'));
+  assert((await pedir(host,'partida:iniciar',{})).ok);
+  const visoes=await Promise.all(estados);
+  for(const v of visoes){
+    assert.equal(v.todosContraTodos,n>2);assert.equal(v.jogadores.length,n);assert.equal(v.tamanhoBaralho,total);
+    for(let i=0;i<n;i++){assert.equal(v.jogadores[i].mao.length,i===v.voce?3:0);assert.equal(v.jogadores[i].maoTotal+v.jogadores[i].baralhoTotal,total/n);assert(!v.jogadores[i].maquina);}
+  }
+  assert((await pedir(host,'sala:baralho',20)).erro);
+  const ativo=visoes[0].turno,alvo=require('../public/motor').adversarios(visoes[0],ativo)[0],uid=visoes[ativo].jogadores[ativo].mao[0].uid;
+  // Nos grupos, a mão inicial sempre inclui um campeão. A escolha de alvo chega ao servidor.
+  if(n>2)assert((await pedir(todos[ativo],'partida:acao',{tipo:'invocar',uid,alvo,revisao:0})).ok);
+});
+
+test('entradas e saídas recalculam a partir do total escolhido, sem acumular arredondamentos',{timeout:12000},async t=>{
+  const a=await ambiente(t),h=await a.cliente(),b=await a.cliente(),c=await a.cliente(),d=await a.cliente();
+  const r=await pedir(h,'sala:criar',{modo:'multiplayer',nome:'H',tamanhoBaralho:20}),codigo=r.sala.codigo;
+  for(const [i,s] of [b,c,d].entries()){
+    const sala=(await pedir(s,'sala:entrar',{modo:'multiplayer',nome:'Pessoa '+i,codigo})).sala;
+    assert.equal(sala.tamanhoBaralho,[20,21,20][i]);
+  }
+  const extra=await a.cliente();assert((await pedir(extra,'sala:entrar',{modo:'multiplayer',nome:'Extra',codigo})).erro);
+  let evento=esperar(h,'sala',s=>s.jogadores.length===3);await pedir(d,'sala:sair',null);assert.equal((await evento).tamanhoBaralho,21);
+  evento=esperar(h,'sala',s=>s.jogadores.length===2);await pedir(c,'sala:sair',null);assert.equal((await evento).tamanhoBaralho,20);
+});
+
+test('catálogo insuficiente para arredondar não prende o lobby nem distribui cópias',{timeout:12000},async t=>{
+  const a=await ambiente(t),h=await a.cliente(),todos=[h];
+  const r=await pedir(h,'sala:criar',{modo:'multiplayer',nome:'H'});
+  for(let i=1;i<3;i++){const c=await a.cliente();todos.push(c);await pedir(c,'sala:entrar',{modo:'multiplayer',nome:'Pessoa '+i,codigo:r.sala.codigo});}
+  for(const c of todos)await pedir(c,'sala:pronto',true);
+  const falha=await pedir(h,'partida:iniciar',{});assert.equal(falha.codigo,'CARTAS_INSUFICIENTES');assert.match(falha.erro,/42/);
+  const novo=await pedir(h,'sala:baralho',20);assert.equal(novo.sala.tamanhoBaralho,21);assert(!novo.sala.iniciando);assert(!novo.sala.emPartida);
+  for(const c of todos)await pedir(c,'sala:pronto',true);
+  assert((await pedir(h,'partida:iniciar',{})).ok);
+});
+
+test('2v2 online exige quatro pessoas, define duplas no lobby e valida os alvos no servidor',{timeout:12000},async t=>{
+ const a=await ambiente(t),todos=[];for(let i=0;i<4;i++)todos.push(await a.cliente());
+ const r=await pedir(todos[0],'sala:criar',{modo:'multiplayer',nome:'Pessoa 0',tamanhoBaralho:20}),codigo=r.sala.codigo;
+ const f=await pedir(todos[0],'sala:formato','2v2');assert.equal(f.sala.min,4);assert.equal(f.sala.formato,'2v2');
+ for(let i=1;i<4;i++)await pedir(todos[i],'sala:entrar',{modo:'multiplayer',nome:'Pessoa '+i,codigo});
+ assert((await pedir(todos[1],'sala:formato','livre')).erro);assert((await pedir(todos[0],'sala:formato','invalido')).erro);
+ for(const c of todos)await pedir(c,'sala:pronto',true);
+ const estados=todos.map(c=>esperar(c,'partida:estado'));assert((await pedir(todos[0],'partida:iniciar',{})).ok);
+ const vs=await Promise.all(estados);assert(vs.every(v=>v.equipes2v2&&v.cooperativo));assert.deepEqual(vs[0].equipes,[0,1,0,1]);
+ const ativo=vs[0].turno;assert((await pedir(todos[ativo],'partida:acao',{tipo:'comprar',alvo:(ativo+2)%4,revisao:0})).erro);
+ assert((await pedir(todos[ativo],'partida:acao',{tipo:'comprar',alvo:(ativo+1)%4,revisao:0})).ok);
+ assert((await pedir(todos[0],'sala:formato','livre')).erro);
+});
+
+test('eliminados podem sair ou desconectar sem encerrar nem pausar a final online',{timeout:12000},async t=>{
+ const catalogo=Array.from({length:40},(_,i)=>({codigo:'final'+i,nome:'Campeão '+i,classe:'campeão',ataque:100,defesa:1}));
+ const a=await ambiente(t,async()=>catalogo),todos=[];for(let i=0;i<4;i++)todos.push(await a.cliente());
+ const r=await pedir(todos[0],'sala:criar',{modo:'multiplayer',nome:'Pessoa 0',tamanhoBaralho:20}),codigo=r.sala.codigo;
+ for(let i=1;i<4;i++)await pedir(todos[i],'sala:entrar',{modo:'multiplayer',nome:'Pessoa '+i,codigo});
+ for(const c of todos)await pedir(c,'sala:pronto',true);
+ assert((await pedir(todos[0],'partida:iniciar',{})).ok);
+ const sala=a.controle.salas.get(codigo);
+ for(const[origem,alvo]of[[0,2],[1,3]]){
+  const p=sala.partida;p.estado.turno=origem;p.estado.acoes=2;
+  for(const i of[origem,alvo]){const j=p.estado.jogadores[i];j.campo=[j.mao.shift()];j.campo[0].ataqueBase=i===origem?100:0;}
+  p.estado.jogadores[alvo].derrotados=2;
+  assert((await pedir(todos[origem],'partida:acao',{tipo:'atacar',alvo,revisao:p.revisao})).ok);
+ }
+ assert.equal(sala.partida.estado.torneio.rodada,2);
+ const salvo=sala.partida.salvar();
+ assert((await pedir(todos[2],'sala:sair',null)).ok);assert(sala.partida);assert.deepEqual(sala.partida.salvar(),salvo);
+ const pausa=esperar(todos[0],'partida:pausa');todos[3].close();assert.equal((await pausa).pausada,false);
+ const quem=sala.partida.estado.turno;
+ // O próximo jogador ativo consegue encerrar normalmente com os dois perdedores ausentes.
+ assert((await pedir(todos[quem],'partida:acao',{tipo:'encerrar',alvo:quem===0?1:0,revisao:sala.partida.revisao})).ok);
+ const v=sala.partida.visao(todos[1].id);assert.equal(v.jogadores[0].mao.length,0);
+ const pausou=esperar(todos[1],'partida:pausa',d=>d.pausada);todos[0].close();assert((await pausou).pausada);
 });

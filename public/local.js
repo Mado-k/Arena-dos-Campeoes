@@ -56,16 +56,20 @@
         dialogo.append(titulo,texto,botoes);document.body.append(dialogo);atualizar();dialogo.showModal();
     }
     const representantes=()=>cartas.filter(c=>Motor.norm(c.classe)==='representante');
+    const formato=()=>$('formato-local').value;
+    const humanos=()=>modo==='pessoas'||formato()==='coop'?Number($('quantidade-local').value):1;
+    const maquinas=()=>modo==='pessoas'?0:formato()==='coop'?humanos():formato()==='2v2'?3:Number($('quantidade-local').value);
     function resumo(){
         if(!modo)return;
-        const n=Number($('quantidade-local').value),participantes=modo==='maquina'?2*n:n;
-        const total=Motor.tamanhoParaParticipantes(Number($('baralho-local').value),participantes);
-        $('resumo-local').textContent=`${modo==='maquina'?n+' pessoa(s) × '+n+' máquina(s)':n+' pessoas, todos contra todos'} · ${total} cartas únicas · no mínimo 5 por participante, incluindo as 3 da mão inicial.${total!==Number($('baralho-local').value)?' Total ajustado automaticamente.':''}`;
+        const participantes=humanos()+maquinas();
+        const pedido=Number($('baralho-local').value),total=Motor.tamanhoParaParticipantes(pedido,participantes);
+        const descripcion=formato()==='2v2'?'Duplas 2v2':formato()==='coop'?'Equipe contra máquinas':'Duelo individual · mata-mata';
+        $('resumo-local').textContent=`${descripcion} · ${humanos()} pessoa(s) + ${maquinas()} máquina(s) · ${total} cartas únicas · ${total/participantes} por participante (3 na mão e ${total/participantes-3} na compra).${total!==pedido?' Total ajustado automaticamente.':''}${formato()==='2v2'&&modo==='maquina'?' Você e a Máquina 2 contra as Máquinas 1 e 3.':''}`;
     }
     function formularios(){
         const anteriores=[...$('participantes-local').querySelectorAll('fieldset')].map(f=>({nome:f.querySelector('input').value,rep:f.querySelector('select').value}));
         $('participantes-local').replaceChildren();
-        for(let i=0;i<Number($('quantidade-local').value);i++){
+        for(let i=0;i<humanos();i++){
             const f=document.createElement('fieldset');f.className='j-cfg';const legend=document.createElement('legend');legend.textContent='Jogador '+(i+1);f.append(legend);
             const label=document.createElement('label');label.htmlFor='nome-local-'+i;label.textContent='Apelido';const input=document.createElement('input');input.id=label.htmlFor;input.maxLength=20;input.placeholder='Jogador '+(i+1);input.value=anteriores[i]?.nome||'';
             const lr=document.createElement('label');lr.htmlFor='rep-local-'+i;lr.textContent='Representante (opcional)';const select=document.createElement('select');select.id=lr.htmlFor;select.add(new Option('Sem representante',''));representantes().forEach(c=>select.add(new Option(c.nome,c.codigo)));select.value=anteriores[i]?.rep||'';
@@ -74,14 +78,25 @@
         }
         resumo();
     }
-    function escolher(tipo){modo=tipo;for(const t of ['maquina','pessoas'])$('modo-'+t).setAttribute('aria-pressed',String(t===tipo));$('opcoes-local').hidden=false;$('campo-dificuldade-local').hidden=tipo!=='maquina';$('quantidade-local').replaceChildren();for(let i=tipo==='maquina'?1:2;i<=4;i++)$('quantidade-local').add(new Option(String(i),String(i)));formularios();}
-    $('modo-maquina').onclick=()=>escolher('maquina');$('modo-pessoas').onclick=()=>escolher('pessoas');$('quantidade-local').onchange=formularios;$('baralho-local').onchange=resumo;
+    function atualizarFormato(){
+        const coop=$('formato-local').querySelector('option[value="coop"]');coop.hidden=modo!=='maquina';
+        if(modo==='pessoas'&&formato()==='coop')$('formato-local').value='livre';
+        const q=$('quantidade-local'),anterior=q.value;q.replaceChildren();
+        if(formato()==='2v2')q.add(new Option(modo==='maquina'?'3 máquinas (4 invocadores)':'4 pessoas',modo==='maquina'?'3':'4'));
+        else for(let i=modo==='pessoas'?2:1;i<=4;i++)q.add(new Option(String(i),String(i)));
+        if([...q.options].some(o=>o.value===anterior))q.value=anterior;
+        q.disabled=formato()==='2v2';
+        $('quantidade-rotulo').textContent=modo==='pessoas'||formato()==='coop'?'Pessoas neste dispositivo':'Máquinas na partida';
+        formularios();
+    }
+    function escolher(tipo){modo=tipo;for(const t of ['maquina','pessoas'])$('modo-'+t).setAttribute('aria-pressed',String(t===tipo));$('opcoes-local').hidden=false;$('campo-dificuldade-local').hidden=tipo!=='maquina';atualizarFormato();}
+    $('modo-maquina').onclick=()=>escolher('maquina');$('modo-pessoas').onclick=()=>escolher('pessoas');$('quantidade-local').onchange=formularios;$('baralho-local').onchange=resumo;$('formato-local').onchange=atualizarFormato;
     $('confirmar-local').onclick=()=>{$('passar-local').hidden=true;mostrar();};
     $('comecar-local').onclick=()=>{
         $('erro-local').textContent='';
         try{
             const jogadores=[...$('participantes-local').querySelectorAll('fieldset')].map((f,i)=>({id:'local'+i,nome:f.querySelector('input').value.trim()||'Jogador '+(i+1),representante:f.querySelector('select').value||null}));
-            partida=new Partida(jogadores,cartas,modo==='maquina'?'coop':'local',Number($('baralho-local').value),{dificuldade:$('dificuldade-local').value});
+            partida=new Partida(jogadores,cartas,formato()==='coop'?'coop':'local',Number($('baralho-local').value),{dificuldade:$('dificuldade-local').value,formato:formato()==='2v2'?'2v2':'livre',maquinas:formato()==='coop'?0:maquinas()});
             humanoAtual=partida.estado.turno;sessao++;
             if(jogadores.length>1){mesa.limpar();$('config-local').hidden=true;$('vez-local').textContent='Vez de '+partida.estado.jogadores[humanoAtual].nome;$('passar-local').hidden=false;}
             else mostrar();

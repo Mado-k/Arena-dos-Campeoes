@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const Partida = require('../partida');
 const Motor = require('../public/motor');
-const cartas = Array.from({ length: 40 }, (_, i) => ({ codigo: 'teste' + i, nome: 'Carta ' + i, classe: 'campeão', ataque: 3, defesa: 20 }));
+const cartas = Array.from({ length: 48 }, (_, i) => ({ codigo: 'teste' + i, nome: 'Carta ' + i, classe: 'campeão', ataque: 3, defesa: 20 }));
 const criar = (quantidade, total = 40) => new Partida(Array.from({ length: quantidade }, (_, i) => ({ id: 'p' + i, nome: 'Pessoa ' + i })), cartas, 'coop', total);
 const todas = j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]);
 function emCampo(p, i, { ataque = 3, defesa = 20, codigo } = {}) {
@@ -14,7 +14,7 @@ function emCampo(p, i, { ataque = 3, defesa = 20, codigo } = {}) {
 const acao = (p, i, dados) => p.agir('p' + i, { ...dados, revisao: p.revisao });
 
 for (const n of [1,2,3,4]) for (const pedido of [20,30,40]) test(`${n} humanos, ${n} máquinas e total solicitado ${pedido}, com cartas únicas e mãos privadas`, () => {
-  const total = Math.max(pedido,n*10);
+  const total = Math.ceil(Math.max(pedido,n*10)/(2*n))*(2*n);
   const p = criar(n, pedido), e = p.estado;
   assert.equal(e.tamanhoBaralho,total);
   assert.equal(e.jogadores.length, 2 * n);
@@ -43,9 +43,9 @@ test('a mão inicial do co-op inclui um campeão sem duplicar cartas', () => {
   vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../public/cartas-offline.js'), 'utf8'), contexto);
   const catalogo = JSON.parse(JSON.stringify(contexto.window.CARTAS_OFFLINE));
   for (const n of [1, 2, 3, 4]) for (let tentativa = 0; tentativa < 20; tentativa++) {
-    const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Pessoa ' + i })), catalogo, 'coop', 40);
+    const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Pessoa ' + i })), catalogo, 'coop', n === 3 ? 30 : 40);
     assert(p.estado.jogadores.every(j => j.mao.length === 3 && j.mao.some(Motor.ehCampeao)));
-    assert.equal(new Set(p.estado.jogadores.flatMap(todas).map(c => c.base.codigo)).size, 40);
+    assert.equal(new Set(p.estado.jogadores.flatMap(todas).map(c => c.base.codigo)).size, p.estado.tamanhoBaralho);
   }
 });
 
@@ -183,7 +183,7 @@ test('simulações com cartas reais preservam propriedade, unicidade e ações d
   const catalogo = JSON.parse(JSON.stringify(contexto.window.CARTAS_OFFLINE));
   const resumo = { partidas: 0, concluidas: 0, atingiramLimite: 0 };
   for (const n of [1, 2, 3, 4]) for (let rodada = 0; rodada < 4; rodada++) {
-    const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Humano ' + i })), catalogo, 'coop');
+    const p = new Partida(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, nome: 'Humano ' + i })), catalogo, 'coop', n === 3 ? 30 : 40);
     for (let turno = 0; turno < 120 && p.estado.vencedor === null; turno++) {
       const indice = p.estado.turno;
       assert(!p.estado.jogadores[indice].maquina && !p.estado.jogadores[indice].eliminado);
@@ -210,9 +210,9 @@ test('simulações com cartas reais preservam propriedade, unicidade e ações d
         assert(acao(p, indice, { tipo: 'encerrar' }).ok); p.jogarComputador();
       }
       const conjunto = p.estado.jogadores.flatMap(todas);
-      assert.equal(conjunto.length, 40);
-      assert.equal(new Set(conjunto.map(c => c.uid)).size, 40);
-      assert.equal(new Set(conjunto.map(c => c.base.codigo)).size, 40);
+      assert.equal(conjunto.length, p.estado.tamanhoBaralho);
+      assert.equal(new Set(conjunto.map(c => c.uid)).size, p.estado.tamanhoBaralho);
+      assert.equal(new Set(conjunto.map(c => c.base.codigo)).size, p.estado.tamanhoBaralho);
       p.estado.jogadores.forEach((j, i) => {
         assert(j.campo.length <= 1 && j.apoio.length <= 2);
       });

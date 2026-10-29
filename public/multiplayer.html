@@ -30,8 +30,8 @@
         <div class="lobby-cabeca">
             <p class="selo">Modo de jogo</p>
             <h1>Multiplayer</h1>
-            <p class="lead">Crie uma sala, mande o código para um amigo e prepare o duelo.</p>
-            <p class="suave dica-regras">Objetivo: derrote 3 campeões do adversário. Cada jogador começa com 3 cartas e tem 2 ações por turno. <a href="tutorial.html">Ver todas as regras</a></p>
+            <p class="lead">Crie uma sala para 2 a 4 pessoas e compartilhe o código com seus amigos.</p>
+            <p class="suave dica-regras">Cada participante é eliminado ao perder 3 campeões. Com 3 ou 4 pessoas, há mata-mata e final; no 2v2, vence a dupla sobrevivente. Cada jogador começa com 3 cartas e tem 2 ações por turno. <a href="tutorial.html">Ver todas as regras</a></p>
         </div>
 
         <!-- ENTRADA -->
@@ -45,14 +45,6 @@
                 <div class="lobby-opcao">
                     <h2>Criar sala</h2>
                     <p>Você vira o anfitrião e recebe um código para compartilhar.</p>
-                    <div class="campo">
-                        <label for="tamanho-baralho">Cartas no total da partida</label>
-                        <select id="tamanho-baralho">
-                            <option value="20">20 cartas · 10 por lado</option>
-                            <option value="30">30 cartas · 15 por lado</option>
-                            <option value="40" selected>40 cartas · 20 por lado</option>
-                        </select>
-                    </div>
                     <button type="button" class="btn primario" id="criar">Criar sala</button>
                 </div>
                 <div class="lobby-opcao">
@@ -79,7 +71,23 @@
                 <button type="button" class="btn pequeno" id="copiar">Copiar convite</button>
             </div>
 
-            <p id="sala-baralho" class="suave"></p>
+            <div class="campo escolha-representante">
+                <label for="formato-sala">Formato da batalha</label>
+                <select id="formato-sala"><option value="livre">Duelo individual · mata-mata</option><option value="2v2">Duplas · 2 vs 2</option></select>
+                <p id="formato-descricao" class="suave"></p>
+            </div>
+            <div class="campo escolha-representante">
+                <label for="tamanho-baralho">Cartas no total da partida</label>
+                <select id="tamanho-baralho" aria-describedby="sala-baralho sala-distribuicao">
+                    <option value="20">20 cartas</option>
+                    <option value="30">30 cartas</option>
+                    <option value="40" selected>40 cartas</option>
+                </select>
+                <p class="suave">O anfitrião escolhe o total. Alterar as cartas pede uma nova confirmação de prontidão.</p>
+            </div>
+            <p id="sala-baralho" class="suave" aria-live="polite"></p>
+            <p id="sala-distribuicao" class="suave" aria-live="polite"></p>
+            <p id="sala-catalogo" class="status erro" role="alert" hidden></p>
             <div class="campo escolha-representante">
                 <label for="representante">Seu representante</label>
                 <select id="representante"><option value="">Sem representante</option></select>

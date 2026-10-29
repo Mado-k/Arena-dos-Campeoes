@@ -49,10 +49,35 @@ test('tamanho inválido ou cartas insuficientes são recusados sem diminuir o ba
 
 for (const modo of ['multiplayer', 'coop']) for (const total of [20, 30, 40]) test(`${modo} informa o tamanho ${total} e preserva a divisão nas visões privadas`, () => {
   const p = new Partida(jogadores, cartas, modo, total);
+  const ajustado = Motor.tamanhoParaParticipantes(total, modo === 'coop' ? 4 : 2);
   for (const j of jogadores) {
     const v = p.visao(j.id);
-    assert.equal(v.tamanhoBaralho, total);
-    for (const time of [0, 1]) assert.equal(v.jogadores.filter(l => l.equipe === time).reduce((n, l) => n + l.maoTotal + l.baralhoTotal, 0), total / 2);
+    assert.equal(v.tamanhoBaralho, ajustado);
+    for (const time of [0, 1]) assert.equal(v.jogadores.filter(l => l.equipe === time).reduce((n, l) => n + l.maoTotal + l.baralhoTotal, 0), ajustado / 2);
     for (let i = 0; i < v.jogadores.length; i++) assert.equal(v.jogadores[i].mao.length, i === v.voce ? 3 : 0);
+  }
+});
+
+for (const [n,pedido,total] of [[3,20,21],[3,30,30],[4,30,32],[4,40,40]]) test(`Multiplayer: ${pedido} cartas com ${n} pessoas ajusta para ${total}, igualmente e sem repetições`, () => {
+  const pessoas=Array.from({length:n},(_,i)=>({id:'p'+i,nome:'Pessoa '+i}));
+  const p=new Partida(pessoas,cartas,'multiplayer',pedido), e=p.estado;
+  assert.equal(e.tamanhoBaralho,total);
+  assert(e.todosContraTodos);
+  assert(e.jogadores.every(j=>todas(j).length===total/n && j.mao.length===3 && j.mao.some(Motor.ehCampeao)));
+  assert.equal(new Set(e.jogadores.flatMap(todas).map(c=>c.base.codigo)).size,total);
+  for(const pessoa of pessoas){const v=p.visao(pessoa.id);for(let i=0;i<n;i++)assert.equal(v.jogadores[i].mao.length,i===v.voce?3:0);}
+  const r=Partida.restaurar(JSON.parse(JSON.stringify(p.salvar())));
+  assert.deepEqual(r.visao('p0'),p.visao('p0'));
+});
+
+test('divisão inteira nunca reduz o total solicitado nem duplica cartas para completar o catálogo', () => {
+  const pessoas=Array.from({length:3},(_,i)=>({id:'p'+i,nome:'Pessoa '+i}));
+  assert.equal(Motor.tamanhoParaParticipantes(40,3),42);
+  assert.equal(Motor.tamanhoParaParticipantes(40,6),42);
+  assert.throws(()=>new Partida(pessoas,cartas,'multiplayer',40),{code:'CARTAS_INSUFICIENTES'});
+  assert.throws(()=>new Partida(pessoas,cartas,'coop',40),{code:'CARTAS_INSUFICIENTES'});
+  for(const n of [2,3,4,6,8])for(const pedido of [20,30,40]){
+    const total=Motor.tamanhoParaParticipantes(pedido,n);
+    assert.equal(total%n,0);assert(total>=pedido);assert(total/n>=5);
   }
 });

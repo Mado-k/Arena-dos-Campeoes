@@ -40,6 +40,10 @@
             if (dados.indisponivel) jogarNovamente.disabled = true;
         });
         let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null, resultadoMostrado = false;
+        let focoArena=matchMedia('(max-width:760px)').matches,espectadorAvisado=false;
+        const espectador=document.createElement('dialog');espectador.className='escolha-online resultado-partida';espectador.setAttribute('aria-label','Acompanhar a final');
+        espectador.append(el('h2','Você foi eliminado'),el('p','A próxima rodada começou. Quer assistir aos classificados ou sair da sala?','suave'));
+        const opcoesEspectador=el('div',undefined,'resultado-botoes');opcoesEspectador.append(botao('Assistir',()=>espectador.close()),botao('Sair da sala',()=>{espectador.close();aoSair();}));espectador.append(opcoesEspectador);document.body.append(espectador);
         let resultadoPendente=false,timerResultado,rolagemTurnoAte=0,interacoesRolagem=0;
         for(const evento of ['wheel','touchmove','pointerdown','keydown'])window.addEventListener(evento,()=>{interacoesRolagem++;},{passive:true});
         const aviso = el('p', '', 'instrucao');
@@ -60,10 +64,11 @@
             });
         }
         function mostrarResultado() {
+            espectador.close();
             if (!estado || estado.vencedor === null) return;
             const venceu = estado.cooperativo ? estado.vencedor === estado.equipes[estado.voce] : estado.vencedor === estado.voce;
-            const equipe = estado.cooperativo && estado.jogadores.filter(j => !j.maquina).length > 1;
-            tituloResultado.textContent = estado.vencedor === -1 ? 'Empate!' : compartilhada && !estado.cooperativo
+            const equipe = estado.cooperativo && (estado.equipes2v2 || estado.jogadores.filter(j => !j.maquina).length > 1);
+            tituloResultado.textContent = estado.vencedor === -1 ? 'Empate!' : compartilhada && estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : compartilhada && !estado.cooperativo
                 ? estado.jogadores[estado.vencedor].nome + ' venceu!'
                 : venceu ? equipe ? 'Sua equipe venceu!' : 'Você venceu!'
                 : equipe ? 'Sua equipe foi derrotada' : 'Você perdeu';
@@ -74,7 +79,7 @@
         }
 
         function ativo() {
-            return estado && estado.turno === estado.voce && estado.vencedor === null && !ocupado && !pausada;
+            return estado && estado.turno === estado.voce && estado.vencedor === null && !estado.jogadores[estado.voce].eliminado && !estado.torneio?.aguardando.includes(estado.voce) && !ocupado && !pausada;
         }
         function botao(texto, acao, habilitado = true, classe = 'btn pequeno') {
             const b = el('button', texto, classe);
@@ -262,7 +267,8 @@
         function maoComPilhas(i) {
             const j=estado.jogadores[i],sua=i===estado.voce;
             const recuperaveis=d=>d.descarte.filter(c=>!Motor.descartePermanente(c)).length;
-            const podeComprar=j.baralhoTotal>0||(estado.cooperativo?recuperaveis(j)>0:!estado.jogadores.some(d=>d.baralhoTotal)&&estado.jogadores.reduce((n,d)=>n+recuperaveis(d),estado.reservaCentralTotal||0)>=estado.jogadores.filter(d=>!d.eliminado).length);
+            const grupo=estado.torneio?[i,...Motor.adversarios(estado,i)].map(k=>estado.jogadores[k]):estado.jogadores;
+            const podeComprar=j.baralhoTotal>0||(estado.cooperativo?recuperaveis(j)>0:(!estado.torneio||grupo.length===2)&&!grupo.some(d=>d.baralhoTotal)&&grupo.reduce((n,d)=>n+recuperaveis(d),estado.reservaCentralTotal||0)>=grupo.filter(d=>!d.eliminado).length);
             const area=el('div',undefined,'mao-com-pilhas');
             const compra=el('section',undefined,'pilha-compra');compra.dataset.zona='baralho';
             if(sua)compra.append(botao('Comprar carta',()=>agir('comprar'),ativo()&&estado.acoes>0&&podeComprar,'btn primario acao-compra'));
@@ -289,7 +295,7 @@
             descarteArea.append(monte,el('span',j.descarte.length+' carta(s)','pilha-contagem'));
             area.append(compra,mao,descarteArea);return area;
         }
-        function lado(i) {
+        function lado(i,mesaCompleta=false) {
             const j = estado.jogadores[i], sua = i === estado.voce;
             const aliada = estado.equipes[i] === estado.equipes[estado.voce];
             const n = el('section', undefined, 'lado lado-online' + (sua ? ' lado-ativo' : '') + (j.eliminado ? ' lado-eliminado' : ''));
@@ -302,6 +308,7 @@
             quem.append(el('strong', j.nome));
             if (j.rep) quem.append(el('span', '· ' + j.rep.nome, 'rep'));
             if (j.bonusCampeao) quem.append(el('span', 'Próximo campeão: +' + j.bonusCampeao + ' DEF', 'etq'));
+            if(estado.torneio?.aguardando.includes(i)){n.classList.add('lado-aguardando');quem.append(el('span','Aguarda próxima rodada','etq'));}
             if (j.eliminado) quem.append(el('span', 'Eliminado', 'etq ruim'));
             else if (j.maquina) quem.append(el('span', `${j.acoesPorTurno} ações`, 'etq'));
             if ((estado.cooperativo || estado.todosContraTodos) && !aliada && i === alvoSelecionado && !j.eliminado) quem.append(el('span', 'Alvo selecionado', 'etq alvo-selecionado'));
@@ -317,54 +324,77 @@
                 zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta', campo: true }),
                 zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true, campo: true })
             );
-            if(aliada)n.append(cab,campo,maoComPilhas(i));
+            if(aliada||mesaCompleta)n.append(cab,campo,maoComPilhas(i));
             else n.append(cab,maoComPilhas(i),campo);
             return n;
+        }
+        function arenaQuatro(){
+            const janela=el('div',undefined,'arena-janela'+(focoArena?' arena-foco':''));
+            janela.setAttribute('aria-label',estado.cooperativo?'Mesa de duplas, frente a frente':'Mesa de quatro invocadores');
+            const arena=el('div',undefined,'arena-completa'+(estado.cooperativo?' arena-equipes':''));
+            const eu=estado.voce;
+            const ancora=estado.torneio?.rodada>1&&estado.jogadores[eu].eliminado?estado.jogadores.findIndex(j=>!j.eliminado):eu;
+            const oposto=Motor.adversarios(estado,ancora)[0]??(ancora+2)%4;
+            const laterais=[0,1,2,3].filter(i=>i!==ancora&&i!==oposto);
+            const posicoes=estado.cooperativo
+                ? [...estado.jogadores.map((_,i)=>i).filter(i=>estado.equipes[i]!==estado.equipes[eu]).map(i=>[i,'norte']),[eu,'sul'],...estado.jogadores.map((_,i)=>i).filter(i=>i!==eu&&estado.equipes[i]===estado.equipes[eu]).map(i=>[i,'sul'])]
+                : [[oposto,'norte'],[laterais[0],'oeste'],[laterais[1],'leste'],[ancora,'sul']];
+            for(const [i,posicao] of posicoes){
+                const assento=el('div',undefined,'assento assento-'+posicao);
+                assento.dataset.ativo=String(i===ancora||i===oposto||i===estado.turno);
+                assento.append(lado(i,true));arena.append(assento);
+            }
+            janela.append(arena);return janela;
         }
         function render() {
             if (!estado) return;
             const posicao={x:scrollX,y:scrollY},preservar=!mesa.hidden;
+            const janelaAnterior=mesa.querySelector('.arena-janela'),posicaoMesa=janelaAnterior?{x:janelaAnterior.scrollLeft,y:janelaAnterior.scrollTop}:null;
             mesa.hidden = false;
             const terminou = estado.vencedor !== null;
             const tabuleiro = el('div', undefined, 'mesa');
             const barra = el('div', undefined, 'barra');
             const info = el('div', undefined, 'turno-info');
-            const vencedor = estado.vencedor === -1 ? 'Empate!' : terminou ? (estado.cooperativo ? estado.vencedor === 0 ? 'A equipe venceu!' : 'As máquinas venceram!' : estado.jogadores[estado.vencedor].nome + ' venceu!') : '';
+            const vencedor = estado.vencedor === -1 ? 'Empate!' : terminou ? (estado.cooperativo ? estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : estado.vencedor === 0 ? 'A equipe venceu!' : 'As máquinas venceram!' : estado.jogadores[estado.vencedor].nome + ' venceu!') : '';
             info.append(el('strong', terminou ? vencedor : `Turno ${estado.numTurno} · vez de ${estado.jogadores[estado.turno].nome}`));
             const acoes = el('span', undefined, 'acoes-texto');
             acoes.append(el('span', 'Ações:'));
             for (let i = 0; i < estado.acoesPorTurno; i++) acoes.append(el('span', undefined, 'acao-pip' + (i >= estado.acoes ? ' gasta' : '')));
             acoes.append(el('span', `${estado.acoes}/${estado.acoesPorTurno}`));
-            info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.cooperativo ? estado.tamanhoBaralho / 2 + ' por equipe, divididas entre os integrantes' : estado.todosContraTodos ? 'entre ' + estado.jogadores.length + ' participantes' : estado.tamanhoBaralho / 2 + ' por lado'}${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
+            info.append(acoes, el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.tamanhoBaralho / estado.jogadores.length} por participante${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
             if (terminou) controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario'));
-            else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn' + (ativo() && estado.acoes === 0 ? ' primario destaque' : '')));
+            else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn acao-encerrar' + (ativo() ? ' primario' : '') + (ativo() && estado.acoes === 0 ? ' acoes-esgotadas' : '')));
             const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);
             dica.setAttribute('role', 'status');
             barra.append(info, controles, dica);
             if(estado.pandora)barra.append(el('p', 'Pandora ativa: ' + estado.danoPandora + ' de dano no início do turno de cada criatura, até uma delas morrer. Usos: ' + estado.pandoraUsos + '/3.', 'nota-equipe'));
-            if (estado.cooperativo) barra.append(el('p', 'Dificuldade: ' + ({facil:'Fácil',normal:'Normal',dificil:'Difícil'}[estado.dificuldade] || 'Normal'), 'suave'));
+            if (estado.torneio) {
+                const t=estado.torneio,duelos=t.duelos.map(d=>d.map(i=>estado.jogadores[i].nome).join(' × ')).join(' · ');
+                barra.append(el('p',`${estado.jogadores.filter(j=>!j.eliminado).length===2?'Final':'Rodada '+t.rodada} · ${duelos}${t.aguardando.includes(estado.voce)?' · Você aguarda os outros duelos.':''}`,'nota-equipe'));
+            }
+            if (estado.cooperativo || estado.jogadores.some(j=>j.maquina)) barra.append(el('p', 'Dificuldade: ' + ({facil:'Fácil',normal:'Normal',dificil:'Difícil'}[estado.dificuldade] || 'Normal'), 'suave'));
             if (estado.cooperativo || estado.todosContraTodos) {
                 const rivais = estado.jogadores.map((j, i) => i).filter(i => estado.equipes[i] !== estado.equipes[estado.voce]);
                 const maquinas = el('section', undefined, 'equipe-online maquinas-online' + (rivais.length === 4 ? ' quatro-maquinas' : ''));
-                maquinas.setAttribute('aria-label', estado.cooperativo ? 'Máquinas adversárias' : 'Jogadores adversários');
+                maquinas.setAttribute('aria-label', rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquinas adversárias' : 'Jogadores adversários');
                 for (const i of rivais) maquinas.append(lado(i));
                 const alvos = el('div', undefined, 'alvo-coop');
-                const label = el('label', estado.cooperativo ? 'Máquina alvo' : 'Adversário alvo');
+                const label = el('label', estado.torneio ? 'Seu adversário' : rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquina alvo' : 'Adversário alvo');
                 const select = document.createElement('select');
-                select.setAttribute('aria-label', estado.cooperativo ? 'Máquina alvo' : 'Adversário alvo');
-                for (const i of rivais) {
+                select.setAttribute('aria-label', rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquina alvo' : 'Adversário alvo');
+                for (const i of (estado.torneio ? Motor.adversarios(estado,estado.voce) : rivais)) {
                     const option = new Option(estado.jogadores[i].nome + (estado.jogadores[i].eliminado ? ' · derrotada' : ''), String(i));
                     option.disabled = estado.jogadores[i].eliminado;
                     select.add(option);
                 }
                 select.value = String(alvoSelecionado);
-                select.disabled = !ativo();
+                select.disabled = !ativo() || Boolean(estado.torneio);
                 select.addEventListener('change', () => { alvoSelecionado = Number(select.value); render(); });
                 label.append(select); alvos.append(label); barra.append(alvos);
-                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? (estado.todosContraTodos ? 'Você foi eliminado. Acompanhe os jogadores que continuam na arena.' : 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.') : estado.todosContraTodos ? 'Todos contra todos. Escolha o adversário alvo; vence o último jogador não eliminado.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
+                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? (estado.todosContraTodos ? 'Você foi eliminado. Acompanhe os jogadores que continuam na arena.' : 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.') : estado.torneio ? 'Mata-mata: enfrente seu adversário espelhado. Os vencedores avançam; quem já venceu aguarda a próxima rodada.' : estado.todosContraTodos ? 'Todos contra todos. Escolha o adversário alvo; vence o último jogador não eliminado.' : estado.equipes2v2 ? 'Duplas 2v2. Você e o aliado compartilham a vitória; cada um tem sua mão e seu campo.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
                 const aliados = el('section', undefined, 'aliados-online');
                 aliados.setAttribute('aria-label', 'Seus aliados');
                 for (let i = 0; i < estado.jogadores.length; i++) if (i !== estado.voce && estado.equipes[i] === estado.equipes[estado.voce]) {
@@ -374,7 +404,11 @@
                     detalhe.append(el('summary', `${j.nome} · ${j.eliminado ? 'eliminado' : i === estado.turno ? 'jogando agora' : 'aliado'} · ${j.derrotados}/3 campeões derrotados`), lado(i));
                     aliados.append(detalhe);
                 }
-                tabuleiro.append(maquinas, barra, aliados, lado(estado.voce));
+                if(estado.jogadores.length===4){
+                    const opcoes=el('div',undefined,'arena-opcoes');
+                    opcoes.append(botao(focoArena?'Ver mesa completa':'Focar no meu duelo',()=>{focoArena=!focoArena;render();}),el('small','Toque em uma carta em campo para ler os detalhes. Na mesa completa, deslize para explorar.','suave'));
+                    tabuleiro.append(barra,opcoes,arenaQuatro());
+                }else tabuleiro.append(maquinas, barra, aliados, lado(estado.voce));
             } else tabuleiro.append(lado(1 - estado.voce), barra, lado(estado.voce));
             const lateral = el('aside', undefined, 'lateral');
             lateral.append(detalhe());
@@ -398,13 +432,17 @@
                 if (estado.vencedor !== null || window.confirm('Sair encerra a partida para todos. Deseja continuar?')) aoSair();
             }, true, 'btn pequeno'));
             mesa.replaceChildren(tabuleiro, lateral);
+            const janelaNova=mesa.querySelector('.arena-janela');
+            if(janelaNova&&posicaoMesa){janelaNova.scrollLeft=posicaoMesa.x;janelaNova.scrollTop=posicaoMesa.y;}
+            else if(janelaNova&&!focoArena)janelaNova.scrollLeft=(janelaNova.scrollWidth-janelaNova.clientWidth)/2;
+            if(!compartilhada&&!espectadorAvisado&&estado.torneio?.rodada>1&&estado.jogadores[estado.voce].eliminado&&estado.vencedor===null){espectadorAvisado=true;espectador.showModal();}
             if(preservar&&Date.now()>=rolagemTurnoAte){
                 const interacao=interacoesRolagem,geracao=sessao;
                 const restaurar=()=>window.scrollTo({left:posicao.x,top:posicao.y,behavior:'instant'});
                 restaurar();
                 requestAnimationFrame(()=>{if(geracao===sessao&&interacao===interacoesRolagem&&Date.now()>=rolagemTurnoAte)restaurar();});
             }
-            turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada, numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
+            turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada && !estado.jogadores[estado.voce].eliminado && !estado.torneio?.aguardando.includes(estado.voce), numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado });
             if (terminou && !resultadoMostrado && !resultadoPendente) mostrarResultado();
         }
         socket.on('partida:estado', proximo => {
@@ -432,6 +470,6 @@
             }
         });
         socket.on('partida:pausa', dados=>{pausada=Boolean(dados.pausada);render();});
-        return { pausar(){pausada=true;render();}, limpar() { rolagemTurnoAte=0; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
+        return { pausar(){pausada=true;render();}, limpar() { rolagemTurnoAte=0; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); espectador.close(); espectadorAvisado=false; resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

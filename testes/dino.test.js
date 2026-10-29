@@ -5,7 +5,7 @@ function preparar(modo='multiplayer',n=2){
  const p=new Partida(Array.from({length:n},(_,i)=>({id:'j'+i,nome:'Jogador '+i})),cartas,modo,40),e=p.estado;e.turno=0;
  for(const j of e.jogadores)j.campo.push(j.mao.shift());
  const dino=e.jogadores[0].mao[0];dino.base={...dino.base,codigo:'n022',nome:'Dino do Google',classe:'auxiliar',universo:'game',elemento:'metálico',ataque:0,defesa:0};
- return {p,e,dino,alvo:e.cooperativo?n:1};
+ return {p,e,dino,alvo:e.cooperativo?n:M.adversarios(e,0)[0]};
 }
 for(const [modo,n]of [['multiplayer',2],['local',2],['local',4],['coop',4]])test(`Dino passivo dá 4 de dano por três encerramentos próprios: ${modo}/${n}`,()=>{
  const {e,dino,alvo}=preparar(modo,n),a=e.jogadores[0],b=e.jogadores[alvo];

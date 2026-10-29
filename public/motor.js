@@ -99,6 +99,10 @@
 
     const atual = (estado) => estado.jogadores[estado.turno];
     function adversarios(estado, dono = estado.turno) {
+        if (estado.torneio) {
+            const duelo = estado.torneio.duelos.find(d => d.includes(dono));
+            return duelo ? duelo.filter(i => i !== dono && !estado.jogadores[i].eliminado) : [];
+        }
         const equipe = estado.equipes ? estado.equipes[dono] : dono;
         return estado.jogadores.map((j, i) => i).filter(i =>
             (estado.equipes ? estado.equipes[i] : i) !== equipe && !estado.jogadores[i].eliminado);
@@ -281,6 +285,30 @@
         return descartadas === estado.tamanhoBaralho;
     }
 
+    function montarRodada(indices) {
+        const corte = Math.ceil(indices.length / 2), duelos = [];
+        for (let i=0;i<Math.floor(indices.length/2);i++) duelos.push([indices[i],indices[i+corte]]);
+        return {duelos, aguardando:indices.length%2 ? [indices[corte-1]] : []};
+    }
+    function atualizarTorneio(estado) {
+        const t=estado.torneio;
+        const vivos=estado.jogadores.map((_,i)=>i).filter(i=>!estado.jogadores[i].eliminado);
+        t.aguardando=[...new Set([...t.aguardando,...t.duelos.filter(d=>d.filter(i=>!estado.jogadores[i].eliminado).length<2).flat().filter(i=>!estado.jogadores[i].eliminado)])];
+        if(vivos.length<=1){estado.vencedor=vivos[0]??-1;return;}
+        if(t.duelos.some(d=>d.every(i=>!estado.jogadores[i].eliminado)))return;
+        const recolhidas=embaralhar(estado.jogadores.filter(j=>j.eliminado).flatMap(reciclaveis));
+        estado.jogadores.filter(j=>j.eliminado).forEach(j=>{j.descarte=j.descarte.filter(descartePermanente);});
+        const porPessoa=Math.floor(recolhidas.length/vivos.length);
+        vivos.forEach((i,k)=>{
+            const j=estado.jogadores[i];j.derrotados=0;
+            j.baralho=embaralhar([...j.baralho,...recolhidas.slice(k*porPessoa,(k+1)*porPessoa)]);
+        });
+        estado.reservaCentral.push(...recolhidas.slice(porPessoa*vivos.length));
+        t.rodada++;Object.assign(t,montarRodada(vivos));
+        estado.alvo=undefined;estado.acoes=0;
+        logAutomatico(estado,`${vivos.length===2?'A final começou':'Nova rodada do mata-mata'}! Contadores de derrotas zerados; mãos e campos mantidos. ${recolhidas.length} carta(s) dos eliminados recolhida(s), ${porPessoa} para o baralho de cada classificado${recolhidas.length%vivos.length?'; sobra na reserva central':''}.`);
+    }
+
     function verificarFim(estado) {
         if (estado.vencedor !== null) return;
         if (estado.todosContraTodos) {
@@ -289,11 +317,12 @@
                 for (const zona of ['mao','baralho','campo','apoio']) {
                     for (const c of j[zona].splice(0)) paraDescarte(j,c);
                 }
-                log(estado, `${j.nome} foi eliminado; suas cartas restantes foram para o descarte.`);
+                logAutomatico(estado, `${j.nome} foi eliminado; suas cartas restantes foram para o descarte.`);
             }
             const vivos = estado.jogadores.map((_,i)=>i).filter(i=>!estado.jogadores[i].eliminado);
-            if (vivos.length <= 1) estado.vencedor = vivos[0] ?? -1;
-            else if (impassePorDescarte(estado)) {
+            if (estado.torneio) atualizarTorneio(estado);
+            else if (vivos.length <= 1) estado.vencedor = vivos[0] ?? -1;
+            if (estado.vencedor === null && impassePorDescarte(estado)) {
                 estado.vencedor = -1;
                 estado.motivoEmpate = `Empate por impasse: todas as cartas foram descartadas após ${estado.redistribuicoes} redistribuições.`;
             }
@@ -306,7 +335,7 @@
             if (perdeuEquipe[0] && perdeuEquipe[1]) estado.vencedor = -1;
             else if (perdeuEquipe[0]) estado.vencedor = 1;
             else if (perdeuEquipe[1]) estado.vencedor = 0;
-            if (estado.vencedor !== null) log(estado, estado.vencedor === -1 ? 'A partida terminou empatada.' : estado.vencedor === 0 ? 'A equipe venceu: todas as máquinas foram derrotadas!' : 'As máquinas venceram: todos os jogadores foram eliminados.');
+            if (estado.vencedor !== null) log(estado, estado.vencedor === -1 ? 'A partida terminou empatada.' : estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : estado.vencedor === 0 ? 'A equipe venceu: todas as máquinas foram derrotadas!' : 'As máquinas venceram: todos os jogadores foram eliminados.');
             return;
         }
         const perdeu = estado.jogadores.map(j => j.derrotados >= REGRAS.campeoesParaVencer);
@@ -430,12 +459,13 @@
     function redistribuirDescartes(estado) {
         if (estado.cooperativo) return false;
         verificarFim(estado);
-        if (estado.vencedor !== null || estado.jogadores.some(j => j.baralho.length)) return false;
-        const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(reciclaveis)];
-        const participantes = estado.jogadores.filter(j=>!j.eliminado);
+        const grupo=estado.torneio ? [estado.turno,...adversarios(estado)].map(i=>estado.jogadores[i]) : estado.jogadores;
+        if (estado.vencedor !== null || (estado.torneio && grupo.length<2) || grupo.some(j => j.baralho.length)) return false;
+        const cartas = [...(estado.reservaCentral || []), ...grupo.flatMap(reciclaveis)];
+        const participantes = grupo.filter(j=>!j.eliminado);
         if (cartas.length < participantes.length) return false;
         const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / participantes.length);
-        estado.jogadores.forEach(j=>{j.descarte=j.descarte.filter(descartePermanente);});
+        grupo.forEach(j=>{j.descarte=j.descarte.filter(descartePermanente);});
         participantes.forEach((j, i) => {
             j.baralho = mistura.slice(i * metade, (i + 1) * metade);
         });
@@ -450,7 +480,8 @@
         const j = estado.jogadores[dono];
         if (j.baralho.length) return true;
         if (estado.cooperativo) return reciclaveis(j).length > 0;
-        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + reciclaveis(j).length, (estado.reservaCentral || []).length) >= estado.jogadores.filter(j=>!j.eliminado).length;
+        const grupo=estado.torneio ? [dono,...adversarios(estado,dono)].map(i=>estado.jogadores[i]) : estado.jogadores;
+        return (!estado.torneio || grupo.length===2) && !grupo.some(j => j.baralho.length) && grupo.reduce((n,j) => n + reciclaveis(j).length, (estado.reservaCentral || []).length) >= grupo.filter(j=>!j.eliminado).length;
     }
 
     // compra até n cartas; devolve quantas foram compradas
@@ -524,9 +555,8 @@
 
     function tamanhoParaParticipantes(total, participantes) {
         if (![20,30,40].includes(total)) throw Object.assign(new Error('Escolha uma partida com 20, 30 ou 40 cartas no total.'), {code:'TAMANHO_BARALHO_INVALIDO'});
-        const escolhido = [20,30,40].find(n=>n>=total && n>=participantes*REGRAS.minimoCartasPorJogador);
-        if (!escolhido) throw Object.assign(new Error('Não há cartas suficientes para garantir cinco cartas únicas por participante.'), {code:'CARTAS_INSUFICIENTES'});
-        return escolhido;
+        if (!Number.isInteger(participantes) || participantes < 2 || participantes > 8) throw new Error('A partida precisa de dois a oito participantes.');
+        return Math.ceil(Math.max(total, participantes * REGRAS.minimoCartasPorJogador) / participantes) * participantes;
     }
 
     function novoJogo(config, cartas) {
@@ -540,13 +570,10 @@
             vistas.add(chave);
             return true;
         });
-        // O tamanho é o total da partida, dividido igualmente entre os dois lados.
+        // Arredondar para cima garante uma divisão inicial inteira e igual por participante.
         const total = tamanhoParaParticipantes(config.tamanhoBaralho === undefined ? 40 : config.tamanhoBaralho, config.nomes.length);
-        if (![20, 30, 40].includes(total)) {
-            throw Object.assign(new Error('Escolha uma partida com 20, 30 ou 40 cartas no total.'), { code: 'TAMANHO_BARALHO_INVALIDO' });
-        }
         if (pool.length < total) {
-            throw Object.assign(new Error(`O banco tem ${pool.length} cartas jogáveis distintas; esta partida precisa de ${total}. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
+            throw Object.assign(new Error(`Esta partida precisa de ${total} cartas jogáveis distintas, mas o catálogo tem ${pool.length}. Escolha um total menor no lobby ou adicione cartas ao catálogo.`), { code: 'CARTAS_INSUFICIENTES' });
         }
         const distribuicao = embaralhar(pool).slice(0, total);
         const equipes = config.equipes || config.nomes.map((_,i)=>i);
@@ -576,7 +603,7 @@
         if (baralhos.some(b => b.length < REGRAS.minimoCartasPorJogador)) throw Object.assign(new Error('Cada participante precisa de pelo menos cinco cartas no total, incluindo a mão inicial.'), { code: 'CARTAS_INSUFICIENTES' });
         const estado = {
             tamanhoBaralho: total,
-            cooperativo, todosContraTodos: Boolean(config.todosContraTodos), equipes, ordemTurnos: config.ordemTurnos || participantes,
+            cooperativo, equipes2v2: Boolean(config.equipes2v2), torneio: config.torneio ? {rodada:1,...montarRodada(participantes)} : null, todosContraTodos: Boolean(config.todosContraTodos), equipes, ordemTurnos: config.ordemTurnos || participantes,
             jogadores: participantes.map((i) => ({
                 nome: config.nomes[i],
                 equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
@@ -600,6 +627,7 @@
             if (cooperativo || config.todosContraTodos) j.mao.push(j.baralho.shift());
             comprar(estado, i, REGRAS.maoInicial - j.mao.length);
         });
+        if (estado.torneio?.aguardando.includes(estado.turno)) estado.turno=estado.torneio.duelos[0][0];
         log(estado, `${estado.jogadores[estado.turno].nome} começa. Cada jogador recebeu ${REGRAS.maoInicial} cartas.`);
         iniciarTurno(estado);
         return estado;
@@ -642,12 +670,12 @@
         do {
             const ordem = estado.ordemTurnos || [0, 1];
             let pos = ordem.indexOf(estado.turno);
-            do { pos = (pos + 1) % ordem.length; } while (estado.jogadores[ordem[pos]].eliminado);
+            do { pos = (pos + 1) % ordem.length; } while (estado.jogadores[ordem[pos]].eliminado || estado.torneio?.aguardando.includes(ordem[pos]));
             estado.turno = ordem[pos];
             estado.alvo = undefined;
             estado.numTurno++;
             iniciarTurno(estado);
-        } while (estado.vencedor === null && atual(estado).eliminado);
+        } while (estado.vencedor === null && (atual(estado).eliminado || estado.torneio?.aguardando.includes(estado.turno)));
         return { ok: true };
     }
 
@@ -662,7 +690,7 @@
         const j = atual(estado);
         if (!podeComprar(estado)) return erro(!estado.cooperativo && estado.jogadores.some(j => j.baralho.length) ? 'Seu baralho acabou. A redistribuição ocorrerá quando os dois baralhos acabarem.' : 'Não há cartas para comprar.');
         comprar(estado, estado.turno, 1);
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} comprou uma carta.`);
         return { ok: true };
     }
@@ -699,7 +727,7 @@
         }
         j.campo.push(inst);
         for (const aux of j.apoio) if (aux.vinculo == null) aux.vinculo = inst.uid;
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em batalha.`);
         verificarPresenca(estado);
         return { ok: true };
@@ -719,7 +747,7 @@
         if (efeitosBrutos(inst).dino) {
             const fator=fatorHabilidade(estado,inst);inst.st.dino=3*fator;inst.st.danoDino=4*fator;
         }
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
         verificarPresenca(estado);
         return { ok: true };
@@ -755,7 +783,7 @@
         alvo.defesa += defesa;
         alvo.defesaMax += defesa;
         alvo.equip.push(inst);
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} equipou ${inst.base.nome} em ${alvo.base.nome}.`);
         verificarPresenca(estado);
         return { ok: true };
@@ -787,7 +815,7 @@
 
         const d = ataqueTotal(a, t.base, estado);
         t.defesa -= d;
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         let texto = `${a.base.nome} atacou ${t.base.nome}: ${d} de dano.`;
         contato(estado, a, t);
         const registrar = () => {
@@ -1223,7 +1251,7 @@
         const res = h.exec(c);
         if (res.erro || res.pergunta) return res;
 
-        estado.acoes--;
+        estado.acoes = Math.max(0, estado.acoes - 1);
         let texto = `${j.nome} usou ${inst.base.nome}${res.texto ? `: ${res.texto}` : '.'}`;
 
         if (zona === 'mao' && h.consumivel) {

@@ -46,14 +46,6 @@
                 <div class="lobby-opcao">
                     <h2>Criar equipe</h2>
                     <p>Comece sozinho ou compartilhe o código para receber até mais três pessoas. Ao iniciar, haverá uma máquina para cada jogador presente.</p>
-                    <div class="campo">
-                        <label for="tamanho-baralho">Cartas no total da partida</label>
-                        <select id="tamanho-baralho">
-                            <option value="20">20 cartas · 10 para cada equipe</option>
-                            <option value="30">30 cartas · 15 para cada equipe</option>
-                            <option value="40" selected>40 cartas · 20 para cada equipe</option>
-                        </select>
-                    </div>
                     <div class="campo escolha-representante"><label for="dificuldade">Dificuldade das máquinas</label><select id="dificuldade"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select><p class="suave">Fácil faz escolhas simples; Normal equilibra ataque e preparo; Difícil também avalia os riscos do campo.</p></div>
                     <p class="suave">Todos têm 2 ações por turno. O total se ajusta à equipe: pelo menos 30 cartas com três pessoas e 40 com quatro, garantindo cinco cartas por participante, incluindo a mão inicial.</p>
                     <button type="button" class="btn primario" id="criar">Criar sala</button>
@@ -82,7 +74,18 @@
                 <button type="button" class="btn pequeno" id="copiar">Copiar convite</button>
             </div>
 
-            <p id="sala-baralho" class="suave"></p>
+            <div class="campo escolha-representante">
+                <label for="tamanho-baralho">Cartas no total da partida</label>
+                <select id="tamanho-baralho" aria-describedby="sala-baralho sala-distribuicao">
+                    <option value="20">20 cartas</option>
+                    <option value="30">30 cartas</option>
+                    <option value="40" selected>40 cartas</option>
+                </select>
+                <p class="suave">O anfitrião escolhe o total. Alterar as cartas pede uma nova confirmação de prontidão.</p>
+            </div>
+            <p id="sala-baralho" class="suave" aria-live="polite"></p>
+            <p id="sala-distribuicao" class="suave" aria-live="polite"></p>
+            <p id="sala-catalogo" class="status erro" role="alert" hidden></p>
             <div class="campo escolha-representante">
                 <label for="representante">Seu representante</label>
                 <select id="representante"><option value="">Sem representante</option></select>

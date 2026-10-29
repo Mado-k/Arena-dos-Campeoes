@@ -11,7 +11,7 @@
         texto.textContent = 'Você usou as duas ações deste turno. Encerre o turno para continuar a partida.';
         const encerrar = document.createElement('button');
         encerrar.type = 'button';
-        encerrar.className = 'btn primario';
+        encerrar.className = 'btn primario acao-encerrar acoes-esgotadas';
         encerrar.textContent = 'Encerrar turno';
         encerrar.addEventListener('click', aoEncerrar);
         janela.append(titulo, texto, encerrar);
