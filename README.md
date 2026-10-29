@@ -300,6 +300,8 @@ Movimento reduzido desativa os voos; limpar a mesa cancela animações pendentes
 Esta revisão usa o incremento de 0.2 solicitado por Luciano. O lado adversário
 espelha mão, pilhas, apoio e batalha, com a descrição acima da imagem nas cartas.
 Compra, versos e cartas da mão compartilham dimensões por tamanho de tela.
+Desde a versão 2.25 (+0.05), as cartas das pilhas de compra e descarte usam 85%
+da largura e altura das cartas da mão, em ambos os lados. A mão mantém seu tamanho.
 Auxiliares exigem um campeão ou besta em batalha, validado pelo motor e pela interface.
 
 `Partida.passoComputador()` aplica uma única jogada ou encerra o turno da máquina.

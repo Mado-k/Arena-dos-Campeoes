@@ -86,6 +86,9 @@
 .lado-adversario .mao-com-pilhas > [data-zona="descarte"] { grid-row:1; }
 .mao-com-pilhas [data-zona="mao"] .carta-online { width:var(--largura-carta); height:var(--altura-carta); min-height:var(--altura-carta); flex:none; overflow:hidden; }
 .mao-com-pilhas .carta-verso,.mao-com-pilhas .pilha-cartas { width:var(--largura-carta); height:var(--altura-carta); flex-basis:var(--largura-carta); }
+.mao-com-pilhas .pilha-cartas,
+.mao-com-pilhas .pilha-cartas .carta-verso { width:calc(var(--largura-carta) * .85); height:calc(var(--altura-carta) * .85); flex-basis:auto; }
+.mao-com-pilhas .pilha-cartas .verso-emblema { font-size:2rem; }
 .mao-com-pilhas .c-desc { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
 .mao-com-pilhas .verso-emblema { font-size:2.5rem; }
 @media(max-width:380px){
