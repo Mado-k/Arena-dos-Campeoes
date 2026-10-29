@@ -255,3 +255,16 @@ O site estático já tem publicação da pasta `public/` no workflow do GitHub P
 Para usar as partidas no site publicado, atualize também o backend no Render: o
 Pages sozinho não executa Node, banco ou Socket.IO. Nenhum deploy é feito pelos
 comandos de teste.
+
+## Changelog público e versões
+
+O histórico fica em `public/changelog.html`, com estilos em `public/changelog.css`
+e animação em `public/changelog.js`. A versão 1.0 consolida o que já estava entregue;
+a versão 1.1 introduz o histórico. Cada versão começa recolhida e funciona também
+sem JavaScript. A preferência por movimento reduzido desativa a animação.
+
+Em cada atualização publicada, adicione uma entrada no início do histórico, sem
+códigos de commit e com descrições voltadas aos jogadores. Avance a versão pública
+em **0.1** para uma atualização pequena, **0.5** para média ou **1.0** para grande,
+sempre a partir da última versão publicada (por exemplo, 1.1 → 1.6 para uma média).
+A numeração pública do histórico é independente da versão técnica do pacote npm.

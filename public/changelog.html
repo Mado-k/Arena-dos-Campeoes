@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Acompanhe as novidades, melhorias e mudanças nas regras de Arena dos Campeões.">
+    <title>Changelog · Arena dos Campeões</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="changelog.css">
+    <script src="changelog.js" defer></script>
+</head>
+<body class="pagina-changelog">
+    <header class="topo">
+        <a class="marca" href="index.html">Arena <span>dos Campeões</span></a>
+        <nav aria-label="Principal">
+            <a href="index.html#como-jogar">Como jogar</a>
+            <a href="index.html#modos">Jogar</a>
+            <a href="index.html#cartas">Cartas</a>
+            <a href="changelog.html" aria-current="page">Changelog</a>
+        </nav>
+    </header>
+    <main class="historico">
+        <div class="historico-cabeca">
+            <p class="selo">A arena está evoluindo</p>
+            <h1>Histórico de atualizações</h1>
+            <p class="lead">Veja o que mudou no jogo. Clique em uma versão para abrir suas novidades.</p>
+        </div>
+        <section class="versoes" aria-label="Versões do jogo">
+            <details class="versao" id="versao-1-1">
+                <summary>
+                    <span class="versao-titulo">Versão 1.1 <span class="versao-selo">Mais recente</span></span>
+                    <span class="versao-tipo">Pequena atualização</span>
+                    <span class="versao-icone" aria-hidden="true">+</span>
+                </summary>
+                <div class="versao-conteudo">
+                    <h2>As novidades agora têm seu lugar</h2>
+                    <ul>
+                        <li>Nova página de changelog para consultar as mudanças do jogo pelo próprio site.</li>
+                        <li>Descrições recolhidas por versão, com animação de abertura e fechamento.</li>
+                        <li>Acesso ao histórico pelos menus da página inicial e dos modos de jogo.</li>
+                    </ul>
+                </div>
+            </details>
+            <details class="versao" id="versao-1-0">
+                <summary>
+                    <span class="versao-titulo">Versão 1.0</span>
+                    <span class="versao-tipo">Base do histórico</span>
+                    <span class="versao-icone" aria-hidden="true">+</span>
+                </summary>
+                <div class="versao-conteudo">
+                    <p class="suave">Esta versão reúne as principais mudanças entregues antes da criação deste histórico.</p>
+                    <h2>Mais formas de jogar</h2>
+                    <ul>
+                        <li>O modo Offline passou a se chamar Local: jogue sozinho ou em até quatro pessoas contra máquinas, ou com duas a quatro pessoas entre si no mesmo dispositivo.</li>
+                        <li>No Local entre pessoas, as mãos ficam escondidas durante a troca de jogador. Com três ou quatro pessoas, vence o último participante na arena.</li>
+                        <li>Multiplayer com salas por convite e partidas em tempo real. Co-op provisório com uma máquina por pessoa, de um a quatro humanos, e mãos individuais.</li>
+                        <li>Dificuldades Fácil, Normal e Difícil contra máquinas.</li>
+                        <li>Cartas únicas na distribuição inicial, com pelo menos cinco por participante, incluindo as três cartas da mão.</li>
+                    </ul>
+                    <h2>Uma mesa mais clara</h2>
+                    <ul>
+                        <li>Multiplayer e co-op passaram a compartilhar o estilo da mesa Local, com campos centralizados, compra de carta destacada e adaptação ao celular.</li>
+                        <li>Avisos ao terminar as duas ações e ao encerrar o turno. O registro mostra dano, contra-ataque e defesa restante.</li>
+                        <li>Janela de vitória, derrota ou empate com Ver tabuleiro, Voltar ao lobby e Jogar novamente. A revanche entre pessoas exige confirmação dos participantes.</li>
+                        <li>Retomada online após desconexão ou reinício do servidor, preservando mão, turno e ações. Uma queda de conexão pausa a partida por até dez minutos.</li>
+                    </ul>
+                    <h2>Regras e habilidades</h2>
+                    <ul>
+                        <li>Representantes escolhidos antes da partida. D007 recupera um ponto de defesa da criatura no início do turno do dono, até o máximo.</li>
+                        <li>Auxiliares não possuem vida nem recebem ataques diretos. São descartados quando o campeão ou besta vinculado morre e podem ser removidos ou anulados por efeitos.</li>
+                        <li>Oni Zumbi dobra o ataque base com um item equipado. Zord Fenrir reserva +100 de defesa para o próximo campeão do dono ao ser derrotado; uma besta não consome esse bônus.</li>
+                        <li>Pandora causa 10 de dano no início do turno de cada criatura em batalha, inclusive as do invocador, até uma criatura morrer. Pode ser recuperada e usada até três vezes; depois fica permanentemente no descarte. Apenas campeões derrotados contam para a vitória.</li>
+                        <li>A carta 001 busca a primeira metálica do baralho. Hércules dobra cumulativamente o ataque a cada três turnos próprios. Kitsune retorna à mão com seus equipamentos e auxiliares uma vez por partida; Dino é descartado se a criatura vinculada morrer. A proteção divina da carta 025 foi mantida.</li>
+                        <li>Revisão das habilidades de busca, captura, amplificação e cópia: Heimdall captura cartas adversárias do universo Normal em jogo, Fuleco amplia efeitos das outras cartas do dono e Guss aplica imediatamente a habilidade copiada.</li>
+                        <li>No duelo e no Local entre pessoas, os descartes são redistribuídos quando os baralhos ativos acabam. Após quatro redistribuições, todas as cartas descartadas encerram a partida em empate antes de outro embaralhamento.</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
+        <p class="historico-nota">As versões avançam em 0.1 para atualizações pequenas, 0.5 para médias e 1.0 para grandes mudanças.</p>
+        <a class="btn" href="index.html#modos">Voltar para a arena</a>
+    </main>
+    <footer class="rodape"><p>Arena dos Campeões · Histórico de atualizações</p></footer>
+</body>
+</html>

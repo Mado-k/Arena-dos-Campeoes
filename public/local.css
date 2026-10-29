@@ -4,3 +4,4 @@
 .modos-locais h2 { font-family:var(--fonte-titulo); font-size:1.15rem; margin-bottom:10px; }
 .local .jogo[hidden] { display:none; }
 .local.em-partida main { padding-bottom:24px; }
+.local .topo nav { display: flex; flex-wrap: wrap; }

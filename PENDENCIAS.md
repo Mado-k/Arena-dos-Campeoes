@@ -117,6 +117,9 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
+- [x] Changelog público com versões recolhidas, animação de abertura/fechamento e
+  acesso pelos menus. Incrementos de 0.1, 0.5 ou 1.0 conforme o tamanho da atualização.
+
 - [x] Janela de vitória/derrota/empate no Local, multiplayer e co-op, com Ver tabuleiro,
   Voltar ao lobby e Jogar novamente. O resultado pode ser reaberto; sair após o fim não fecha
   o tabuleiro dos demais jogadores online.

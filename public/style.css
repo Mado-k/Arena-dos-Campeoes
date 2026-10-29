@@ -602,7 +602,8 @@ a.modo:focus-visible {
 
 /* ============ Responsivo ============ */
 @media (max-width: 560px) {
-    .topo nav { gap: 14px; }
+    .topo { flex-wrap: wrap; }
+    .topo nav { gap: 14px; flex-wrap: wrap; }
     .grade { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .inicial { font-size: 2.6rem; }
     .detalhe { grid-template-columns: 1fr; }
