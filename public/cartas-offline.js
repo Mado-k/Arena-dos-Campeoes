@@ -284,7 +284,7 @@ window.CARTAS_OFFLINE = [
   "origem": "memes",
   "ataque": 0,
   "defesa": 0,
-  "habilidade": "Pula sobre os inimigos durante três turnos, causando 4 de dano a mais. Depois, bate em um cacto, morre e a carta vai para a pilha de descarte.",
+  "habilidade": "No fim de cada um dos três turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após o terceiro, bate em um cacto e vai para o descarte.",
   "imagem": null
  },
  {

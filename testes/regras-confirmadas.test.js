@@ -82,7 +82,7 @@ test('009 dobra defesa concedida ao equipar e remoção retira o bônus realment
 });
 test('009 dobra o bônus e a duração do Dino e a recuperação do D007', () => {
   const {e,obter}=mesa();obter('n009',0,'apoio');const a=obter('n013',0,'campo'),dino=obter('n022',0,'mao');
-  assert(M.colocarApoio(e,dino.uid).ok);assert.equal(dino.st.dino,6);assert.equal(M.ataqueTotal(a,null,e),15);
+  assert(M.colocarApoio(e,dino.uid).ok);assert.equal(dino.st.dino,6);assert.equal(M.ataqueTotal(a,null,e),7);assert.equal(dino.st.danoDino,8);
   e.jogadores[0].rep=cartas.find(c=>c.codigo==='D007');a.defesa=5;
   M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(a.defesa,7);
 });

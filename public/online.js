@@ -136,10 +136,11 @@
         }
         function etiquetas(c) {
             const linha = el('div', undefined, 'etqs');
-            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
+            const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Turnos do Dino', copia: 'Habilidade copiada' };
             for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
             if (Motor.fatorHabilidade(estado,c) === 2) linha.append(el('span','Efeitos ×2','etq bom'));
             if(c.base.codigo==='n002')linha.append(el('span', Motor.descartePermanente(c)?'Descarte permanente · 3/3 usos':'Pandora: '+(c.usos.n002||0)+'/3 usos', 'etq'));
+            if(c.st.dino)linha.append(el('span',c.st.dino+' turno(s) restantes · '+(c.st.danoDino||4)+' de dano ao encerrar','etq'));
             if (c.rec) linha.append(el('span', 'Recarga: ' + c.rec, 'etq'));
             if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
             return linha;

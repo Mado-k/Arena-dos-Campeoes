@@ -49,7 +49,7 @@ const cartas = [
   ['n021', 'batsopra bolha', 'água', 'arma', 'menção honrosa', 'memes', 6, null,
     'sopra bat bolhas no oponente distraindo os auxiliares e impedindo eles de usar as habilidades'],
   ['n022', 'dino do google', 'metálico', 'auxiliar', 'game', 'memes', null, null,
-    'pula em cima dos inimigos em três turnos causando 4 de dano a mais, após os três turnos ele bate em um cacto  morre e a carta vai para pilha de descarte'],
+    'No fim de cada um dos três turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após o terceiro, bate em um cacto e vai para o descarte.'],
   ['n023', 'zord Fenrir', 'metálico', 'besta', 'cyberpunk', 'mitologia nórdica', 2, 14,
     'ao ser derrotado adicione mais 100 de vida a próxima carta caso seja um campeão'],
   ['n024', 'bagunça de dados do saci', 'planta', 'feitiço', 'game', 'folclore brasileiro', null, null,

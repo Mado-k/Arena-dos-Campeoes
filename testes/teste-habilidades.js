@@ -62,7 +62,7 @@ M.encerrarTurno(t.e); ok(cb.defesa === 14 - M.ataqueTotal(cb, cb.base, t.e) || c
 t.e.acoes = 2; M.encerrarTurno(t.e); r = M.executarHabilidade(t.e, ca.uid); ok(r.erro, 'recarga');
 // n022 dino
 t = mesa(); a = t.mao(t.A, 'n022'); ca = t.campo(t.A, 'n013'); cb = t.campo(t.B, 'n010'); M.colocarApoio(t.e, a.uid);
-eq(M.ataqueTotal(ca, cb.base, t.e), 11, 'dino +4'); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); ok(t.A.apoio.length === 1, 'dino ainda');
+eq(M.ataqueTotal(ca, cb.base, t.e), 7, 'dino não altera o ataque básico'); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); ok(t.A.apoio.length === 1, 'dino ainda');
 M.encerrarTurno(t.e); M.encerrarTurno(t.e); ok(t.A.apoio.length === 0 && t.A.descarte.includes(a), 'dino morre no cacto');
 // n023 fenrir
 t = mesa(); ca = t.campo(t.A, 'n023'); ca.defesa = 1; cb = t.campo(t.B, 'n013'); t.e.turno = 1; M.atacar(t.e);

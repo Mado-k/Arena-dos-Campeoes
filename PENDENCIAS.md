@@ -25,7 +25,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 | n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
 | n013 — Hércules | Multiplica cumulativamente o ataque base por 2 a cada três turnos próprios em batalha: 7 → 14 → 28. |
 | n019 — Kitsune | Retorna à mão com os itens, armas e auxiliares vinculados, recuperando os atributos. Uma utilização da habilidade por partida, inclusive quando copiada. |
-| n022 — Dino | +4 de ataque por três turnos próprios; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
+| n022 — Dino | Passiva: 4 de dano à criatura inimiga no fim de cada um de três turnos próprios; depois vai ao descarte; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
 | n025 | Mantida a proteção contra dano e efeitos divinos enquanto estiver em apoio, conforme confirmação do item anterior. |
 | n033 — Oni Zumbi | Dobra o ataque base quando equipa item; bestas continuam sem poder equipar armas. |
 | n034 — Guss | Executa imediatamente a habilidade ativa copiada; uma passiva copiada passa a valer imediatamente, incluindo gatilhos de presença. |
@@ -34,8 +34,8 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 Duplica danos de habilidades, bônus de ataque/defesa, multiplicadores, quantidade de
 cartas obtidas/removidas e duração dos efeitos. Exemplos: veneno 2 → 4, queimadura
-7 → 14, paralisia 1 → 2 turnos, defesa de equipamento 11 → 22, Dino +4/3 turnos →
-+8/6 turnos e recuperação do D007 1 → 2. O ataque básico da criatura não dobra.
+7 → 14, paralisia 1 → 2 turnos, defesa de equipamento 11 → 22, Dino 4 de dano/3 turnos →
+8 de dano/6 turnos e recuperação do D007 1 → 2. O ataque básico da criatura não dobra.
 Custos de ações, recargas, intervalos de ativação e limites de uso único não dobram.
 Os efeitos já aplicados conservam seus valores e duração; ao sair ou ser anulado,
 Fuleco deixa de ampliar aplicações novas e bônus passivos calculados continuamente.
@@ -116,6 +116,9 @@ Após o próximo deploy, conferir as novidades desta revisão:
   automático, sem novo embaralhamento, com as opções de revanche e encerramento.
 
 ## Melhorias solicitadas implementadas
+
+- [x] Versão 2.2: Dino executa dano passivo ao encerrar cada turno próprio e é
+  descartado depois da terceira execução; não acrescenta ataque ao campeão.
 
 - [x] Versão 2.1 (+0.2): campo adversário completamente espelhado, descrição acima
   da imagem, pilhas do tamanho das cartas da mão, animações mais suaves e IA por

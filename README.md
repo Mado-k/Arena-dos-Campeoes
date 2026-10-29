@@ -309,3 +309,13 @@ Desconexões pausam a sequência; a retomada continua do último passo salvo. Ti
 são cancelados ao encerrar a sala/servidor. `jogarComputador()` continua disponível
 sem pausas para testes e simulações. Animações duram cerca de 760 ms e respeitam
 movimento reduzido.
+
+## Dino do Google (versão 2.2)
+
+A passiva n022 causa 4 de dano à criatura do adversário selecionado no fim de cada
+um dos três turnos do dono (o turno de entrada já conta). Não exige botão nem ação
+extra e não aumenta o ataque da criatura. Após a terceira execução, Dino é descartado.
+Sem alvo ou quando anulado, não há dano, mas o prazo passa. A derrota da criatura
+vinculada descarta Dino imediatamente. O efeito respeita proteções e pontua campeões.
+Fuleco amplia a aplicação para 8 de dano por 6 turnos, conservando esses valores.
+O registro público mostra dano, defesa restante, prazo e descarte nos três modos.

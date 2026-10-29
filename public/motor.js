@@ -247,17 +247,6 @@
 
         if (ef.dobraBaseComItem && temItem) d += proprio * (2 * ef.fator - 1);
 
-        // dino do google (auxiliar em apoio do mesmo jogador)
-        if (estado) {
-            const loc = localizar(estado, atacante.uid);
-            if (loc && loc.zona === 'campo') {
-                for (const aux of estado.jogadores[loc.dono].apoio) {
-                    const efa = efeitosDe(estado, aux);
-                    if (efa.dino && aux.st.dino > 0) d += efa.dino;
-                }
-            }
-        }
-
         if (alvoBase && ef.maisContra && casa(ef.maisContra.quando, alvoBase)) d += ef.maisContra.bonus;
         if (alvoBase && ef.dobraContra && casa(ef.dobraContra, alvoBase)) d *= 2 * ef.fator;
         return Math.max(0, d);
@@ -624,15 +613,28 @@
             if (c.st.paralisia > 0) c.st.paralisia--;
         }
         for (const aux of j.apoio.slice()) {
-            const ef = efeitosBrutos(aux);
-            if (ef.dino && aux.st.dino > 0) {
-                aux.st.dino--;
-                if (aux.st.dino === 0) {
-                    j.apoio.splice(j.apoio.indexOf(aux), 1);
-                    paraDescarte(j, aux);
-                    log(estado, `${aux.base.nome} bateu em um cacto, foi destruído e vai para o descarte de ${j.nome}.`);
+            if (!efeitosBrutos(aux).dino || !(aux.st.dino > 0)) continue;
+            const ef = efeitosDe(estado, aux);
+            const idx = indiceOponente(estado), inimigo = estado.jogadores[idx]?.campo[0];
+            if (j.campo[0] && ef.dino && inimigo) {
+                const ferida = ferivel(estado,idx,inimigo,aux.base);
+                const bloqueio = protecao(estado,idx,inimigo,aux.base,true) || (!ferida.ok && ferida.motivo);
+                if (bloqueio) logAutomatico(estado, `${aux.base.nome}: habilidade bloqueada. ${bloqueio}`);
+                else {
+                    const dano = aux.st.danoDino ?? ef.dino;
+                    inimigo.defesa -= dano;
+                    logAutomatico(estado, `${aux.base.nome} causou ${dano} de dano a ${inimigo.base.nome} no fim do turno de ${j.nome}. DEF restante: ${Math.max(0,inimigo.defesa)}.`);
+                    if (inimigo.defesa <= 0) morrer(estado,idx,inimigo);
                 }
-            }
+            } else logAutomatico(estado, `${aux.base.nome} não causou dano neste encerramento: ${!ef.dino?'habilidade anulada':!j.campo[0]?'sem criatura vinculada':'sem criatura inimiga em batalha'}.`);
+            aux.st.dino--;
+            if (aux.st.dino === 0) {
+                j.apoio.splice(j.apoio.indexOf(aux), 1);
+                paraDescarte(j, aux);
+                logAutomatico(estado, `${aux.base.nome} bateu em um cacto após concluir sua habilidade, foi destruído e vai para o descarte de ${j.nome}.`);
+            } else logAutomatico(estado, `${aux.base.nome}: restam ${aux.st.dino} encerramento(s) de turno do dono.`);
+            verificarFim(estado);
+            if (estado.vencedor !== null) break;
         }
         redistribuirDescartes(estado);
         if (estado.vencedor !== null) return { ok: true };
@@ -714,7 +716,9 @@
         j.mao.splice(i, 1);
         inst.vinculo = j.campo[0]?.uid ?? null;
         j.apoio.push(inst);
-        if (efeitosBrutos(inst).dino) inst.st.dino = 3 * fatorHabilidade(estado, inst);
+        if (efeitosBrutos(inst).dino) {
+            const fator=fatorHabilidade(estado,inst);inst.st.dino=3*fator;inst.st.danoDino=4*fator;
+        }
         estado.acoes--;
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
         verificarPresenca(estado);
@@ -973,8 +977,8 @@
         },
         n021: passiva('Sopra bolhas no oponente, distraindo os auxiliares dele e impedindo que usem habilidades.',
             'Funciona enquanto a arma estiver equipada na criatura em batalha.'),
-        n022: passiva('Pula sobre os inimigos durante três turnos, causando 4 de dano a mais. Depois, bate em um cacto, morre e a carta vai para a pilha de descarte.',
-            'Começa a contar quando é colocado em apoio (esse turno conta). Soma +4 ao ataque da sua criatura e some no fim do 3º turno.'),
+        n022: passiva('No fim de cada um dos três turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após o terceiro, bate em um cacto e vai para o descarte.',
+            'O turno em que entra em apoio já conta. Funciona automaticamente, sem ação extra ou contra-ataque; não aumenta o ataque da sua criatura. No co-op e no Local entre várias pessoas, atinge o adversário selecionado. Sem alvo, ou se anulada, o turno também conta. Sai antes se sua criatura vinculada morrer.'),
         n023: passiva('Ao ser derrotada, a próxima carta de campeão que você colocar em batalha recebe +100 de defesa.'),
         n024: {
             tipo: 'ativa', consumivel: true, local: ['mao'], botao: 'Lançar feitiço',

@@ -97,7 +97,7 @@ class Partida {
       this.log.push(melhor.res.registroCombate||melhor.res.registroHabilidade||`${nome} ${ROTULOS[melhor.tipo]}.`);
     }else{
       Motor.encerrarTurno(this.estado);
-      this.log.push(`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`);
+      this.log.push(this.estado.vencedor===null?`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`:`${nome} encerrou o turno.`);
     }
     this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
     this.revisao++;this.log=this.log.slice(-100);return true;
