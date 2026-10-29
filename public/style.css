@@ -660,7 +660,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
     text-align: center;
 }
 .modos-centro .etiqueta { position: static; margin-bottom: 4px; }
-.modos-centro .modo h3 { margin: 0; }
+.modos-centro .modo h3.etiqueta { margin: 0 0 4px; padding: 5px 14px; font: 600 .85rem/1.4 var(--fonte); letter-spacing: .1em; }
 .modos-centro .modo .ir { margin-top: 6px; }
 
 /* guia */

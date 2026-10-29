@@ -87,7 +87,7 @@
     };
     (async()=>{
         try{const r=await fetch(`${typeof API==='string'?API:''}/cartas`,{signal:AbortSignal.timeout(2500)});const lista=await r.json();if(r.ok&&Array.isArray(lista)&&lista.length)cartas=lista.map(Motor.normalizarCarta);}catch{/* cópia embutida */}
-        $('fonte-local').textContent='Cartas disponíveis: '+cartas.filter(c=>Motor.norm(c.classe)!=='representante').length+'. O modo Local funciona sem servidor com a cópia embutida.';
+        $('fonte-local').textContent='Cartas disponíveis: '+cartas.filter(c=>Motor.norm(c.classe)!=='representante').length+'.';
         $('comecar-local').disabled=false;if(modo)formularios();
     })();
 })();
