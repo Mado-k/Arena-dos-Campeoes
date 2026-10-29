@@ -223,8 +223,8 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
 No Local entre três ou quatro pessoas, a redistribuição espera os baralhos de todos
 os participantes ativos acabarem, reúne os descartes e divide entre os sobreviventes;
 o restante fica no centro. A mesma condição de impasse vale após quatro redistribuições.
-A página inicial (`public/index.html`, `public/index.js` e `public/style.css`) explica
-os modos atuais; o pedido antigo que chegou cortado deixou de ser uma pendência.
+A página inicial (`public/index.html`, `public/index.js` e `public/style.css`) apresenta
+os modos atuais, e `public/tutorial.html` reúne todas as instruções; o pedido antigo que chegou cortado deixou de ser uma pendência.
 
 As decisões completas, exemplos de amplificação e os testes a conferir no Render
 estão em [PENDENCIAS.md](PENDENCIAS.md).
@@ -271,3 +271,12 @@ resumos. Avance a versão pública
 em **0.1** para uma atualização pequena, **0.5** para média ou **1.0** para grande,
 sempre a partir da última versão publicada (por exemplo, 1.1 → 1.6 para uma média).
 A numeração pública do histórico é independente da versão técnica do pacote npm.
+
+## Tutorial
+
+O guia Como jogar fica em `public/tutorial.html`, compartilhando os estilos do site.
+Atualize essa página ao mudar regras, controles ou preparação dos modos. Os links
+Como jogar em todos os menus apontam ao tutorial; o index mantém os modos e o catálogo.
+Os atalhos de elementos levam ao index com `?elemento=...#cartas` para abrir o
+catálogo filtrado. Endereços antigos `index.html#como-jogar` e `index.html#cj-...`
+são encaminhados pelo index para a seção correspondente no tutorial.

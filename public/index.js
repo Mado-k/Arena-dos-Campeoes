@@ -1,4 +1,4 @@
-// Página inicial. Nada é baixado até o jogador clicar em "Ver as cartas".
+// Página inicial. O catálogo é carregado pelo botão ou por um link filtrado do tutorial.
 const $ = (id) => document.getElementById(id);
 
 const POR_PAGINA = 24;
@@ -174,22 +174,6 @@ $('limpar').addEventListener('click', () => {
 
 $('mais').addEventListener('click', () => { visiveis += POR_PAGINA; aplicar(); });
 
-// ---------- guia de elementos (chips que abrem o catálogo já filtrado) ----------
-function montarGuia() {
-    const area = $('guia-elemento');
-    for (const valor of OPCOES_PADRAO.elemento) {
-        const chip = el('button', 'chip', valor);
-        chip.type = 'button';
-        chip.dataset.elemento = idElemento(valor);
-        chip.addEventListener('click', async () => {
-            await abrirCatalogo();
-            filtros.elemento.value = valor;
-            novaBusca();
-        });
-        area.append(chip);
-    }
-}
-
 // ---------- catálogo (carregado só quando o jogador pede) ----------
 async function buscarCartas() {
     try {
@@ -270,4 +254,17 @@ function esconderCatalogo() {
 document.querySelectorAll('[data-abrir-cartas]').forEach((b) => b.addEventListener('click', abrirCatalogo));
 $('esconder').addEventListener('click', esconderCatalogo);
 
-montarGuia();
+// Links do tutorial abrem o catálogo com o elemento escolhido.
+const elementoInicial = new URLSearchParams(location.search).get('elemento');
+if (OPCOES_PADRAO.elemento.includes(elementoInicial)) {
+    abrirCatalogo().then(() => { filtros.elemento.value = elementoInicial; novaBusca(); });
+}
+
+// Preserva favoritos e convites que apontavam ao guia na página inicial.
+function encaminharTutorial() {
+    if (location.hash === '#como-jogar' || location.hash.startsWith('#cj-')) {
+        location.replace(new URL('tutorial.html' + location.hash, location.href).href);
+    }
+}
+encaminharTutorial();
+window.addEventListener('hashchange', encaminharTutorial);

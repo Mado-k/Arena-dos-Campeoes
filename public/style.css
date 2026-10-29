@@ -665,6 +665,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 
 /* guia */
 .como-jogar { max-width: 980px; }
+.como-jogar h1 { font-family: var(--fonte-titulo); font-size: clamp(2rem, 5vw, 3rem); }
 .como-jogar .indice {
     display: flex;
     flex-wrap: wrap;
@@ -709,7 +710,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
     gap: 12px;
     margin: 14px 0;
 }
-.como-jogar .cartoes.dois { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.como-jogar .cartoes.dois { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
 .como-jogar .cartao {
     padding: 14px 16px;
     border: 1px solid var(--borda);

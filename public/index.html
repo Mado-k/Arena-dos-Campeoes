@@ -15,14 +15,14 @@
 <body>
 
     <!-- instrução de como jogar, sempre no topo -->
-    <a class="faixa-ajuda" href="#como-jogar">
-        <span aria-hidden="true">📖</span> Novo por aqui? <strong>Veja como jogar</strong> <span aria-hidden="true">&darr;</span>
+    <a class="faixa-ajuda" href="tutorial.html">
+        <span aria-hidden="true">📖</span> Novo por aqui? <strong>Veja como jogar</strong> <span aria-hidden="true">&rarr;</span>
     </a>
 
     <header class="topo">
         <a class="marca" href="#inicio">Arena <span>dos Campeões</span></a>
         <nav aria-label="Principal">
-            <a class="destaque" href="#como-jogar">Como jogar</a>
+            <a class="destaque" href="tutorial.html">Como jogar</a>
             <a href="#modos">Modos</a>
             <a href="#cartas">Cartas</a>
             <a href="changelog.html">Changelog</a>
@@ -41,7 +41,7 @@
             </p>
             <div class="acoes">
                 <a class="btn primario" href="#modos">Jogar agora</a>
-                <a class="btn" href="#como-jogar">Como jogar</a>
+                <a class="btn" href="tutorial.html">Como jogar</a>
                 <button type="button" class="btn" data-abrir-cartas>Ver as cartas</button>
             </div>
         </section>
@@ -69,113 +69,6 @@
                     <p>De 1 a 4 pessoas, com uma máquina por jogador e mãos e campos individuais. A quantidade se ajusta automaticamente no lobby. Escolha a dificuldade antes de criar a sala.</p>
                     <span class="ir">Criar ou entrar em uma sala &rarr;</span>
                 </a>
-            </div>
-        </section>
-
-        <!-- COMO JOGAR -->
-        <section id="como-jogar" class="secao como-jogar">
-            <div class="centro">
-                <h2>Como jogar</h2>
-                <p class="suave sub">Regras, funcionamento da partida e o que cada botão faz.</p>
-            </div>
-
-            <nav class="indice" aria-label="Neste guia">
-                <a href="#cj-objetivo">Objetivo</a>
-                <a href="#cj-turno">O turno</a>
-                <a href="#cj-classes">Classes</a>
-                <a href="#cj-regras">Regras da mesa</a>
-                <a href="#cj-combate">Combate</a>
-                <a href="#cj-habilidades">Habilidades</a>
-                <a href="#cj-tela">A tela da partida</a>
-                <a href="#cj-elementos">Elementos</a>
-            </nav>
-
-            <article id="cj-objetivo" class="bloco destaque-bloco">
-                <h3>1. Objetivo</h3>
-                <p>Vença <strong>três campeões</strong> do adversário usando as suas cartas. Quem tiver três campeões derrotados perde a partida. Bestas derrotadas não contam para a vitória. No Local entre três ou quatro pessoas, vence o último jogador que permanecer na arena.</p>
-                <p>No início do jogo, cada participante recebe <strong>3 cartas</strong> de um conjunto de pelo menos <strong>5 cartas próprias</strong>. O total se ajusta à quantidade de pessoas e máquinas, sem repetições. Escolha o representante antes de começar.</p>
-                <p>No Local entre pessoas e no multiplayer, após pelo menos <strong>quatro redistribuições</strong>, se todas as cartas estiverem nos descartes ou na reserva central, a partida termina <strong>empatada antes de embaralhar novamente</strong>. Vocês podem jogar novamente ou encerrar.</p>
-            </article>
-
-            <article id="cj-turno" class="bloco">
-                <h3>2. O seu turno: 2 ações</h3>
-                <p>Em cada turno você pode fazer <strong>duas ações</strong>. Cada ação gasta uma das duas e pode ser:</p>
-                <div class="cartoes">
-                    <div class="cartao"><h4>Atacar</h4><p>Sua criatura em batalha ataca a criatura em batalha do adversário.</p></div>
-                    <div class="cartao"><h4>Comprar</h4><p>Pegue uma carta do topo do seu baralho. No Local entre pessoas e no multiplayer, quando os baralhos de todos os participantes ativos acabam, os descartes são reunidos, embaralhados e divididos igualmente. As cartas que sobrarem ficam no centro; o critério de empate é verificado antes da nova distribuição.</p></div>
-                    <div class="cartao"><h4>Usar habilidade</h4><p>Selecione uma carta sua e clique em “Executar habilidade”. O jogo faz o efeito sozinho.</p></div>
-                    <div class="cartao"><h4>Jogar uma carta</h4><p>Coloque em batalha, em apoio, equipe uma criatura ou lance um feitiço.</p></div>
-                </div>
-                <p class="nota">Quando as ações acabam, clique em “Encerrar turno”. Se você tentar algo que as regras não permitem, o jogo explica o motivo e <strong>não gasta a ação</strong>.</p>
-            </article>
-
-            <article id="cj-classes" class="bloco">
-                <h3>3. Classes das cartas</h3>
-                <div class="cartoes">
-                    <div class="cartao"><h4>Campeão</h4><p>Criatura principal. Fica em batalha, carrega 1 arma e 1 item. Cada campeão derrotado conta para a vitória do adversário.</p></div>
-                    <div class="cartao"><h4>Besta</h4><p>Criatura em batalha. Não carrega armas, mas aceita até 3 itens.</p></div>
-                    <div class="cartao"><h4>Arma</h4><p>Equipada só em campeões. Soma ataque (e defesa, se tiver) à criatura.</p></div>
-                    <div class="cartao"><h4>Item</h4><p>Equipado em campeões (1) ou bestas (até 3). Dá defesa e efeitos extras.</p></div>
-                    <div class="cartao"><h4>Auxiliar</h4><p>Fica em apoio (máximo de 2) e ajuda com habilidades.</p></div>
-                    <div class="cartao"><h4>Feitiço</h4><p>Uso único: é lançado da mão e vai para o descarte. Se tiver ataque, atinge a criatura do adversário.</p></div>
-                </div>
-            </article>
-
-            <article id="cj-regras" class="bloco">
-                <h3>4. Regras da mesa</h3>
-                <ol class="regras-num">
-                    <li>Só pode haver <strong>um campeão ou uma besta</strong> em batalha por jogador.</li>
-                    <li>Não é possível equipar <strong>armas em bestas</strong>.</li>
-                    <li>Cada campeão carrega <strong>uma única arma</strong>.</li>
-                    <li>Cada besta aceita <strong>até três itens</strong>.</li>
-                    <li>Só pode haver <strong>dois auxiliares</strong> na batalha por jogador. Quando seu campeão ou besta é derrotado, <strong>os auxiliares vinculados também são derrotados e vão para o descarte</strong>.</li>
-                    <li>Depois de jogado na mesa, um campeão ou uma besta <strong>não volta para a mão</strong> (só uma habilidade pode permitir isso).</li>
-                    <li>Cada campeão aceita <strong>um único item</strong>.</li>
-                </ol>
-            </article>
-
-            <article id="cj-combate" class="bloco">
-                <h3>5. Ataque e defesa</h3>
-                <p>Toda carta tem <strong>ATQ</strong> (ataque) e <strong>DEF</strong> (defesa). Quando você ataca, a defesa da criatura do adversário diminui pelo seu ataque total (ataque da criatura + armas e itens + bônus de habilidades).</p>
-                <p>Se ela sobreviver, <strong>contra-ataca</strong>. Uma criatura sem defesa é derrotada e vai para o descarte. Armas e itens equipados vão junto.</p>
-                <p>No jogo, o botão de atacar já mostra quanto dano o golpe vai causar.</p>
-            </article>
-
-            <article id="cj-habilidades" class="bloco">
-                <h3>6. Habilidades automáticas</h3>
-                <div class="cartoes dois">
-                    <div class="cartao"><h4><span class="tipo-hab ativa">⚡ Ativa</span></h4><p>Você escolhe quando usar: selecione a carta e clique em “Executar habilidade”. Gasta <strong>1 ação</strong>. Se precisar escolher um alvo, o jogo mostra as opções.</p></div>
-                    <div class="cartao"><h4><span class="tipo-hab passiva">● Passiva</span></h4><p>Funciona sozinha quando a situação acontece (dobro de dano contra um tipo, imunidades, dano por turno...). <strong>Não gasta ação</strong>.</p></div>
-                </div>
-                <p class="nota">Efeitos em andamento (veneno, paralisia, recarga...) aparecem como etiquetas na carta. Cartas de uso único, como feitiços, são usadas direto da mão.</p>
-            </article>
-
-            <article id="cj-tela" class="bloco">
-                <h3>7. A tela da partida</h3>
-                <ul class="lista-funcoes">
-                    <li><strong>Em batalha</strong> e <strong>Apoio</strong>: a criatura que luta e os auxiliares de cada jogador.</li>
-                    <li><strong>Sua mão</strong>: só aparece depois que o jogador confirma a troca de vez (no modo Local com mais de uma pessoa).</li>
-                    <li><strong>Painel da carta</strong>: ao clicar em uma carta, você lê a descrição completa e vê os botões disponíveis.</li>
-                    <li><strong>Executar habilidade</strong>: usa a habilidade ativa da carta selecionada.</li>
-                    <li><strong>Atacar</strong>, <strong>Colocar em batalha</strong> e <strong>Equipar</strong>: as ações de jogar a carta.</li>
-                    <li><strong>Comprar carta</strong>: gasta 1 ação para comprar uma carta.</li>
-                    <li><strong>Encerrar turno</strong>: passa a vez ao adversário.</li>
-                    <li><strong>Campeões derrotados</strong>: contador de 0 a 3 de cada jogador.</li>
-                    <li><strong>Reconexão online</strong>: se alguém perder a conexão, a partida pausa por até dez minutos. Reabra no mesmo navegador para retomar sua mão e seu turno.</li>
-                    <li><strong>Descarte</strong>: toque no botão para ver as cartas descartadas.</li>
-                    <li><strong>Registro</strong>: lista tudo o que aconteceu na partida.</li>
-                </ul>
-                <p class="nota">O representante é opcional: dá +10 de defesa às criaturas do universo dele.</p>
-            </article>
-
-            <article id="cj-elementos" class="bloco">
-                <h3>8. Elementos (tipos das cartas)</h3>
-                <p class="suave">Clique em um elemento para ver as cartas dele.</p>
-                <div class="chips" id="guia-elemento"></div>
-            </article>
-
-            <div class="centro fecho">
-                <a class="btn primario" href="#modos">Entendi, quero jogar</a>
             </div>
         </section>
 

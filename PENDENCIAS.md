@@ -117,6 +117,9 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
+- [x] Tutorial em página própria, com instruções dos modos, regras e controles;
+  links Como jogar atualizados e inicial sem o guia completo.
+
 - [x] Changelog público com versões recolhidas, animação de abertura/fechamento e
   acesso pelos menus. Incrementos de 0.1, 0.5 ou 1.0 conforme o tamanho da atualização.
 
