@@ -1,0 +1,6 @@
+.modos-locais { margin: 24px 0; }
+.modos-locais .modo { text-align:left; cursor:pointer; color:var(--texto); font:inherit; }
+.modos-locais .modo[aria-pressed="true"] { border-color:var(--ouro); box-shadow:0 0 0 1px var(--ouro); }
+.modos-locais h2 { font-family:var(--fonte-titulo); font-size:1.15rem; margin-bottom:10px; }
+.local .jogo[hidden] { display:none; }
+.local.em-partida main { padding-bottom:24px; }

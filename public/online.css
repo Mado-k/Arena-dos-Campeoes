@@ -40,3 +40,5 @@
 .alvo-coop select { color: var(--texto); background: var(--bg); border: 1px solid var(--ouro); border-radius: 8px; padding: 8px; font: inherit; }
 .ordem-turnos ol { padding-left: 20px; color: var(--suave); font-size: .85rem; line-height: 1.8; }
 .ordem-turnos .turno-atual { color: var(--ouro-claro); font-weight: 700; }
+
+.conexao-jogo { position:sticky; top:0; z-index:110; margin:0; padding:12px 20px; text-align:center; color:var(--ouro-claro); background:var(--painel); border-bottom:1px solid var(--ouro); }

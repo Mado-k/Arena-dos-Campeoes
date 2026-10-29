@@ -24,7 +24,7 @@ window.CARTAS_OFFLINE = [
   "origem": "mitologia grega",
   "ataque": 0,
   "defesa": 0,
-  "habilidade": "Todos os campeões e bestas em batalha passam a sofrer 10 de dano por turno (inclusive os do invocador).",
+  "habilidade": "Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.",
   "imagem": null
  },
  {
@@ -427,7 +427,7 @@ window.CARTAS_OFFLINE = [
   "origem": "folclore japonês",
   "ataque": 3,
   "defesa": 19,
-  "habilidade": "Dobra o ataque base se estiver com uma arma.",
+  "habilidade": "Dobra o ataque base se estiver com um item equipado.",
   "imagem": null
  },
  {

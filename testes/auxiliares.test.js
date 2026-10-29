@@ -46,10 +46,10 @@ for (const causa of ['ataque', 'contra-ataque', 'habilidade', 'veneno', 'queimad
     assert(Motor.executarHabilidade(e, carta.uid).ok);
   } else {
     const c = dono.campo[0]; c.defesa = 1;
-    if (causa === 'pandora') e.pandora = true;
+    if (causa === 'pandora') { const spell=e.jogadores[0].mao[0];spell.base={...spell.base,codigo:'n002',classe:'feitiço',ataque:0};assert(Motor.executarHabilidade(e,spell.uid).ok); }
     else if (causa === 'confusao') c.st.confusao = true;
     else c.st[causa] = 2;
-    assert(Motor.encerrarTurno(e).ok);
+    if(causa!=='pandora')assert(Motor.encerrarTurno(e).ok);
   }
   conferir(e, indice, auxiliares);
   assert(e.log.some(t => t.includes('auxiliares') && t.includes('descarte')));

@@ -7,6 +7,7 @@
     const REGRAS = {
         acoesPorTurno: 2,        // atacar, comprar, usar habilidade ou jogar uma carta
         maoInicial: 3,           // cartas na mão no início do jogo
+        minimoCartasPorJogador: 5, // inclui a mão inicial
         maxCampo: 1,             // só 1 campeão ou besta em batalha por jogador
         maxApoio: 2,             // auxiliares na batalha
         maxArmasCampeao: 1,      // cada campeão carrega uma única arma (bestas não carregam armas)
@@ -39,7 +40,7 @@
         n027: { queimaContato: 7 },
         n029: { x10Se: ['sombrio'] },
         n030: { dobraContra: { universo: ['normal'] } },
-        n033: { dobraBaseComArma: true },
+        n033: { dobraBaseComItem: true },
         n037: { soFeridoPorElemento: ['fantasma'] },
         n038: { semEquip: true }
     };
@@ -222,12 +223,12 @@
         const ef = efeitosDe(estado, atacante);
         const proprio = atacante.ataqueBase + atacante.ataqueAjuste;
         let d = proprio;
-        let temArma = false;
+        let temItem = false;
 
         for (const e of atacante.equip) {
             const efe = efeitosDe(estado, e);
             const bonus = Number(e.base.ataque) || 0;
-            if (classeDe(e) === 'arma') temArma = true;
+            if (classeDe(e) === 'item') temItem = true;
             if (efe.bonusCondicional) {
                 if (alvoBase && casa(efe.bonusCondicional, alvoBase)) d += bonus * efe.fator;
             } else {
@@ -235,7 +236,7 @@
             }
         }
 
-        if (ef.dobraBaseComArma && temArma) d += proprio * (2 * ef.fator - 1);
+        if (ef.dobraBaseComItem && temItem) d += proprio * (2 * ef.fator - 1);
 
         // dino do google (auxiliar em apoio do mesmo jogador)
         if (estado) {
@@ -284,6 +285,23 @@
 
     function verificarFim(estado) {
         if (estado.vencedor !== null) return;
+        if (estado.todosContraTodos) {
+            for (const j of estado.jogadores) if (!j.eliminado && j.derrotados >= REGRAS.campeoesParaVencer) {
+                j.eliminado = true;
+                for (const zona of ['mao','baralho','campo','apoio']) {
+                    for (const c of j[zona].splice(0)) paraDescarte(j,c);
+                }
+                log(estado, `${j.nome} foi eliminado; suas cartas restantes foram para o descarte.`);
+            }
+            const vivos = estado.jogadores.map((_,i)=>i).filter(i=>!estado.jogadores[i].eliminado);
+            if (vivos.length <= 1) estado.vencedor = vivos[0] ?? -1;
+            else if (impassePorDescarte(estado)) {
+                estado.vencedor = -1;
+                estado.motivoEmpate = `Empate por impasse: todas as cartas foram descartadas após ${estado.redistribuicoes} redistribuições.`;
+            }
+            if (estado.vencedor !== null) log(estado, estado.vencedor === -1 ? estado.motivoEmpate || 'A partida terminou empatada.' : `${estado.jogadores[estado.vencedor].nome} venceu: é o último jogador na arena!`);
+            return;
+        }
         if (estado.cooperativo) {
             estado.jogadores.forEach(j => { j.eliminado = j.derrotados >= REGRAS.campeoesParaVencer; });
             const perdeuEquipe = [0, 1].map(time => estado.jogadores.filter((j, i) => estado.equipes[i] === time).every(j => j.eliminado));
@@ -412,15 +430,17 @@
         verificarFim(estado);
         if (estado.vencedor !== null || estado.jogadores.some(j => j.baralho.length)) return false;
         const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(j => j.descarte)];
-        if (cartas.length < 2) return false;
-        const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / 2);
-        estado.jogadores.forEach((j, i) => {
+        const participantes = estado.jogadores.filter(j=>!j.eliminado);
+        if (cartas.length < participantes.length) return false;
+        const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / participantes.length);
+        estado.jogadores.forEach(j=>{j.descarte=[];});
+        participantes.forEach((j, i) => {
             j.baralho = mistura.slice(i * metade, (i + 1) * metade);
             j.descarte = [];
         });
-        estado.reservaCentral = mistura.slice(2 * metade);
+        estado.reservaCentral = mistura.slice(participantes.length * metade);
         estado.redistribuicoes = (estado.redistribuicoes || 0) + 1;
-        log(estado, `Os dois baralhos acabaram. Os descartes foram reunidos e redistribuídos: ${metade} carta(s) por jogador${estado.reservaCentral.length ? '; 1 carta ficou no centro para a próxima redistribuição' : ''}.`);
+        log(estado, `${estado.todosContraTodos ? 'Todos os baralhos acabaram.' : 'Os dois baralhos acabaram.'} Os descartes foram reunidos e redistribuídos: ${metade} carta(s) por jogador${estado.reservaCentral.length ? `; ${estado.reservaCentral.length} carta(s) ficou no centro para a próxima redistribuição` : ''}.`);
         return true;
     }
 
@@ -429,7 +449,7 @@
         const j = estado.jogadores[dono];
         if (j.baralho.length) return true;
         if (estado.cooperativo) return j.descarte.length > 0;
-        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length) >= 2;
+        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length) >= estado.jogadores.filter(j=>!j.eliminado).length;
     }
 
     // compra até n cartas; devolve quantas foram compradas
@@ -479,7 +499,6 @@
             }
 
             const danos = [];
-            if (estado.pandora) danos.push(['A Caixa de Pandora', estado.danoPandora || 10]);
             if (c.st.veneno) danos.push(['O veneno', c.st.veneno]);
             if (c.st.queimadura) danos.push(['A queimadura', c.st.queimadura]);
             for (const [origem, valor] of danos) {
@@ -501,6 +520,13 @@
         verificarFim(estado);
     }
 
+    function tamanhoParaParticipantes(total, participantes) {
+        if (![20,30,40].includes(total)) throw Object.assign(new Error('Escolha uma partida com 20, 30 ou 40 cartas no total.'), {code:'TAMANHO_BARALHO_INVALIDO'});
+        const escolhido = [20,30,40].find(n=>n>=total && n>=participantes*REGRAS.minimoCartasPorJogador);
+        if (!escolhido) throw Object.assign(new Error('Não há cartas suficientes para garantir cinco cartas únicas por participante.'), {code:'CARTAS_INSUFICIENTES'});
+        return escolhido;
+    }
+
     function novoJogo(config, cartas) {
         const lista = cartas.map(normalizarCarta);
         const vistas = new Set();
@@ -513,7 +539,7 @@
             return true;
         });
         // O tamanho é o total da partida, dividido igualmente entre os dois lados.
-        const total = config.tamanhoBaralho === undefined ? 40 : config.tamanhoBaralho;
+        const total = tamanhoParaParticipantes(config.tamanhoBaralho === undefined ? 40 : config.tamanhoBaralho, config.nomes.length);
         if (![20, 30, 40].includes(total)) {
             throw Object.assign(new Error('Escolha uma partida com 20, 30 ou 40 cartas no total.'), { code: 'TAMANHO_BARALHO_INVALIDO' });
         }
@@ -521,21 +547,22 @@
             throw Object.assign(new Error(`O banco tem ${pool.length} cartas jogáveis distintas; esta partida precisa de ${total}. Importe as cartas com o seed.js no mesmo banco usado pelo servidor.`), { code: 'CARTAS_INSUFICIENTES' });
         }
         const distribuicao = embaralhar(pool).slice(0, total);
-        const equipes = config.equipes || [0, 1];
-        const cooperativo = Boolean(config.equipes);
+        const equipes = config.equipes || config.nomes.map((_,i)=>i);
+        const cooperativo = Boolean(config.equipes) && !config.todosContraTodos;
         const participantes = config.nomes.map((_, i) => i);
         const baralhos = participantes.map(() => []);
-        if (cooperativo) {
+        if (cooperativo || config.todosContraTodos) {
             // Cada participante começa com um campeão, evitando mãos sem como entrar em batalha.
             const campeoes = distribuicao.filter(c => norm(c.classe) === 'campeao');
             // Em conjuntos menores, procurar também entre as cartas que não entraram no sorteio.
             for (const c of embaralhar(pool)) if (norm(c.classe) === 'campeao' && !campeoes.includes(c)) campeoes.push(c);
-            if (campeoes.length < participantes.length) throw Object.assign(new Error(`O co-op precisa de pelo menos ${participantes.length} campeões distintos.`), { code: 'CARTAS_INSUFICIENTES' });
+            if (campeoes.length < participantes.length) throw Object.assign(new Error(`A partida precisa de pelo menos ${participantes.length} campeões distintos.`), { code: 'CARTAS_INSUFICIENTES' });
             const reservas = campeoes.slice(0, participantes.length);
             const restantes = embaralhar(pool.filter(c => !reservas.includes(c))).slice(0, total - participantes.length);
             let cursor = 0;
             participantes.forEach(i => baralhos[i].push(reservas[i]));
-            for (const time of [0, 1]) {
+            if (config.todosContraTodos) restantes.forEach((c,i)=>baralhos[i % participantes.length].push(c));
+            else for (const time of [0, 1]) {
                 const membros = participantes.filter(i => equipes[i] === time);
                 for (let i = 0; i < total / 2 - membros.length; i++) baralhos[membros[i % membros.length]].push(restantes[cursor++]);
             }
@@ -544,10 +571,10 @@
             if (!membros.length) throw new Error('As duas equipes precisam de participantes.');
             distribuicao.slice(time * total / 2, (time + 1) * total / 2).forEach((c, i) => baralhos[membros[i % membros.length]].push(c));
         }
-        if (baralhos.some(b => b.length < REGRAS.maoInicial)) throw Object.assign(new Error('Este formato precisa de pelo menos 30 cartas para que todos comecem com três cartas.'), { code: 'CARTAS_INSUFICIENTES' });
+        if (baralhos.some(b => b.length < REGRAS.minimoCartasPorJogador)) throw Object.assign(new Error('Cada participante precisa de pelo menos cinco cartas no total, incluindo a mão inicial.'), { code: 'CARTAS_INSUFICIENTES' });
         const estado = {
             tamanhoBaralho: total,
-            cooperativo, equipes, ordemTurnos: config.ordemTurnos || participantes,
+            cooperativo, todosContraTodos: Boolean(config.todosContraTodos), equipes, ordemTurnos: config.ordemTurnos || participantes,
             jogadores: participantes.map((i) => ({
                 nome: config.nomes[i],
                 equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
@@ -568,7 +595,7 @@
         };
         estado.jogadores.forEach((j, i) => {
             j.baralho = baralhos[i].map(c => nova(estado, c));
-            if (cooperativo) j.mao.push(j.baralho.shift());
+            if (cooperativo || config.todosContraTodos) j.mao.push(j.baralho.shift());
             comprar(estado, i, REGRAS.maoInicial - j.mao.length);
         });
         log(estado, `${estado.jogadores[estado.turno].nome} começa. Cada jogador recebeu ${REGRAS.maoInicial} cartas.`);
@@ -811,14 +838,27 @@
             }
         },
         n002: {
-            tipo: 'ativa', consumivel: true, local: ['mao'], botao: 'Lançar feitiço',
-            texto: 'Todos os campeões e bestas em batalha passam a sofrer 10 de dano por turno (inclusive os do invocador).',
-            detalhe: 'Vale até o fim da partida. O dano é aplicado no início do turno do dono de cada criatura.',
+            tipo: 'ativa', consumivel: true, publica: true, local: ['mao'], botao: 'Lançar feitiço',
+            texto: 'Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.',
+            detalhe: 'O dano acontece somente ao lançar e preserva seu campo e o dos aliados. Apenas campeões adversários derrotados contam para a vitória. Auxiliares não possuem vida nem recebem dano; são descartados se sua criatura vinculada morrer. Itens e armas não recebem dano diretamente.',
             exec(c) {
-                if (c.estado.pandora) return erro('A Caixa de Pandora já foi aberta nesta partida.');
-                c.estado.pandora = true;
-                c.estado.danoPandora = 10 * c.potencia;
-                return { ok: true, texto: `abriu a Caixa de Pandora! Toda criatura em batalha sofre ${c.estado.danoPandora} de dano no início do turno do seu dono.` };
+                if (c.estado.pandoraUsada || c.inst.usos.n002) return erro('A Caixa de Pandora já foi usada nesta partida.');
+                c.estado.pandoraUsada = true;
+                c.inst.usos.n002 = true;
+                const dano = 10 * c.potencia;
+                const alvos = adversarios(c.estado,c.dono).flatMap(dono=>c.estado.jogadores[dono].campo.map(inst=>({dono,inst})));
+                const registro = [];
+                // Aplica todo o dano antes de retirar cartas: proteções e amplificação
+                // valem para o lançamento inteiro, inclusive se o auxiliar for derrotado.
+                for (const alvo of alvos) {
+                    const bloqueada = protecao(c.estado,alvo.dono,alvo.inst,c.origem,true) || !ferivel(c.estado,alvo.dono,alvo.inst,c.origem).ok;
+                    alvo.atingido = !bloqueada;
+                    if (bloqueada) { registro.push(`${alvo.inst.base.nome}: dano bloqueado`); continue; }
+                    alvo.inst.defesa -= dano;
+                    registro.push(`${alvo.inst.base.nome}: ${dano} de dano, DEF restante ${Math.max(0,alvo.inst.defesa)}`);
+                }
+                for (const alvo of alvos) if (alvo.atingido && alvo.inst.defesa<=0) morrer(c.estado,alvo.dono,alvo.inst);
+                return { ok:true, texto: `lançou a Caixa de Pandora uma única vez. ${registro.join('; ') || 'Não havia criaturas inimigas em batalha.'}` };
             }
         },
         n003: passiva('Causa 2 de dano a mais em cartas da origem humanidade.'),
@@ -988,7 +1028,7 @@
         },
         n032: passiva('Como foi a primeira infectada, tem muito mais defesa que o normal.',
             'Já está refletido na defesa da carta.', { semEfeito: true }),
-        n033: passiva('Dobra o ataque base se estiver com uma arma.'),
+        n033: passiva('Dobra o ataque base se estiver com um item equipado.'),
         n034: {
             tipo: 'ativa', local: ['campo'], botao: 'Copiar habilidade',
             texto: 'Consegue copiar a habilidade do campeão ou da besta do oponente.',
@@ -1123,6 +1163,7 @@
         const sil = zona !== 'mao' ? silenciada(estado, inst) : null;
         if (sil) return nao(sil);
         if (inst.rec > 0) return nao(`Recarregando: faltam ${inst.rec} turno(s) seus.`);
+        if (inst.base.codigo === 'n002' && (estado.pandoraUsada || inst.usos.n002)) return nao('Já usada nesta partida (uso único).');
         if (inst.base.codigo === 'n019' && estado.kitsuneUsada) return nao('Já usada nesta partida (uso único).');
         if ((inst.base.codigo === 'n019' || inst.base.codigo === 'n040') && inst.usos[inst.base.codigo]) return nao('Já usada (uso único).');
         return r;
@@ -1190,7 +1231,7 @@
         verificarPresenca(estado);
         verificarFim(estado);
         redistribuirDescartes(estado);
-        return { ok: true };
+        return { ok: true, ...(h.publica ? {registroHabilidade:texto} : {}) };
     }
 
     function lancarFeitico(estado, uid, escolha) {
@@ -1200,7 +1241,7 @@
     }
 
     const Motor = {
-        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, podeComprar, fatorHabilidade,
+        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, podeComprar, fatorHabilidade, tamanhoParaParticipantes,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,

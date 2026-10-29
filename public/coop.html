@@ -24,6 +24,7 @@
         </nav>
     </header>
 
+    <p id="conexao-jogo" class="conexao-jogo" role="status" hidden></p>
     <main class="lobby">
         <div class="lobby-cabeca">
             <p class="selo">Modo de jogo</p>
@@ -52,7 +53,8 @@
                             <option value="40" selected>40 cartas · 20 para cada equipe</option>
                         </select>
                     </div>
-                    <p class="suave">Todos têm 2 ações por turno. Com quatro pessoas, uma escolha de 20 cartas passa automaticamente para 30 para garantir a mão inicial.</p>
+                    <div class="campo escolha-representante"><label for="dificuldade">Dificuldade das máquinas</label><select id="dificuldade"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select><p class="suave">Fácil faz escolhas simples; Normal equilibra ataque e preparo; Difícil também avalia os riscos do campo.</p></div>
+                    <p class="suave">Todos têm 2 ações por turno. O total se ajusta à equipe: pelo menos 30 cartas com três pessoas e 40 com quatro, garantindo cinco cartas por participante, incluindo a mão inicial.</p>
                     <button type="button" class="btn primario" id="criar">Criar sala</button>
                 </div>
                 <div class="lobby-opcao">
@@ -66,6 +68,7 @@
             </div>
 
             <p id="status" class="status" aria-live="polite"></p>
+            <button type="button" class="btn" id="retomar-sessao" hidden>Retomar última partida</button>
         </section>
 
         <!-- SALA -->

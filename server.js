@@ -173,7 +173,7 @@ app.use((err, req, res, next) => {
 require('./salas')(io, async () => {
   const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
   return cartas.map(banco.normalizar);
-});
+}, { armazenamento: require('./armazenamento-partidas')(pool) });
 
 const PORT = Number(process.env.PORT) || 3000;
 servidor.listen(PORT, '0.0.0.0', () => {

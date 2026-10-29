@@ -52,6 +52,25 @@ nesse arquivo, ou defina `window.ARENA_API` antes de carregar `config.js`. No Gi
 Pages, preencha `API_HOSPEDADA` em `public/config.js` com o endereço do backend no Render.
 O servidor precisa estar acessível aos convidados; não compartilhe a porta do banco.
 
+## Modo Local
+
+Abra **Local** na página inicial e escolha **Player vs máquina** (1 a 4 pessoas,
+com uma máquina por pessoa) ou **Player vs player** (2 a 4 pessoas no mesmo
+dispositivo). Cada pessoa escolhe seu representante antes de começar. A cortina de
+troca de vez oculta a mão até o próximo jogador confirmar. Com três ou quatro
+pessoas competindo entre si, vence o último participante que não perdeu três campeões.
+
+O Local usa a cópia embutida das cartas quando o servidor está indisponível.
+O endereço antigo `offline.html` redireciona para `local.html`. O controlador
+compartilhado fica em `public/partida.js`, o motor em `public/motor.js` e a IA em
+`public/ia.js`; `partida.js` na raiz exporta esse controlador para o servidor.
+
+Antes de jogar contra máquinas, escolha **Fácil**, **Normal** ou **Difícil**, tanto
+no Local quanto ao criar o co-op. Fácil varia as jogadas legais, Normal avalia o
+ganho imediato e Difícil também considera a exposição da criatura aos ataques
+adversários. Todos mantêm os mesmos atributos e duas ações por turno; a IA não
+consulta mãos ou baralhos adversários.
+
 ## Partidas online
 
 1. Abra Multiplayer ou Co-op, informe o apelido, escolha o total de cartas e crie a sala.
@@ -64,14 +83,14 @@ O servidor precisa estar acessível aos convidados; não compartilhe a porta do 
 
 O total é dividido igualmente no início, sem repetir cartas entre os lados: 40 = 20 para cada
 lado; 30 = 15; 20 = 10. As três cartas da mão inicial já fazem parte dessa metade.
-Essa distribuição vale também no offline. Uma partida só começa se houver cartas
+Essa distribuição vale também no Local entre duas pessoas. Uma partida só começa se houver cartas
 jogáveis distintas suficientes para o tamanho escolhido.
 
 Ao começar, o lobby fica com `hidden` e a mesa ocupa seu lugar na mesma página.
 Use **Sair da partida** para retornar à entrada; sair encerra a partida para os demais.
 Depois da segunda ação, uma janela central avisa que as ações acabaram e oferece
 **Encerrar turno**. Ao confirmar, os dois lados recebem um aviso central de quem
-encerrou e de quem joga em seguida. No offline, a cortina de troca também mostra
+encerrou e de quem joga em seguida. No Local, a cortina de troca também mostra
 essa informação.
 
 **O co-op permanece um protótipo:** o formato abaixo foi solicitado como solução
@@ -92,14 +111,14 @@ baralho individuais. Mesmo os aliados não veem sua mão.
 Metade das cartas únicas vai para cada equipe, dividida entre os integrantes sem
 repetições. Com 40 cartas: no 1 × 1 são 20 por participante; no 2 × 2, 10; no 3 × 3,
 a divisão por equipe é 7/7/6; no 4 × 4, são 5 por participante. Se a sala foi criada
-com 20 cartas e chega a quatro pessoas, o total sobe automaticamente para 30,
-garantindo a mão inicial de três aos oito participantes. O lobby informa o ajuste;
-se voltar a três pessoas antes do início, o total escolhido de 20 volta a valer.
+com 20 cartas e chega a três pessoas, o total sobe para 30; com quatro, sobe para
+40. Cada participante recebe pelo menos cinco cartas no total, incluindo as três
+da mão inicial. O lobby informa o ajuste e recalcula o total quando alguém sai.
 A mão inicial de cada participante inclui um campeão distinto.
 
 Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
 As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
-presença consideram os inimigos em jogo, e Pandora vale para todos. Equipamentos,
+presença consideram os inimigos em jogo, e Pandora atinge todas as criaturas inimigas. Equipamentos,
 auxiliares e recuperações beneficiam o dono da carta; Heimdall pode transferir
 cartas adversárias do universo Normal conforme sua habilidade.
 
@@ -117,19 +136,29 @@ resume as ações para evitar revelar cartas compradas ou escolhidas no baralho.
 Nos combates, o registro mostra os danos do ataque e do contra-ataque e a defesa
 restante das duas criaturas. Se uma criatura for derrotada, mostra zero de defesa;
 se não houver contra-ataque, mostra dano zero e o motivo. O detalhamento aparece
-para ambos os jogadores, no offline e também nos ataques do computador.
+para ambos os jogadores, no Local e também nos ataques do computador.
 
-A mesa online usa a mesma apresentação do offline: adversário acima, barra de
+A mesa online usa a mesma apresentação do Local: adversário acima, barra de
 ações ao centro, seu campo e sua mão abaixo, e painel lateral com a carta selecionada
 e o registro. As cartas mostram arte (ou inicial), atributos e habilidade, com a
 descrição completa no painel. O layout se reorganiza em uma coluna no celular.
-Os ajustes manuais foram removidos também do offline; as alterações de jogo passam
+Os ajustes manuais foram removidos também do Local; as alterações de jogo passam
 somente pelas regras e habilidades automáticas.
 
-Salas e partidas ficam em memória: reiniciar o servidor encerra as partidas.
-Se alguém sair ou perder a conexão, a partida é encerrada sem atribuir vitória;
-os restantes podem preparar uma nova partida. Não há retomada após desconexão.
+Uma desconexão inesperada pausa a partida por até **10 minutos**. A mesma aba
+retoma automaticamente; depois de fechar a aba, use **Retomar partida** no mesmo
+navegador e modo. A mão, as ações e o turno são preservados. Todos precisam voltar
+para a partida continuar. Sair pelo botão continua sendo abandono explícito.
 Não entram novos jogadores numa partida em andamento.
+
+As sessões são salvas no MySQL/Aiven, na tabela `arena_sessoes`, criada automaticamente
+na inicialização. O usuário do banco precisa poder criar essa tabela e consultar,
+inserir, atualizar e excluir suas linhas; a tabela de cartas não é alterada.
+O servidor só confirma uma ação depois de salvar o estado. Ao reiniciar, recupera
+as sessões e abre uma nova janela de reconexão; registros sem atividade há mais de
+24 horas são descartados. A retomada depende da disponibilidade desse banco.
+O identificador privado de retomada fica no navegador; somente seu hash é salvo
+no servidor e ele não aparece no convite nem nos estados enviados aos adversários.
 
 As decisões que ainda precisam de confirmação e a lista de verificações estão em
 [PENDENCIAS.md](PENDENCIAS.md).
@@ -152,20 +181,31 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
 - Hércules dobra cumulativamente a cada três turnos próprios. Kitsune retorna uma
   vez por partida com equipamentos e auxiliares; Dino sai junto com sua criatura;
   n025 mantém a proteção divina e Guss aplica a habilidade copiada imediatamente.
-- No offline e no multiplayer, a reciclagem espera os dois baralhos vazios, reúne
+- No Local e no multiplayer, a reciclagem espera os dois baralhos vazios, reúne
   os descartes e divide igualmente. Uma sobra fica no centro para a redistribuição
   seguinte. Cartas não são duplicadas; a posse pode mudar durante a partida.
   O co-op conserva sua reciclagem individual provisória.
 - Um empate oferece reiniciar ou encerrar. A revanche online exige concordância
-  de todos e volta à sala para confirmar representantes e prontidão. No offline e
+  de todos e volta à sala para confirmar representantes e prontidão. No Local e
   no multiplayer, após pelo menos quatro redistribuições, todas as cartas nos
   descartes ou na reserva central causam empate antes de embaralhar novamente.
   Não pode restar carta em mão ou em jogo. A quarta redistribuição é permitida;
   não existe uma contagem adicional de três turnos pulados. O co-op continua
   aguardando a definição das suas regras específicas.
-- O último pedido do index foi cortado em “e por fim,”: dossiê, seção 4, item c;
-  também mencionado nas seções 10 e 13. A página inicial continua em
-  `public/index.html`, `public/index.js` e `public/style.css`.
+- Oni Zumbi dobra o ataque base com **item** equipado; bestas continuam sem poder
+  equipar armas.
+- Caixa de Pandora causa 10 de dano somente ao ser lançada, uma vez por partida,
+  aos campeões e bestas em batalha de todos os adversários, preservando o próprio
+  campo e os aliados. Apenas campeões adversários derrotados
+  contam para a vitória. Auxiliares não possuem vida nem recebem dano; são descartados
+  se sua criatura vinculada morrer. Itens e armas não recebem dano diretamente.
+  Não há dano de Pandora nos turnos seguintes.
+
+No Local entre três ou quatro pessoas, a redistribuição espera os baralhos de todos
+os participantes ativos acabarem, reúne os descartes e divide entre os sobreviventes;
+o restante fica no centro. A mesma condição de impasse vale após quatro redistribuições.
+A página inicial (`public/index.html`, `public/index.js` e `public/style.css`) explica
+os modos atuais; o pedido antigo que chegou cortado deixou de ser uma pendência.
 
 As decisões completas, exemplos de amplificação e os testes a conferir no Render
 estão em [PENDENCIAS.md](PENDENCIAS.md).
@@ -182,10 +222,15 @@ de portas/TLS e conexões reais Socket.IO. Os testes Socket.IO abrem portas loca
 temporárias e não usam o banco Aiven.
 Os testes de distribuição verificam os três tamanhos, unicidade entre jogadores,
 tratamento de duplicatas no catálogo e conservação das cartas durante as jogadas.
-Os testes de co-op cobrem três ou seis participantes, mãos privadas, turnos, alvos,
+Os testes de co-op cobrem de dois a oito participantes, mãos privadas, turnos, alvos,
 eliminações, vitória em equipe e simulações completas com as cartas reais.
 Os testes de combate cobrem dano com bônus, imunidade, derrota no ataque e no
 contra-ataque, defesa restaurada no descarte e registro compartilhado entre os jogadores.
+
+Também há testes de Local com duas a quatro pessoas, mínimo de cinco cartas por
+participante, níveis de dificuldade, restauração após reinício, autenticação da
+retomada, expiração e reversão de ação quando a gravação falha. A persistência foi
+exercitada em MariaDB local; isso não confirma permissões no Aiven de produção.
 
 O site estático já tem publicação da pasta `public/` no workflow do GitHub Pages.
 Para usar as partidas no site publicado, atualize também o backend no Render: o

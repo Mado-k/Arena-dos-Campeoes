@@ -15,6 +15,25 @@
     let salaAtual = null;
     let mesa = null;
     let pedidoInicio = false;
+    let conexaoPendente = null, retomando = false;
+    const chaveSessao = 'arena-sessao-' + modo, chaveBackup = chaveSessao + '-ultima';
+    let sessaoSalva = null, identidade = null;
+    try { sessaoSalva = JSON.parse(sessionStorage.getItem(chaveSessao) || 'null'); identidade = sessaoSalva?.jogadorId; } catch { /* armazenamento indisponível */ }
+    function limparSessao() {
+        const anterior = sessaoSalva; sessaoSalva = null; identidade = null;
+        try { sessionStorage.removeItem(chaveSessao); const ultima=JSON.parse(localStorage.getItem(chaveBackup)||'null'); if(ultima?.jogadorId===anterior?.jogadorId)localStorage.removeItem(chaveBackup); } catch { /* ignora */ }
+        $('retomar-sessao').hidden=true;
+    }
+    function conexao(texto) { $('conexao-jogo').textContent=texto; $('conexao-jogo').hidden=!texto; }
+    async function retomar() {
+        if(!sessaoSalva || !socket?.connected)return;
+        retomando=true;mesa?.pausar();conexao('Recuperando a partida…');
+        const res=await new Promise(resolve=>socket.timeout(15000).emit('sala:retomar',{...sessaoSalva,modo},(err,r)=>resolve(err?{erro:'Não foi possível retomar agora. Tente novamente.'}:r)));
+        retomando=false;
+        if(res?.ok){mostrarSala(res.sala);if(res.sala.jogadores.every(j=>j.conectado))conexao('');}
+        else { if(res?.expirada){limparSessao();voltarParaEntrada(res.erro,'erro');return;}conexao('');aviso(res?.erro||'Não foi possível retomar a sessão.','erro'); }
+    }
+
     let representantes = [];
     let carregandoRepresentantes = true;
     const seletorRepresentante = $('representante');
@@ -76,36 +95,31 @@
     }
 
     async function conectar() {
-        if (socket) return socket;
-
-        // o cliente é carregado do próprio servidor, então as versões sempre combinam
-        await carregarScript(`${API}/socket.io/socket.io.js`);
-        socket = io(API || location.origin);
-
-        mesa = criarMesaOnline(socket, {
-            aoMostrar() {
-                painelEntrada.hidden = true;
-                painelSala.hidden = true;
-                cabeca.hidden = true;
-                document.querySelector('main').classList.add('em-partida');
-            },
-            aoSair() {
-                socket.emit('sala:sair');
-                voltarParaEntrada('Você saiu da partida.');
+        if (conexaoPendente) return conexaoPendente;
+        if (socket?.connected) return socket;
+        conexaoPendente = (async () => {
+            if(!window.io)await carregarScript(`${API}/socket.io/socket.io.js`);
+            if(!socket){
+                socket=io(API||location.origin,{autoConnect:false});
+                mesa=criarMesaOnline(socket,{
+                    aoMostrar(){painelEntrada.hidden=true;painelSala.hidden=true;cabeca.hidden=true;document.querySelector('main').classList.add('em-partida');},
+                    aoSair(){socket.emit('sala:sair');limparSessao();voltarParaEntrada('Você saiu da partida.');}
+                });
+                socket.on('sessao',dados=>{sessaoSalva=dados;identidade=dados.jogadorId;try{sessionStorage.setItem(chaveSessao,JSON.stringify(dados));localStorage.setItem(chaveBackup,JSON.stringify(dados));}catch{/* ignora */}$('retomar-sessao').hidden=true;});
+                socket.on('sala',mostrarSala);
+                socket.on('partida:encerrada',dados=>{mesa.limpar();if(dados.final){limparSessao();voltarParaEntrada(dados.motivo,'erro');}else{aviso(dados.motivo,dados.empate?'':'erro');$('sala-aviso').textContent=dados.motivo;}});
+                socket.on('partida:pausa',dados=>{conexao(dados.pausada?'Partida pausada. Aguardando '+dados.ausentes.join(', ')+'. A reconexão preserva as cartas e o turno; prazo de '+Math.ceil(dados.prazoMs/60000)+' minutos.':'');});
+                socket.on('disconnect',()=>{if(sessaoSalva){mesa.pausar();conexao('Conexão interrompida. Reconectando automaticamente; sua partida está preservada.');}});
+                socket.on('connect',()=>{retomar().catch(()=>conexao('Não foi possível recuperar agora. Tentando reconectar…'));});
             }
-        });
-        socket.on('sala', mostrarSala);
-        socket.on('partida:encerrada', dados => { mesa.limpar(); aviso(dados.motivo, dados.empate ? '' : 'erro'); $('sala-aviso').textContent = dados.motivo; });
-        socket.on('disconnect', () => {
-            if (salaAtual) voltarParaEntrada('A conexão com o servidor caiu. Entre em uma sala de novo.', 'erro');
-        });
-
-        await new Promise((resolve, reject) => {
-            const limite = setTimeout(() => reject(new Error('tempo esgotado')), 6000);
-            socket.once('connect', () => { clearTimeout(limite); resolve(); });
-            socket.once('connect_error', (err) => { clearTimeout(limite); reject(err); });
-        });
-        return socket;
+            await new Promise((resolve,reject)=>{
+                const limite=setTimeout(()=>{socket.off('connect',ok);reject(Error('Tempo esgotado'));},15000);
+                async function ok(){clearTimeout(limite);while(retomando)await new Promise(r=>setTimeout(r,25));resolve();}
+                socket.once('connect',ok);socket.once('connect_error',err=>{clearTimeout(limite);socket.off('connect',ok);reject(err);});socket.connect();
+            });
+            return socket;
+        })();
+        try{return await conexaoPendente;}finally{conexaoPendente=null;}
     }
 
     async function pedir(evento, dados) {
@@ -113,7 +127,7 @@
             await conectar();
         } catch (err) {
             console.error(err);
-            if (socket) { socket.close(); socket = null; }
+            if (socket && !sessaoSalva) { socket.close(); socket = null; }
             aviso('Não foi possível conectar ao servidor. Confira o endereço da API e se o servidor está acessível.', 'erro');
             return null;
         }
@@ -141,7 +155,7 @@
         mostrarSala(resp.sala);
     }
 
-    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value) }));
+    $('criar').addEventListener('click', () => abrirSala('sala:criar', { tamanhoBaralho: Number($('tamanho-baralho').value), ...(modo==='coop'?{dificuldade:$('dificuldade').value}:{}) }));
 
     function tentarEntrar() {
         const c = limpar(codigo.value);
@@ -165,7 +179,7 @@
         document.querySelector('main').classList.toggle('em-partida', Boolean(sala.emPartida));
         $('sala-codigo').textContent = sala.codigo;
         $('sala-baralho').textContent = modo === 'coop'
-            ? `${sala.jogadores.length} de ${sala.max} jogadores · ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe · mãos privadas${sala.tamanhoBaralho !== sala.tamanhoBaralhoEscolhido ? ' · Total ajustado automaticamente para garantir 3 cartas por participante.' : ''}`
+            ? `${sala.dificuldade === 'facil' ? 'Fácil' : sala.dificuldade === 'dificil' ? 'Difícil' : 'Normal'} · ${sala.jogadores.length} de ${sala.max} jogadores · ${sala.maquinas} máquina(s) · ${sala.tamanhoBaralho} cartas únicas · metade para cada equipe · mãos privadas${sala.tamanhoBaralho !== sala.tamanhoBaralhoEscolhido ? ' · Total ajustado automaticamente para garantir pelo menos 5 cartas por participante, incluindo a mão inicial.' : ''}`
             : `${sala.tamanhoBaralho} cartas no total · ${sala.tamanhoBaralho / 2} por jogador · sem repetição`;
 
         const lista = $('jogadores');
@@ -176,12 +190,12 @@
             const nome = el('span', 'nome', j.nome);
             const rep = representantes.find(r => r.codigo === j.representante);
             nome.append(el('small', null, rep ? rep.nome : 'Sem representante'));
-            if (j.id === socket.id) nome.append(el('small', null, '(você)'));
+            if (j.id === (identidade || socket.id)) nome.append(el('small', null, '(você)'));
             if (j.id === sala.anfitriao) nome.append(el('small', null, 'anfitrião'));
             li.append(
                 el('span', 'avatar', j.nome.charAt(0).toUpperCase()),
                 nome,
-                el('span', 'estado' + (j.pronto ? ' pronto' : ''), j.pronto ? 'Pronto' : 'Aguardando')
+                el('span', 'estado' + (j.pronto ? ' pronto' : ''), !j.conectado ? 'Reconectando' : j.pronto ? 'Pronto' : 'Aguardando')
             );
             lista.append(li);
         }
@@ -191,7 +205,7 @@
             lista.append(li);
         }
 
-        const eu = sala.jogadores.find((j) => j.id === socket.id);
+        const eu = sala.jogadores.find((j) => j.id === (identidade || socket.id));
         seletorRepresentante.value = eu?.representante || '';
         seletorRepresentante.disabled = sala.iniciando || sala.emPartida || carregandoRepresentantes;
         const rep = representantes.find(r => r.codigo === eu?.representante);
@@ -203,11 +217,12 @@
         let texto;
         if (total < sala.min) texto = `Aguardando jogadores (${total} de ${sala.min} no mínimo).`;
         else if (sala.emPartida) texto = 'Partida em andamento. A mesa está abaixo.';
+        else if (sala.jogadores.some(j=>!j.conectado)) texto = 'Aguardando a reconexão de todos os jogadores.';
         else if (sala.iniciando) texto = 'Carregando as cartas…';
         else if (prontos === total) texto = modo === 'coop' ? `Todos prontos! O anfitrião pode iniciar ${total} jogador(es) × ${sala.maquinas} máquina(s).` : 'Todos prontos! O anfitrião pode iniciar a partida.';
         else texto = `${prontos} de ${total} jogadores prontos.`;
         $('sala-aviso').textContent = texto;
-        $('iniciar').disabled = pedidoInicio || sala.anfitriao !== socket.id || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida;
+        $('iniciar').disabled = pedidoInicio || sala.anfitriao !== (identidade || socket.id) || total < sala.min || prontos !== total || sala.iniciando || sala.emPartida || sala.jogadores.some(j=>!j.conectado);
         $('pronto').disabled = sala.iniciando || sala.emPartida || carregandoRepresentantes;
     }
 
@@ -218,6 +233,7 @@
         painelEntrada.hidden = false;
         cabeca.hidden = false;
         document.querySelector('main').classList.remove('em-partida');
+        conexao('');
         aviso(texto || '', tipo);
     }
 
@@ -235,12 +251,13 @@
 
     $('pronto').addEventListener('click', () => {
         if (!salaAtual) return;
-        const eu = salaAtual.jogadores.find((j) => j.id === socket.id);
+        const eu = salaAtual.jogadores.find((j) => j.id === (identidade || socket.id));
         socket.emit('sala:pronto', !(eu && eu.pronto));
     });
 
     $('sair').addEventListener('click', () => {
         if (socket) socket.emit('sala:sair');
+        limparSessao();
         voltarParaEntrada('');
     });
 
@@ -256,4 +273,11 @@
         }
         setTimeout(() => { botao.textContent = 'Copiar convite'; }, 1800);
     });
+    $('retomar-sessao').addEventListener('click',async()=>{
+        try{sessaoSalva=JSON.parse(localStorage.getItem(chaveBackup)||'null');}catch{sessaoSalva=null;}
+        if(!sessaoSalva)return;identidade=sessaoSalva.jogadorId;
+        try{await conectar();if(!salaAtual)await retomar();}catch{aviso('Não foi possível reconectar. Tente novamente.','erro');}
+    });
+    try{const ultima=JSON.parse(localStorage.getItem(chaveBackup)||'null');if(ultima){$('retomar-sessao').hidden=false;$('retomar-sessao').textContent='Retomar partida de '+ultima.nome;}}catch{/* ignora */}
+    if(sessaoSalva)conectar().catch(()=>aviso('Servidor indisponível. A sessão foi mantida para uma nova tentativa.','erro'));
 })();

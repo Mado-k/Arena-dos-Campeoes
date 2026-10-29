@@ -50,10 +50,10 @@
             <h2>Escolha o modo de jogo</h2>
             <p class="suave sub">Três jeitos de entrar na arena.</p>
             <div class="modos modos-centro">
-                <a class="modo" href="offline.html">
+                <a class="modo" href="local.html">
                     <span class="etiqueta">Sem internet</span>
-                    <h3>Offline</h3>
-                    <p>Dois jogadores no mesmo computador, revezando os turnos. Não precisa de conexão.</p>
+                    <h3>Local</h3>
+                    <p>Jogue sozinho ou em até quatro pessoas no mesmo dispositivo: contra máquinas ou entre amigos. Não precisa de servidor.</p>
                     <span class="ir">Jogar agora &rarr;</span>
                 </a>
                 <a class="modo" href="multiplayer.html">
@@ -65,7 +65,7 @@
                 <a class="modo" href="coop.html">
                     <span class="etiqueta">Precisa do servidor</span>
                     <h3>Co-op</h3>
-                    <p>De 1 a 4 pessoas, com uma máquina por jogador e mãos e campos individuais. A quantidade se ajusta automaticamente no lobby.</p>
+                    <p>De 1 a 4 pessoas, com uma máquina por jogador e mãos e campos individuais. A quantidade se ajusta automaticamente no lobby. Escolha a dificuldade antes de criar a sala.</p>
                     <span class="ir">Criar ou entrar em uma sala &rarr;</span>
                 </a>
             </div>
@@ -91,9 +91,9 @@
 
             <article id="cj-objetivo" class="bloco destaque-bloco">
                 <h3>1. Objetivo</h3>
-                <p>Vença <strong>três campeões</strong> do adversário usando as suas cartas. Quem tiver três campeões derrotados perde a partida. Bestas derrotadas não contam para a vitória.</p>
-                <p>No início do jogo, cada jogador recebe <strong>3 cartas</strong> do próprio baralho.</p>
-                <p>No offline e no multiplayer, após pelo menos <strong>quatro redistribuições</strong>, se todas as cartas estiverem nos descartes ou na reserva central, a partida termina <strong>empatada antes de embaralhar novamente</strong>. Vocês podem jogar novamente ou encerrar.</p>
+                <p>Vença <strong>três campeões</strong> do adversário usando as suas cartas. Quem tiver três campeões derrotados perde a partida. Bestas derrotadas não contam para a vitória. No Local entre três ou quatro pessoas, vence o último jogador que permanecer na arena.</p>
+                <p>No início do jogo, cada participante recebe <strong>3 cartas</strong> de um conjunto de pelo menos <strong>5 cartas próprias</strong>. O total se ajusta à quantidade de pessoas e máquinas, sem repetições. Escolha o representante antes de começar.</p>
+                <p>No Local entre pessoas e no multiplayer, após pelo menos <strong>quatro redistribuições</strong>, se todas as cartas estiverem nos descartes ou na reserva central, a partida termina <strong>empatada antes de embaralhar novamente</strong>. Vocês podem jogar novamente ou encerrar.</p>
             </article>
 
             <article id="cj-turno" class="bloco">
@@ -101,7 +101,7 @@
                 <p>Em cada turno você pode fazer <strong>duas ações</strong>. Cada ação gasta uma das duas e pode ser:</p>
                 <div class="cartoes">
                     <div class="cartao"><h4>Atacar</h4><p>Sua criatura em batalha ataca a criatura em batalha do adversário.</p></div>
-                    <div class="cartao"><h4>Comprar</h4><p>Pegue uma carta do topo do seu baralho. No offline e no multiplayer, quando os dois baralhos acabam, os descartes são reunidos, embaralhados e divididos igualmente. Uma sobra fica no centro; o critério de empate é verificado antes da nova distribuição.</p></div>
+                    <div class="cartao"><h4>Comprar</h4><p>Pegue uma carta do topo do seu baralho. No Local entre pessoas e no multiplayer, quando os baralhos de todos os participantes ativos acabam, os descartes são reunidos, embaralhados e divididos igualmente. As cartas que sobrarem ficam no centro; o critério de empate é verificado antes da nova distribuição.</p></div>
                     <div class="cartao"><h4>Usar habilidade</h4><p>Selecione uma carta sua e clique em “Executar habilidade”. O jogo faz o efeito sozinho.</p></div>
                     <div class="cartao"><h4>Jogar uma carta</h4><p>Coloque em batalha, em apoio, equipe uma criatura ou lance um feitiço.</p></div>
                 </div>
@@ -153,13 +153,14 @@
                 <h3>7. A tela da partida</h3>
                 <ul class="lista-funcoes">
                     <li><strong>Em batalha</strong> e <strong>Apoio</strong>: a criatura que luta e os auxiliares de cada jogador.</li>
-                    <li><strong>Sua mão</strong>: só aparece depois que o jogador confirma a troca de vez (no modo offline).</li>
+                    <li><strong>Sua mão</strong>: só aparece depois que o jogador confirma a troca de vez (no modo Local com mais de uma pessoa).</li>
                     <li><strong>Painel da carta</strong>: ao clicar em uma carta, você lê a descrição completa e vê os botões disponíveis.</li>
                     <li><strong>Executar habilidade</strong>: usa a habilidade ativa da carta selecionada.</li>
                     <li><strong>Atacar</strong>, <strong>Colocar em batalha</strong> e <strong>Equipar</strong>: as ações de jogar a carta.</li>
                     <li><strong>Comprar carta</strong>: gasta 1 ação para comprar uma carta.</li>
                     <li><strong>Encerrar turno</strong>: passa a vez ao adversário.</li>
                     <li><strong>Campeões derrotados</strong>: contador de 0 a 3 de cada jogador.</li>
+                    <li><strong>Reconexão online</strong>: se alguém perder a conexão, a partida pausa por até dez minutos. Reabra no mesmo navegador para retomar sua mão e seu turno.</li>
                     <li><strong>Descarte</strong>: toque no botão para ver as cartas descartadas.</li>
                     <li><strong>Registro</strong>: lista tudo o que aconteceu na partida.</li>
                 </ul>

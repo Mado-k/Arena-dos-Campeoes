@@ -14,7 +14,7 @@ function emCampo(p, i, { ataque = 3, defesa = 20, codigo } = {}) {
 const acao = (p, i, dados) => p.agir('p' + i, { ...dados, revisao: p.revisao });
 
 for (const n of [1,2,3,4]) for (const pedido of [20,30,40]) test(`${n} humanos, ${n} máquinas e total solicitado ${pedido}, com cartas únicas e mãos privadas`, () => {
-  const total = n === 4 && pedido === 20 ? 30 : pedido;
+  const total = Math.max(pedido,n*10);
   const p = criar(n, pedido), e = p.estado;
   assert.equal(e.tamanhoBaralho,total);
   assert.equal(e.jogadores.length, 2 * n);
@@ -31,8 +31,8 @@ for (const n of [1,2,3,4]) for (const pedido of [20,30,40]) test(`${n} humanos, 
   }
 });
 
-test('co-op aceita de uma a quatro pessoas e ajusta 20 para 30 cartas com quatro', () => {
-  assert.equal(criar(4,20).estado.tamanhoBaralho,30);
+test('co-op aceita de uma a quatro pessoas e garante cinco cartas por participante', () => {
+  assert.equal(criar(4,20).estado.tamanhoBaralho,40);
   assert.throws(() => criar(0), /um a quatro/);
   assert.throws(() => criar(5), /um a quatro/);
 });
@@ -130,7 +130,7 @@ test('eliminar um humano não encerra a equipe e seus turnos são pulados', () =
 
 test('eliminação por dano no início do turno avança até um participante ativo', () => {
   const p = criar(4); emCampo(p, 1, { defesa: 1 });
-  p.estado.jogadores[1].derrotados = 2; p.estado.pandora = true;
+  p.estado.jogadores[1].derrotados = 2; p.estado.jogadores[1].campo[0].st.veneno=10;
   p.estado.turno=4;
   assert(Motor.encerrarTurno(p.estado).ok);
   assert.equal(p.estado.jogadores[1].eliminado, true);
@@ -168,8 +168,9 @@ test('Iara e Pandora alcançam os adversários corretos no tabuleiro de oito par
   const maquina = emCampo(p, 5, { codigo: 'n012' });
   assert.match(Motor.silenciada(p.estado, humano), /anula/);
   assert.equal(Motor.silenciada(p.estado, aliado), null);
-  p.estado.pandora = true;
   const defesa = maquina.defesa;
+  const spell=p.estado.jogadores[0].mao[0];spell.base={...spell.base,codigo:'n002',classe:'feitiço',universo:'normal',ataque:0};
+  assert(Motor.executarHabilidade(p.estado,spell.uid).ok);
   p.estado.turno = 1;
   Motor.encerrarTurno(p.estado);
   assert.equal(p.estado.turno, 5); assert.equal(maquina.defesa, defesa - 10);

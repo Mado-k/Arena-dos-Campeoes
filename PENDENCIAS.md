@@ -5,7 +5,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 ## Confirmado e implementado
 
-- [x] Escolha do representante antes da partida nos três modos. No offline, fica na
+- [x] Escolha do representante antes da partida nos três modos. No Local, fica na
   configuração; no online, na sala, antes de confirmar prontidão. Trocar a escolha
   desmarca a prontidão de todos. A opção de jogar sem representante foi preservada.
 - [x] Apoio e auxiliar são a mesma categoria. Quando um campeão **ou besta** morre,
@@ -19,6 +19,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 | Carta | Regra confirmada |
 | --- | --- |
+| n002 — Caixa de Pandora | Uso único na partida: 10 de dano imediato aos campeões e bestas em batalha de todos os adversários; preserva o dono e os aliados; auxiliares não recebem dano; apenas campeões contam para a vitória. |
 | n001 | Busca a primeira metálica a partir do topo do baralho. Não descarta as cartas ignoradas nem muda sua ordem. |
 | n008 — Heimdall | Passiva: captura para a sua mão as cartas do universo Normal já em jogo ou jogadas posteriormente pelo adversário. Inclui criaturas, auxiliares e equipamentos. Anexos de outros universos voltam à mão do dono anterior. Capturar não conta como derrotar; proteções e anulações continuam valendo. Não acessa cartas escondidas. |
 | n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
@@ -26,6 +27,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 | n019 — Kitsune | Retorna à mão com os itens, armas e auxiliares vinculados, recuperando os atributos. Uma utilização da habilidade por partida, inclusive quando copiada. |
 | n022 — Dino | +4 de ataque por três turnos próprios; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
 | n025 | Mantida a proteção contra dano e efeitos divinos enquanto estiver em apoio, conforme confirmação do item anterior. |
+| n033 — Oni Zumbi | Dobra o ataque base quando equipa item; bestas continuam sem poder equipar armas. |
 | n034 — Guss | Executa imediatamente a habilidade ativa copiada; uma passiva copiada passa a valer imediatamente, incluindo gatilhos de presença. |
 
 ### Alcance dos efeitos do Fuleco
@@ -40,7 +42,7 @@ Fuleco deixa de ampliar aplicações novas e bônus passivos calculados continua
 Quando uma habilidade permite obter/remover duas cartas, ambas são escolhidas
 antes de gastar a ação; cancelar a seleção não altera a partida.
 
-### Redistribuição no offline e no multiplayer
+### Redistribuição no Local e no multiplayer
 
 Somente quando **os dois baralhos de compra estiverem vazios**, os descartes são
 reunidos, embaralhados e divididos igualmente entre os dois jogadores. Se houver
@@ -54,7 +56,7 @@ e a redistribuição podem mudar a posse. A quantidade total e a unicidade são 
 
 ### Empate
 
-Critério confirmado: no offline e no multiplayer, depois de **pelo menos quatro
+Critério confirmado: no Local e no multiplayer, depois de **pelo menos quatro
 redistribuições concluídas**, se todas as cartas da partida estiverem nos descartes
 ou na reserva central, o jogo termina empatado **antes de embaralhar novamente**.
 Não pode restar carta em mão, baralho, campo, apoio ou equipamentos em uso. A quarta
@@ -66,7 +68,9 @@ tem prioridade. O registro e o aviso de resultado mostram a causa do empate.
 O resultado empatado oferece jogar novamente ou encerrar. No online, todos precisam
 aceitar a revanche; se alguém encerrar, a partida termina. Uma revanche volta à mesma
 sala, para conferir representantes e confirmar prontidão antes de iniciar novamente.
-No offline, reiniciar volta à configuração.
+No Local, reiniciar volta à configuração. Entre três ou quatro pessoas, a
+redistribuição espera todos os baralhos ativos vazios e divide os descartes entre
+os sobreviventes, reservando no centro as cartas que sobrarem.
 
 ## Ainda falta definir
 
@@ -74,8 +78,8 @@ No offline, reiniciar volta à configuração.
   condições de vitória e habilidades de equipe ficam para uma etapa futura.
   O formato provisório agora aceita de 1 a 4 humanos e cria uma máquina por pessoa,
   automaticamente conforme o lobby. Ambos têm duas ações e turnos alternados.
-  Quatro pessoas em uma sala criada com 20 cartas elevam o total para 30; o lobby
-  informa o ajuste, garantindo mãos de três sem repetir cartas.
+  Três pessoas exigem pelo menos 30 cartas e quatro exigem 40; o lobby
+  informa o ajuste, garantindo cinco cartas totais por participante, incluindo a mão.
   A redistribuição de dois jogadores não foi aplicada ao co-op; por enquanto cada
   participante continua reciclando seu próprio descarte.
 
@@ -86,7 +90,7 @@ No offline, reiniciar volta à configuração.
 - [x] Removido o seletor de formatos; as vagas adicionais são opcionais.
 - [x] Mãos e campos continuam individuais, com cartas únicas e representantes prévios.
 - [x] Duas ações por participante e turnos alternados entre humano e máquina.
-- [x] Ajuste automático de 20 para 30 cartas se houver quatro humanos ao iniciar.
+- [x] Ajuste automático para 30 cartas com três humanos e 40 com quatro humanos.
 
 ## Verificação prática no Render
 
@@ -111,10 +115,38 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [ ] Após quatro redistribuições, descartar todas as cartas e conferir o empate
   automático, sem novo embaralhamento, com as opções de revanche e encerramento.
 
-## Melhorias opcionais
+## Melhorias solicitadas implementadas
 
-- Retomar partidas após desconexão ou reinício do servidor. Hoje as salas ficam em
-  memória e uma desconexão encerra a partida.
-- Definir níveis de dificuldade quando o co-op voltar à etapa de especificação.
-- O complemento antigo do pedido do index continua desconhecido; manter a página
-  atual até Luciano trazer uma alteração nova.
+- [x] Local substitui Offline: 1 a 4 humanos contra igual número de máquinas, ou
+  2 a 4 humanos entre si no mesmo dispositivo. Mãos separadas e cortina na troca.
+- [x] No Local entre três ou quatro pessoas, todos contra todos: perde quem tiver
+  três campeões derrotados; vence o último participante. Eliminados não jogam mais.
+- [x] Pelo menos cinco cartas totais por participante, incluindo a mão inicial de três,
+  em todos os modos; cartas únicas e aumento automático do total quando necessário.
+- [x] Fácil, Normal e Difícil antes da partida contra máquinas, sem vantagens de
+  atributos, ações ou acesso às mãos adversárias.
+- [x] Desconexão pausa por até dez minutos. Recarregar retoma a sessão; uma nova aba
+  oferece retomar a última partida no mesmo navegador. Sair pelo botão é abandono.
+- [x] Sessões persistidas em `arena_sessoes` no MySQL, com recuperação após reinício
+  do servidor. Ações só são confirmadas depois de salvas; falhas revertem a jogada.
+- [x] Oni Zumbi dobra o ataque base com item equipado, mantendo a proibição de armas.
+- [x] Pandora causa dano ao lançar aos campeões e bestas em batalha de todos os
+  adversários, preservando o dono e os aliados. Auxiliares não possuem vida nem recebem dano: saem se a criatura vinculada
+  morrer. Itens e armas não recebem dano diretamente. Não há repetição por turno;
+  somente campeões derrotados contam para a vitória. Uso único na partida.
+- [x] A página inicial apresenta o Local e as regras atuais. O complemento antigo
+  que chegou cortado não bloqueia mais o projeto, conforme orientação de Luciano.
+
+## Novidades a conferir após o deploy
+
+- [ ] Abrir Local, testar os dois formatos e a cortina de mãos com até quatro pessoas.
+- [ ] Conferir Fácil, Normal e Difícil no Local e no co-op.
+- [ ] Recarregar a página durante a partida: conferir mão, ações e turno preservados.
+- [ ] Fechar e reabrir a aba no mesmo navegador: usar o botão de retomada.
+- [ ] Desconectar um jogador: o restante aguarda; reconectar libera a partida.
+- [ ] Confirmar criação e acesso a `arena_sessoes` no Aiven e retomada após reinício
+  do Render. A integração com banco foi validada localmente, não em produção.
+- [ ] Equipar Oni Zumbi com item e conferir o dobro do ataque base.
+- [ ] Lançar Pandora e conferir dano imediato nas criaturas, apoios preservados se a
+  criatura sobreviver, descarte dos vinculados se morrer, contagem de campeões e
+  ausência de dano nos turnos seguintes.

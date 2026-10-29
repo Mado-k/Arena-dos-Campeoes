@@ -9,7 +9,7 @@ const cartas = [
   ['n001', 'grávida dos robôs', 'metálico', 'auxiliar', 'cyberpunk', 'memes', null, null,
     'quando a habilidade dessa carta, você deve comprar uma carta do baralho se ela for do tipo “metálico” adicione ela no baralho caso não, coloque a carta comprada na pilha de descarte'],
   ['n002', 'abertura da caixa de pandora', 'sombrio', 'feitiço', 'normal', 'mitologia grega', null, null,
-    'todas os campeões/bestas invocados passaram a sofrer 10 de dano por turno (também afetará o invocador)'],
+    'Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.'],
   ['n003', 'vingança do lobo-guará', 'planta', 'besta', 'mágico', 'humanidade', 6, 18,
     'da mais 2 de dano em cartas da origem humanidade'],
   ['n004', 'lança do Pirarucu', 'água', 'arma', 'mágico', 'folclore brasileiro', 2, null,
@@ -74,7 +74,7 @@ const cartas = [
     'como ela foi a primeira infectada, ela tem muito mais vida que o normal'],
   // n033: o original tinha tipo "besta" e carta "fantasma" (parecia trocado). Corrigi.
   ['n033', 'ôni zumbi', 'fantasma', 'besta', 'zumbi', 'folclore japonês', 3, 19,
-    'dobra o dano base caso esteja com uma arma'],
+    'Dobra o ataque base se estiver com um item equipado.'],
   ['n034', 'guss deus do design', 'fogo', 'campeão', 'menção honrosa', 'mitologia grega', 9, 16,
     'consegue copiar a habilidade do campeão/besta do oponente'],
   ['n035', 'doce hera', 'planta', 'campeão', 'game', 'mitologia grega', 4, 13,
