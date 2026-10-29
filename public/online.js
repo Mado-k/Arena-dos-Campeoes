@@ -137,6 +137,7 @@
             const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Bônus do Dino', copia: 'Habilidade copiada' };
             for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
             if (Motor.fatorHabilidade(estado,c) === 2) linha.append(el('span','Efeitos ×2','etq bom'));
+            if(c.base.codigo==='n002')linha.append(el('span', Motor.descartePermanente(c)?'Descarte permanente · 3/3 usos':'Pandora: '+(c.usos.n002||0)+'/3 usos', 'etq'));
             if (c.rec) linha.append(el('span', 'Recarga: ' + c.rec, 'etq'));
             if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
             return linha;
@@ -252,6 +253,7 @@
             const cab = el('div', undefined, 'cab'), quem = el('div', undefined, 'quem');
             quem.append(el('strong', j.nome));
             if (j.rep) quem.append(el('span', '· ' + j.rep.nome, 'rep'));
+            if (j.bonusCampeao) quem.append(el('span', 'Próximo campeão: +' + j.bonusCampeao + ' DEF', 'etq'));
             if (j.eliminado) quem.append(el('span', 'Eliminado', 'etq ruim'));
             else if (j.maquina) quem.append(el('span', `${j.acoesPorTurno} ações`, 'etq'));
             if ((estado.cooperativo || estado.todosContraTodos) && !aliada && i === alvoSelecionado && !j.eliminado) quem.append(el('span', 'Alvo selecionado', 'etq alvo-selecionado'));
@@ -296,6 +298,7 @@
             const dica = el('p', instrucao, aviso.className);
             dica.setAttribute('role', 'status');
             barra.append(info, controles, dica);
+            if(estado.pandora)barra.append(el('p', 'Pandora ativa: ' + estado.danoPandora + ' de dano no início do turno de cada criatura, até uma delas morrer. Usos: ' + estado.pandoraUsos + '/3.', 'nota-equipe'));
             if (estado.cooperativo) barra.append(el('p', 'Dificuldade: ' + ({facil:'Fácil',normal:'Normal',dificil:'Difícil'}[estado.dificuldade] || 'Normal'), 'suave'));
             if (estado.cooperativo || estado.todosContraTodos) {
                 const rivais = estado.jogadores.map((j, i) => i).filter(i => estado.equipes[i] !== estado.equipes[estado.voce]);

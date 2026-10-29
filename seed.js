@@ -9,7 +9,7 @@ const cartas = [
   ['n001', 'grávida dos robôs', 'metálico', 'auxiliar', 'cyberpunk', 'memes', null, null,
     'quando a habilidade dessa carta, você deve comprar uma carta do baralho se ela for do tipo “metálico” adicione ela no baralho caso não, coloque a carta comprada na pilha de descarte'],
   ['n002', 'abertura da caixa de pandora', 'sombrio', 'feitiço', 'normal', 'mitologia grega', null, null,
-    'Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.'],
+    'Todos os campeões e bestas em batalha sofrem 10 de dano no início do turno do dono, inclusive os do invocador, até uma criatura morrer. Até três usos; depois permanece no descarte.'],
   ['n003', 'vingança do lobo-guará', 'planta', 'besta', 'mágico', 'humanidade', 6, 18,
     'da mais 2 de dano em cartas da origem humanidade'],
   ['n004', 'lança do Pirarucu', 'água', 'arma', 'mágico', 'folclore brasileiro', 2, null,

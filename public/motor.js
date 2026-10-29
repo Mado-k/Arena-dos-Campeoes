@@ -91,6 +91,12 @@
         if (estado.log.length > 300) estado.log.shift();
     }
 
+    function logAutomatico(estado,texto) {
+        log(estado,texto);
+        estado.serieEvento=(estado.serieEvento||0)+1;
+        estado.eventosPublicos=[...(estado.eventosPublicos||[]),{seq:estado.serieEvento,texto}].slice(-100);
+    }
+
     const atual = (estado) => estado.jogadores[estado.turno];
     function adversarios(estado, dono = estado.turno) {
         const equipe = estado.equipes ? estado.equipes[dono] : dono;
@@ -127,6 +133,9 @@
         delete inst.vinculo;
         delete inst.bonusDefesa;
     }
+
+    const descartePermanente = inst => inst.base.codigo === 'n002' && (inst.usos.n002 || 0) >= 3;
+    const reciclaveis = j => j.descarte.filter(c => !descartePermanente(c));
 
     // manda uma carta (e o que estava equipado nela) para o descarte do dono
     function paraDescarte(jogador, inst) {
@@ -328,6 +337,10 @@
     function morrer(estado, dono, inst) {
         const j = estado.jogadores[dono];
         const ef = efeitosDe(estado, inst);
+        if (estado.pandora) {
+            estado.pandora = false;
+            logAutomatico(estado, 'O efeito de Pandora terminou com a derrota de ' + inst.base.nome + '.');
+        }
         const i = j.campo.indexOf(inst);
         if (i >= 0) j.campo.splice(i, 1);
         const campeao = ehCampeao(inst);
@@ -344,8 +357,8 @@
         for (const auxiliar of auxiliares) paraDescarte(j, auxiliar);
         if (auxiliares.length) log(estado, `Os auxiliares de ${j.nome} também foram derrotados com ${nome}: ${auxiliares.map(c => c.base.nome).join(', ')}. Todos foram para o descarte.`);
         if (ef.fenrir) {
-            j.bonusCampeao += ef.fenrir;
-            log(estado, `${nome} deixou uma herança: o próximo campeão de ${j.nome} entra com +${ef.fenrir} de defesa.`);
+            j.bonusCampeao = (Number(j.bonusCampeao) || 0) + ef.fenrir;
+            logAutomatico(estado, `${nome} deixou uma herança: o próximo campeão de ${j.nome} entra com +${ef.fenrir} de defesa.`);
         }
     }
 
@@ -429,14 +442,13 @@
         if (estado.cooperativo) return false;
         verificarFim(estado);
         if (estado.vencedor !== null || estado.jogadores.some(j => j.baralho.length)) return false;
-        const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(j => j.descarte)];
+        const cartas = [...(estado.reservaCentral || []), ...estado.jogadores.flatMap(reciclaveis)];
         const participantes = estado.jogadores.filter(j=>!j.eliminado);
         if (cartas.length < participantes.length) return false;
         const mistura = embaralhar(cartas), metade = Math.floor(mistura.length / participantes.length);
-        estado.jogadores.forEach(j=>{j.descarte=[];});
+        estado.jogadores.forEach(j=>{j.descarte=j.descarte.filter(descartePermanente);});
         participantes.forEach((j, i) => {
             j.baralho = mistura.slice(i * metade, (i + 1) * metade);
-            j.descarte = [];
         });
         estado.reservaCentral = mistura.slice(participantes.length * metade);
         estado.redistribuicoes = (estado.redistribuicoes || 0) + 1;
@@ -448,8 +460,8 @@
         if (estado.vencedor !== null || impassePorDescarte(estado)) return false;
         const j = estado.jogadores[dono];
         if (j.baralho.length) return true;
-        if (estado.cooperativo) return j.descarte.length > 0;
-        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length) >= estado.jogadores.filter(j=>!j.eliminado).length;
+        if (estado.cooperativo) return reciclaveis(j).length > 0;
+        return !estado.jogadores.some(j => j.baralho.length) && estado.jogadores.reduce((n,j) => n + reciclaveis(j).length, (estado.reservaCentral || []).length) >= estado.jogadores.filter(j=>!j.eliminado).length;
     }
 
     // compra até n cartas; devolve quantas foram compradas
@@ -460,9 +472,9 @@
             redistribuirDescartes(estado);
             if (estado.vencedor !== null) break;
             if (!j.baralho.length) {
-                if (!estado.cooperativo || !j.descarte.length) break;
-                j.baralho = embaralhar(j.descarte);
-                j.descarte = [];
+                if (!estado.cooperativo || !reciclaveis(j).length) break;
+                j.baralho = embaralhar(reciclaveis(j));
+                j.descarte = j.descarte.filter(descartePermanente);
                 log(estado, `${j.nome} reembaralhou o descarte no baralho.`);
             }
             j.mao.push(j.baralho.pop());
@@ -499,11 +511,12 @@
             }
 
             const danos = [];
+            if (estado.pandora) danos.push(['A Caixa de Pandora', estado.danoPandora || 10]);
             if (c.st.veneno) danos.push(['O veneno', c.st.veneno]);
             if (c.st.queimadura) danos.push(['A queimadura', c.st.queimadura]);
             for (const [origem, valor] of danos) {
                 c.defesa -= valor;
-                log(estado, `${origem} causou ${valor} de dano a ${c.base.nome}.`);
+                logAutomatico(estado, `${origem} causou ${valor} de dano a ${c.base.nome}. DEF restante: ${Math.max(0,c.defesa)}.`);
                 if (c.defesa <= 0) { morrer(estado, estado.turno, c); c = null; break; }
             }
         }
@@ -588,7 +601,7 @@
             numTurno: 1,
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
-            pandora: false,
+            pandora: false, pandoraUsos: 0, pandoraVersao: 2,
             reservaCentral: [],
             log: [],
             proxUid: 1
@@ -679,7 +692,7 @@
         if (ehCampeao(inst) && j.bonusCampeao > 0) {
             inst.defesa += j.bonusCampeao;
             inst.defesaMax += j.bonusCampeao;
-            log(estado, `${inst.base.nome} recebeu +${j.bonusCampeao} de defesa (herança de Zord Fenrir).`);
+            logAutomatico(estado, `${inst.base.nome} recebeu +${j.bonusCampeao} de defesa (herança de Zord Fenrir).`);
             j.bonusCampeao = 0;
         }
         j.campo.push(inst);
@@ -839,26 +852,17 @@
         },
         n002: {
             tipo: 'ativa', consumivel: true, publica: true, local: ['mao'], botao: 'Lançar feitiço',
-            texto: 'Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.',
-            detalhe: 'O dano acontece somente ao lançar e preserva seu campo e o dos aliados. Apenas campeões adversários derrotados contam para a vitória. Auxiliares não possuem vida nem recebem dano; são descartados se sua criatura vinculada morrer. Itens e armas não recebem dano diretamente.',
+            texto: 'Todos os campeões e bestas em batalha sofrem 10 de dano no início do turno do dono, inclusive os do invocador, até uma criatura em batalha morrer.',
+            detalhe: 'Até 3 usos por partida, recuperando a carta do descarte entre os usos. Após o terceiro, fica permanentemente no descarte. Auxiliares não recebem dano. Não acumula enquanto o efeito estiver ativo. Campeões derrotados contam para a vitória; bestas não.',
             exec(c) {
-                if (c.estado.pandoraUsada || c.inst.usos.n002) return erro('A Caixa de Pandora já foi usada nesta partida.');
-                c.estado.pandoraUsada = true;
-                c.inst.usos.n002 = true;
-                const dano = 10 * c.potencia;
-                const alvos = adversarios(c.estado,c.dono).flatMap(dono=>c.estado.jogadores[dono].campo.map(inst=>({dono,inst})));
-                const registro = [];
-                // Aplica todo o dano antes de retirar cartas: proteções e amplificação
-                // valem para o lançamento inteiro, inclusive se o auxiliar for derrotado.
-                for (const alvo of alvos) {
-                    const bloqueada = protecao(c.estado,alvo.dono,alvo.inst,c.origem,true) || !ferivel(c.estado,alvo.dono,alvo.inst,c.origem).ok;
-                    alvo.atingido = !bloqueada;
-                    if (bloqueada) { registro.push(`${alvo.inst.base.nome}: dano bloqueado`); continue; }
-                    alvo.inst.defesa -= dano;
-                    registro.push(`${alvo.inst.base.nome}: ${dano} de dano, DEF restante ${Math.max(0,alvo.inst.defesa)}`);
-                }
-                for (const alvo of alvos) if (alvo.atingido && alvo.inst.defesa<=0) morrer(c.estado,alvo.dono,alvo.inst);
-                return { ok:true, texto: `lançou a Caixa de Pandora uma única vez. ${registro.join('; ') || 'Não havia criaturas inimigas em batalha.'}` };
+                const usos = Math.max(c.inst.usos.n002 || 0,c.estado.pandoraUsos || 0);
+                if (usos >= 3) return erro('A Caixa de Pandora atingiu o limite de 3 usos e fica permanentemente no descarte.');
+                if (c.estado.pandora) return erro('O efeito de Pandora já está ativo. Aguarde a derrota de uma criatura.');
+                c.inst.usos.n002 = c.estado.pandoraUsos = usos + 1;
+                c.estado.pandora = true;
+                c.estado.pandoraVersao = 2;
+                c.estado.danoPandora = 10 * c.potencia;
+                return { ok:true, texto: `ativou a Caixa de Pandora (${usos + 1}/3 usos): ${c.estado.danoPandora} de dano no início do turno de cada criatura, até uma delas morrer.` };
             }
         },
         n003: passiva('Causa 2 de dano a mais em cartas da origem humanidade.'),
@@ -869,7 +873,7 @@
             texto: 'Escolha uma carta zumbi da sua pilha de descarte e coloque-a na sua mão.',
             detalhe: 'Vale qualquer carta do universo zumbi que esteja no seu descarte.',
             exec(c) {
-                const lista = c.j.descarte.filter((x) => norm(x.base.universo) === 'zumbi');
+                const lista = c.j.descarte.filter((x) => norm(x.base.universo) === 'zumbi' && !descartePermanente(x));
                 if (!lista.length) return erro('Você não tem cartas do universo zumbi no seu descarte.');
                 const r = escolherCartas(c,lista,'Qual carta zumbi volta para a sua mão?');
                 if (!r.alvos) return r;
@@ -976,10 +980,11 @@
             texto: 'Joga todas as cartas da pilha de descarte de volta ao baralho e embaralha as cartas.',
             detalhe: 'Vale para o seu descarte e o seu baralho.',
             exec(c) {
-                if (!c.j.descarte.length) return erro('Seu descarte está vazio.');
-                const n = c.j.descarte.length;
-                c.j.baralho = embaralhar(c.j.baralho.concat(c.j.descarte.map((x) => { reiniciar(x); return x; })));
-                c.j.descarte = [];
+                const cartas = reciclaveis(c.j);
+                if (!cartas.length) return erro('Não há cartas recuperáveis no seu descarte.');
+                const n = cartas.length;
+                c.j.baralho = embaralhar(c.j.baralho.concat(cartas.map((x) => { reiniciar(x); return x; })));
+                c.j.descarte = c.j.descarte.filter(descartePermanente);
                 return { ok: true, texto: `devolveu ${n} carta(s) do descarte ao baralho e embaralhou.` };
             }
         },
@@ -1163,7 +1168,10 @@
         const sil = zona !== 'mao' ? silenciada(estado, inst) : null;
         if (sil) return nao(sil);
         if (inst.rec > 0) return nao(`Recarregando: faltam ${inst.rec} turno(s) seus.`);
-        if (inst.base.codigo === 'n002' && (estado.pandoraUsada || inst.usos.n002)) return nao('Já usada nesta partida (uso único).');
+        if (inst.base.codigo === 'n002') {
+            if (Math.max(inst.usos.n002 || 0,estado.pandoraUsos || 0) >= 3) return nao('Limite de 3 usos; permanece no descarte.');
+            if (estado.pandora) return nao('O efeito de Pandora já está ativo.');
+        }
         if (inst.base.codigo === 'n019' && estado.kitsuneUsada) return nao('Já usada nesta partida (uso único).');
         if ((inst.base.codigo === 'n019' || inst.base.codigo === 'n040') && inst.usos[inst.base.codigo]) return nao('Já usada (uso único).');
         return r;
@@ -1241,7 +1249,7 @@
     }
 
     const Motor = {
-        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, podeComprar, fatorHabilidade, tamanhoParaParticipantes,
+        REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, descartePermanente, podeComprar, fatorHabilidade, tamanhoParaParticipantes,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
         comprarAcao, invocar, colocarApoio, equipar, lancarFeitico, atacar,

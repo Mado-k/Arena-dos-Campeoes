@@ -12,109 +12,89 @@ function preparar(modo='multiplayer', humanos=2) {
   caixa.base={...caixa.base,codigo:'n002',nome:'Caixa de Pandora',classe:'feitiço',elemento:'sombrio',ataque:0,defesa:0};
   return {p,e,caixa};
 }
-for(const [modo,n] of [['multiplayer',2],['local',2],['local',4],['coop',4]]) {
-  test(`Pandora atinge todos os inimigos e preserva aliados e auxiliares ao lançar: ${modo}, ${n} humanos`,()=>{
-    const {p,caixa}=preparar(modo,n);
-    const inimigos=M.adversarios(p.estado,0);
-    p.estado.jogadores[inimigos[0]].campo[0].base.classe='besta';
-    const apoios=p.estado.jogadores.map(j=>{
-      const aux=j.baralho.pop();
-      aux.base={...aux.base,classe:'auxiliar',defesa:0};aux.defesa=aux.defesaMax=0;
-      aux.vinculo=j.campo[0].uid;j.apoio.push(aux);return aux.uid;
-    });
-    assert(p.agir('j0',{tipo:'habilidade',uid:caixa.uid,revisao:0}).ok);
-    const e=p.estado;
-    for(const [i,j] of e.jogadores.entries()){
-      assert.equal(j.campo[0].defesa,inimigos.includes(i)?20:30);
-      assert.equal(j.apoio.length,1,'auxiliar não recebe dano se sua criatura sobreviver');
-      assert.equal(j.apoio[0].uid,apoios[i]);assert.equal(j.apoio[0].defesa,0);
-      assert(!j.descarte.some(c=>c.uid===apoios[i]));
-      assert.equal(j.derrotados,0,'auxiliares não contam para a vitória');
-    }
-    assert.equal(e.acoes,1);assert(e.jogadores[0].descarte.some(c=>c.uid===caixa.uid));
-    for(let i=0;i<e.jogadores.length;i++)assert(M.encerrarTurno(e).ok);
-    for(const [i,j] of e.jogadores.entries())assert.equal(j.campo[0].defesa,inimigos.includes(i)?20:30,'não repete o dano em turnos futuros');
-    const log=p.visao('j0').log.at(-1);
-    assert.match(log,/10 de dano, DEF restante 20/);
-    assert.equal(log,p.visao('j1').log.at(-1));
-  });
-}
-test('campeão derrotado por Pandora completa a vitória; besta não soma derrota',()=>{
-  for(const classe of ['campeão','besta']) {
-    const {e,caixa}=preparar(),j=e.jogadores[1];
-    j.derrotados=2;j.campo[0].base.classe=classe;j.campo[0].defesa=10;
-    assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(j.campo.length,0);
-    assert.equal(j.derrotados,classe==='campeão'?3:2);assert.equal(e.vencedor,classe==='campeão'?0:null);
+
+for(const [modo,n] of [['multiplayer',2],['local',2],['local',4],['coop',4]])test(`Pandora causa dano só no início do turno do dono, em todos os lados: ${modo}/${n}`,()=>{
+ const {e,caixa}=preparar(modo,n);
+ for(const j of e.jogadores){const a=j.baralho.pop();a.base={...a.base,classe:'auxiliar',defesa:0};a.defesa=0;j.apoio.push(a);}
+ assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(e.pandoraUsos,1);
+ assert(e.jogadores.every(j=>j.campo[0].defesa===30));
+ for(let i=0;i<e.jogadores.length;i++){
+  assert(M.encerrarTurno(e).ok);
+  assert.equal(e.jogadores[e.turno].campo[0].defesa,20);
+  assert(e.jogadores.every(j=>j.apoio.length===1&&j.apoio[0].defesa===0));
+ }
+ assert(e.jogadores.every(j=>j.campo[0].defesa===20));
+});
+for(const classe of ['campeão','besta'])test(`Pandora encerra na derrota de ${classe}, só campeão soma para vitória`,()=>{
+ const {e,caixa}=preparar(),j=e.jogadores[1];j.campo[0].base.classe=classe;j.campo[0].defesa=10;j.derrotados=2;
+ assert(M.executarHabilidade(e,caixa.uid).ok);assert(M.encerrarTurno(e).ok);
+ assert.equal(e.pandora,false);assert.equal(j.campo.length,0);
+ assert.equal(j.derrotados,classe==='campeão'?3:2);assert.equal(e.vencedor,classe==='campeão'?0:null);
+});
+test('qualquer derrota em combate encerra Pandora, inclusive a criatura do invocador',()=>{
+ const {e,caixa}=preparar();assert(M.executarHabilidade(e,caixa.uid).ok);
+ e.jogadores[0].campo[0].defesa=1;assert(M.atacar(e).ok);assert.equal(e.pandora,false);
+ const defesa=e.jogadores[1].campo[0].defesa;assert(M.encerrarTurno(e).ok);assert.equal(e.jogadores[1].campo[0].defesa,defesa);
+});
+test('Pandora admite três usos, não acumula ativa e o contador sobrevive à restauração',()=>{
+ const {p,e,caixa}=preparar(),j=e.jogadores[0];
+ for(let uso=1;uso<=3;uso++){
+  e.acoes=2;assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(e.pandoraUsos,uso);
+  assert.equal(caixa.usos.n002,uso);
+  assert(M.descartePermanente(caixa)===(uso===3));
+  if(uso<3){
+   j.descarte.splice(j.descarte.indexOf(caixa),1);j.mao.push(caixa);
+   assert(M.executarHabilidade(e,caixa.uid).erro);assert.equal(e.acoes,1);
+   e.pandora=false; // representa uma derrota entre as reutilizações
   }
+ }
+ const r=Partida.restaurar(p.salvar());assert(r.estado.pandora);assert.equal(r.estado.pandoraUsos,3);
+ assert(M.descartePermanente(r.estado.jogadores[0].descarte.find(c=>c.uid===caixa.uid)));
 });
-test('auxiliares e equipamentos não recebem dano de Pandora, mesmo com valores legados de defesa',()=>{
-  const {e,caixa}=preparar();
-  const j=e.jogadores[1],criatura=j.campo[0],aux=j.baralho.pop(),item=j.mao.pop();
-  aux.base={...aux.base,classe:'auxiliar'};j.apoio.push(aux);
-  item.base={...item.base,classe:'item'};criatura.equip.push(item);
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  assert(j.apoio.includes(aux));assert.equal(aux.defesa,30);
-  assert.equal(item.defesa,30);assert(criatura.equip.includes(item));
-  assert.equal(j.derrotados,0);
+
+for(const modo of ['multiplayer','coop'])test(`Pandora esgotada permanece no descarte na reciclagem: ${modo}`,()=>{
+ const {e,caixa}=preparar(modo),j=e.jogadores[0];j.mao.splice(j.mao.indexOf(caixa),1);caixa.usos.n002=3;j.descarte.push(caixa);
+ for(const dono of e.jogadores)dono.descarte.push(...dono.baralho.splice(0));
+ assert(M.comprarAcao(e).ok);assert(j.descarte.includes(caixa));
+ assert(!e.jogadores.some(d=>[...d.mao,...d.baralho].includes(caixa)));
 });
-test('derrota da criatura descarta cada auxiliar vinculado uma única vez',()=>{
-  const {e,caixa}=preparar(),j=e.jogadores[1],criatura=j.campo[0];
-  criatura.defesa=10;
-  for(const defesa of [0,30]){
-    const aux=j.baralho.pop();aux.base={...aux.base,classe:'auxiliar',defesa};
-    aux.defesa=aux.defesaMax=defesa;aux.vinculo=criatura.uid;j.apoio.push(aux);
-  }
-  const ids=[criatura.uid,...j.apoio.map(c=>c.uid)];
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  assert.equal(j.campo.length,0);assert.equal(j.apoio.length,0);assert.equal(j.derrotados,1);
-  for(const uid of ids)assert.equal(j.descarte.filter(c=>c.uid===uid).length,1);
-  const todas=e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]));
-  assert.equal(todas.length,40);assert.equal(new Set(todas.map(c=>c.uid)).size,40);
+test('reciclagem por habilidade também preserva Pandora no descarte permanente',()=>{
+ const {e,caixa}=preparar(),j=e.jogadores[0];j.mao.splice(j.mao.indexOf(caixa),1);caixa.usos.n002=3;j.descarte.push(caixa);
+ const rec=j.mao[0];rec.base={...rec.base,codigo:'n024',classe:'feitiço',ataque:0};
+ const antes=structuredClone(e);assert(M.executarHabilidade(e,rec.uid).erro);assert.deepEqual(e,antes);
+ j.descarte.push(j.baralho.pop());assert(M.executarHabilidade(e,rec.uid).ok);assert(j.descarte.includes(caixa));
 });
-test('Pandora preserva todos os apoios quando não há criatura vinculada em batalha',()=>{
-  const {e,caixa}=preparar(),j=e.jogadores[1];
-  j.mao.push(...j.campo.splice(0));
-  const protegido=j.baralho.pop(),alvo=j.baralho.pop();
-  protegido.base={...protegido.base,codigo:'n037',classe:'auxiliar'};
-  alvo.base={...alvo.base,classe:'auxiliar'};j.apoio.push(protegido,alvo);
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  assert.equal(protegido.defesa,30);assert.equal(alvo.defesa,30);assert.equal(j.apoio.length,2);
+test('Fuleco amplia o dano periódico e a potência permanece após restauração',()=>{
+ const {p,e,caixa}=preparar(),aux=e.jogadores[0].baralho.pop();aux.base={...aux.base,codigo:'n009',classe:'auxiliar'};e.jogadores[0].apoio.push(aux);
+ assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(e.danoPandora,20);
+ const r=Partida.restaurar(p.salvar());assert(M.encerrarTurno(r.estado).ok);assert.equal(r.estado.jogadores[1].campo[0].defesa,10);
 });
-for(const modo of ['local','coop'])test(`Pandora derrota todos os inimigos simultaneamente e preserva aliados: ${modo}`,()=>{
-  const {e,caixa}=preparar(modo,4),inimigos=M.adversarios(e,0);
-  e.jogadores.forEach(j=>{j.derrotados=2;j.campo[0].defesa=10;});
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  for(const [i,j] of e.jogadores.entries()){
-    assert.equal(j.derrotados,inimigos.includes(i)?3:2);
-    assert.equal(j.campo.length,inimigos.includes(i)?0:1);
-    if(!inimigos.includes(i))assert.equal(j.campo[0].defesa,10);
-  }
-  assert.equal(e.vencedor,0);
+test('recuperação direta não retira Pandora esgotada do descarte',()=>{
+ const {e,caixa}=preparar(),j=e.jogadores[0];
+ j.mao.splice(j.mao.indexOf(caixa),1);caixa.usos.n002=3;caixa.base.universo='zumbi';j.descarte.push(caixa);
+ const recuperar=j.mao[0];recuperar.base={...recuperar.base,codigo:'n005',classe:'feitiço',ataque:0};
+ const antes=structuredClone(e);assert(M.executarHabilidade(e,recuperar.uid).erro);assert.deepEqual(e,antes);
 });
-test('Fuleco amplia Pandora para 20 contra os inimigos e preserva seu próprio campo',()=>{
-  const {e,caixa}=preparar(),j=e.jogadores[0],aux=j.baralho.pop();
-  aux.base={...aux.base,codigo:'n009',classe:'auxiliar',defesa:0};aux.defesa=0;
-  aux.vinculo=j.campo[0].uid;j.apoio.push(aux);j.campo[0].defesa=20;
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  assert.equal(j.campo[0].defesa,20);assert(j.apoio.includes(aux));assert.equal(aux.defesa,0);
-  assert.equal(e.jogadores[1].campo[0].defesa,10);
+test('somente Pandora permanente no descarte não habilita compra ou redistribuição',()=>{
+ const {e,caixa}=preparar(),j=e.jogadores[0];j.mao.splice(j.mao.indexOf(caixa),1);caixa.usos.n002=3;j.descarte.push(caixa);
+ e.jogadores.forEach(d=>d.mao.push(...d.baralho.splice(0)));
+ const antes=structuredClone(e);assert.equal(M.podeComprar(e),false);assert(M.comprarAcao(e).erro);assert.deepEqual(e,antes);
 });
-test('Pandora respeita proteção contra elementos diferentes de fantasma',()=>{
-  const {e,caixa}=preparar(),c=e.jogadores[1].campo[0];
-  c.base.codigo='n037'; // Só pode ser ferida por cartas do elemento fantasma.
-  assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(c.defesa,30);
+for(const modo of ['multiplayer','local','coop'])test(`Fenrir reserva +100 e só o próximo campeão consome a herança: ${modo}`,()=>{
+ const {p,e}=preparar(modo),j=e.jogadores[0],op=e.cooperativo?2:1;
+ const fenrir=j.campo[0];fenrir.base={...fenrir.base,codigo:'n023',classe:'besta'};fenrir.defesa=1;
+ e.turno=op;assert(M.atacar(e).ok);assert.equal(j.bonusCampeao,100);
+ e.turno=0;e.acoes=2;const besta=j.mao[1];besta.base={...besta.base,classe:'besta'};
+ assert(M.invocar(e,besta.uid).ok);assert.equal(besta.defesa,30);assert.equal(j.bonusCampeao,100);
+ besta.defesa=1;e.turno=op;e.acoes=2;assert(M.atacar(e).ok);
+ e.turno=0;e.acoes=2;const c=j.baralho.pop();j.mao.push(c);
+ assert(M.invocar(e,c.uid).ok);assert.equal(c.defesa,130);assert.equal(c.defesaMax,130);assert.equal(j.bonusCampeao,0);
+ const r=Partida.restaurar(p.salvar());assert.equal(r.estado.jogadores[0].campo[0].defesa,130);
 });
-test('reciclar Pandora não permite repetir o uso nem gastar ação recusada',()=>{
-  const {e,caixa}=preparar(),j=e.jogadores[0];
-  assert(M.executarHabilidade(e,caixa.uid).ok);
-  j.descarte.splice(j.descarte.indexOf(caixa),1);j.mao.push(caixa);
-  const antes=structuredClone(e);
-  assert(M.executarHabilidade(e,caixa.uid).erro);assert.deepEqual(e,antes);
-  assert.equal(M.estadoHabilidade(e,caixa.uid).disponivel,false);
-});
-test('restaurar sessão antiga desativa o dano contínuo de Pandora',()=>{
-  const {p}=preparar();p.estado.pandora=true;p.estado.danoPandora=10;
-  const r=Partida.restaurar(p.salvar());
-  assert(r.estado.pandoraUsada);assert.equal(r.estado.pandora,false);
-  assert(M.encerrarTurno(r.estado).ok);assert.equal(r.estado.jogadores[1].campo[0].defesa,30);
+test('registro público e visão mostram a herança de Fenrir e o dano periódico de Pandora',()=>{
+ const {p,e,caixa}=preparar();e.jogadores[1].campo[0].base.codigo='n023';e.jogadores[1].campo[0].defesa=10;
+ assert(p.agir('j0',{tipo:'habilidade',uid:caixa.uid,revisao:0}).ok);
+ assert(p.agir('j0',{tipo:'encerrar',revisao:1}).ok);
+ const v=p.visao('j0');assert.equal(v.jogadores[1].bonusCampeao,100);
+ assert(v.log.some(l=>l.startsWith('A Caixa de Pandora causou')));assert(v.log.some(l=>l.includes('deixou uma herança')));
 });

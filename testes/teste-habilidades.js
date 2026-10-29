@@ -30,8 +30,8 @@ t = mesa(); a = t.apoio(t.A, 'n001'); t.deck(t.A, 'n006'); r = M.executarHabilid
 ok(r.ok && t.A.mao.length === 1 && t.A.descarte.length === 0, 'n001 metálica fica na mão');
 // n002 Pandora: dano imediato e sem repetição nos turnos seguintes
 t = mesa(); let s = t.mao(t.A, 'n002'); let ca = t.campo(t.A, 'n013'); let cb = t.campo(t.B, 'n015');
-r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.e.pandoraUsada && t.A.descarte.includes(s), 'n002');
-M.encerrarTurno(t.e); eq(cb.defesa, 14 - 10, 'Pandora não repete dano no turno do B'); M.encerrarTurno(t.e); eq(ca.defesa, 13, 'Pandora preserva a criatura do próprio jogador');
+r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.e.pandoraUsos===1 && t.A.descarte.includes(s), 'n002');
+M.encerrarTurno(t.e); eq(cb.defesa, 14 - 10, 'Pandora não repete dano no turno do B'); M.encerrarTurno(t.e); eq(ca.defesa, 3, 'Pandora também atinge a criatura do próprio jogador');
 // n005
 t = mesa(); s = t.mao(t.A, 'n005'); let z = { uid: 999, base: por('n028'), equip: [], st: {}, usos: {}, rec: 0, ataqueBase: 0, ataqueAjuste: 0, defesa: 0, defesaMax: 0 };
 t.A.descarte.push(z); r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.A.mao.includes(z), 'n005');

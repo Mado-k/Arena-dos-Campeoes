@@ -19,7 +19,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 | Carta | Regra confirmada |
 | --- | --- |
-| n002 — Caixa de Pandora | Uso único na partida: 10 de dano imediato aos campeões e bestas em batalha de todos os adversários; preserva o dono e os aliados; auxiliares não recebem dano; apenas campeões contam para a vitória. |
+| n002 — Caixa de Pandora | 10 de dano no início do turno do dono de cada criatura, de todos os lados, até uma criatura morrer. Três usos; depois fica permanentemente no descarte. Auxiliares não recebem dano. |
 | n001 | Busca a primeira metálica a partir do topo do baralho. Não descarta as cartas ignoradas nem muda sua ordem. |
 | n008 — Heimdall | Passiva: captura para a sua mão as cartas do universo Normal já em jogo ou jogadas posteriormente pelo adversário. Inclui criaturas, auxiliares e equipamentos. Anexos de outros universos voltam à mão do dono anterior. Capturar não conta como derrotar; proteções e anulações continuam valendo. Não acessa cartas escondidas. |
 | n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
@@ -136,10 +136,11 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [x] Sessões persistidas em `arena_sessoes` no MySQL, com recuperação após reinício
   do servidor. Ações só são confirmadas depois de salvas; falhas revertem a jogada.
 - [x] Oni Zumbi dobra o ataque base com item equipado, mantendo a proibição de armas.
-- [x] Pandora causa dano ao lançar aos campeões e bestas em batalha de todos os
-  adversários, preservando o dono e os aliados. Auxiliares não possuem vida nem recebem dano: saem se a criatura vinculada
-  morrer. Itens e armas não recebem dano diretamente. Não há repetição por turno;
-  somente campeões derrotados contam para a vitória. Uso único na partida.
+- [x] Pandora: dano por turno em todos os lados; encerra quando uma criatura morre.
+  Até três usos, sem acumular. Após o terceiro fica permanentemente no descarte,
+  mesmo quando outras cartas recuperam ou reciclam o descarte. Só campeões pontuam.
+- [x] Fenrir: +100 de defesa atual e máxima ao próximo campeão, preservando a reserva
+  ao invocar bestas; bônus pendente e aplicação visíveis na mesa e no registro.
 - [x] A página inicial apresenta o Local e as regras atuais. O complemento antigo
   que chegou cortado não bloqueia mais o projeto, conforme orientação de Luciano.
 
@@ -155,6 +156,8 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [ ] Confirmar criação e acesso a `arena_sessoes` no Aiven e retomada após reinício
   do Render. A integração com banco foi validada localmente, não em produção.
 - [ ] Equipar Oni Zumbi com item e conferir o dobro do ataque base.
-- [ ] Lançar Pandora e conferir dano imediato nas criaturas, apoios preservados se a
-  criatura sobreviver, descarte dos vinculados se morrer, contagem de campeões e
-  ausência de dano nos turnos seguintes.
+- [ ] Lançar Pandora e conferir dano no início de cada turno, incluindo o invocador,
+  término na primeira derrota e pontuação de campeões. Reutilizar até três vezes
+  e conferir que depois não sai do descarte, nem por embaralhamento ou habilidade.
+- [ ] Derrotar Fenrir, conferir a reserva de +100, invocar uma besta e depois um
+  campeão: só o campeão recebe e consome a herança.

@@ -49,7 +49,7 @@ for (const causa of ['ataque', 'contra-ataque', 'habilidade', 'veneno', 'queimad
     if (causa === 'pandora') { const spell=e.jogadores[0].mao[0];spell.base={...spell.base,codigo:'n002',classe:'feitiço',ataque:0};assert(Motor.executarHabilidade(e,spell.uid).ok); }
     else if (causa === 'confusao') c.st.confusao = true;
     else c.st[causa] = 2;
-    if(causa!=='pandora')assert(Motor.encerrarTurno(e).ok);
+    assert(Motor.encerrarTurno(e).ok);
   }
   conferir(e, indice, auxiliares);
   assert(e.log.some(t => t.includes('auxiliares') && t.includes('descarte')));

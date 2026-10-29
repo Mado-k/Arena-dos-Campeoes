@@ -24,7 +24,7 @@ window.CARTAS_OFFLINE = [
   "origem": "mitologia grega",
   "ataque": 0,
   "defesa": 0,
-  "habilidade": "Uso único: causa 10 de dano imediatamente aos campeões e bestas em batalha de todos os adversários.",
+  "habilidade": "Todos os campeões e bestas em batalha sofrem 10 de dano no início do turno do dono, inclusive os do invocador, até uma criatura morrer. Até três usos; depois permanece no descarte.",
   "imagem": null
  },
  {

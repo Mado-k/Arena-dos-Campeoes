@@ -73,11 +73,13 @@ class Partida {
     const resposta = ACOES[dados.tipo](proximo, dados);
     if (!resposta || !resposta.ok) return resposta || { erro: 'Não foi possível executar a ação.' };
     const redistribuiu = (proximo.redistribuicoes || 0) !== (this.estado.redistribuicoes || 0);
+    const serieAnterior = this.estado.serieEvento || 0;
     this.estado = proximo;
     this.revisao++;
     // Logs internos de habilidades podem citar cartas compradas/escolhidas no baralho.
     // O registro público descreve a ação, sem revelar essas informações privadas.
     this.log.push(resposta.registroCombate || resposta.registroHabilidade || `${this.estado.jogadores[indice].nome} ${ROTULOS[dados.tipo]}.`);
+    this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
     if (this.estado.motivoEmpate) this.log.push(this.estado.motivoEmpate);
     if (redistribuiu) this.log.push(this.estado.log.findLast(l => /^(Os dois|Todos os) baralhos acabaram\./.test(l)));
     if (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].eliminado) Motor.encerrarTurno(this.estado);
@@ -97,12 +99,16 @@ class Partida {
       for (let passo = 0; passo < limite && this.estado.acoes > 0 && this.estado.vencedor === null && !this.estado.jogadores[indice].eliminado; passo++) {
         const melhor = IA.escolher(this.estado, this.dificuldade);
         if (!melhor) break;
+        const serieAnterior = this.estado.serieEvento || 0;
         this.estado = melhor.copia;
         this.revisao++;
         this.log.push(melhor.res.registroCombate || melhor.res.registroHabilidade || `${nome} ${ROTULOS[melhor.tipo]}.`);
+        this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
       }
       if (this.estado.vencedor === null) {
+        const serieAnterior = this.estado.serieEvento || 0;
         Motor.encerrarTurno(this.estado);
+        this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
         this.revisao++;
         this.log.push(`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`);
       }
@@ -114,7 +120,7 @@ class Partida {
     const p=Object.create(Partida.prototype);
     Object.assign(p,structuredClone(dados));
     p.dificuldade=p.dificuldade||'normal';
-    if(p.estado.pandora){p.estado.pandoraUsada=true;p.estado.pandora=false;delete p.estado.danoPandora;}
+    if(p.estado.pandoraVersao!==2){p.estado.pandoraUsos=p.estado.pandoraUsada?1:0;p.estado.pandora=false;delete p.estado.danoPandora;}
     return p;
   }
 
@@ -130,9 +136,9 @@ class Partida {
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
       voce, cooperativo: this.coop, todosContraTodos: Boolean(e.todosContraTodos), dificuldade: this.dificuldade, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
-      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
+      acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, danoPandora: e.danoPandora || 10, pandoraUsos: e.pandoraUsos || 0, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
-        nome: j.nome, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,
+        nome: j.nome, bonusCampeao: j.bonusCampeao || 0, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,
         maoTotal: j.mao.length, baralhoTotal: j.baralho.length,
         mao: i === voce ? j.mao.map(carta) : [],
         campo: j.campo.map(carta), apoio: j.apoio.map(carta), descarte: j.descarte.map(carta)

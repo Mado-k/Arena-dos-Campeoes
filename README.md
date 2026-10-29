@@ -131,7 +131,7 @@ A mão inicial de cada participante inclui um campeão distinto.
 
 Os humanos escolhem a máquina alvo antes de atacar ou usar uma habilidade ofensiva.
 As habilidades voltadas ao adversário se aplicam à máquina escolhida; efeitos de
-presença consideram os inimigos em jogo, e Pandora atinge todas as criaturas inimigas. Equipamentos,
+presença consideram os inimigos em jogo, e Pandora afeta todas as criaturas em batalha, inclusive as aliadas e do invocador. Equipamentos,
 auxiliares e recuperações beneficiam o dono da carta; Heimdall pode transferir
 cartas adversárias do universo Normal conforme sua habilidade.
 
@@ -207,12 +207,18 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
   aguardando a definição das suas regras específicas.
 - Oni Zumbi dobra o ataque base com **item** equipado; bestas continuam sem poder
   equipar armas.
-- Caixa de Pandora causa 10 de dano somente ao ser lançada, uma vez por partida,
-  aos campeões e bestas em batalha de todos os adversários, preservando o próprio
-  campo e os aliados. Apenas campeões adversários derrotados
-  contam para a vitória. Auxiliares não possuem vida nem recebem dano; são descartados
-  se sua criatura vinculada morrer. Itens e armas não recebem dano diretamente.
-  Não há dano de Pandora nos turnos seguintes.
+- Caixa de Pandora causa 10 de dano no início do turno do dono de cada campeão ou
+  besta em batalha, inclusive os do invocador e aliados. Não causa dano ao lançar.
+  O efeito acaba quando qualquer criatura em batalha morre, por qualquer causa.
+  Pode ser usada três vezes por partida, recuperando-a do descarte entre os usos;
+  após o terceiro uso permanece no descarte, excluída de recuperações e reciclagens.
+  Não acumula enquanto ativa. Auxiliares não possuem vida nem recebem dano;
+  os vinculados a uma criatura derrotada são descartados. Só campeões derrotados
+  contam para a vitória.
+- Zord Fenrir reserva +100 de defesa para o próximo campeão do dono ao ser derrotado.
+  Invocar uma besta não consome a herança. O bônus aumenta a defesa atual e máxima
+  do campeão; a reserva e sua aplicação aparecem na mesa e no registro.
+
 
 No Local entre três ou quatro pessoas, a redistribuição espera os baralhos de todos
 os participantes ativos acabarem, reúne os descartes e divide entre os sobreviventes;
