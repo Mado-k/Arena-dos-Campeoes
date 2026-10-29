@@ -147,3 +147,33 @@ test('armazenamento MySQL usa parâmetros e serializa atualizações na ordem',a
  assert.deepEqual(await store.carregar(),[{codigo:'ABCDE',valor:2}]);assert(chamadas.some(c=>c.sql.includes('CREATE TABLE IF NOT EXISTS arena_sessoes')));
  assert(chamadas.filter(c=>c.sql.startsWith('INSERT')).every(c=>c.sql.includes('VALUES (?, ?)')));await store.excluir('ABCDE');assert.deepEqual(await store.carregar(),[]);
 });
+
+test('reinício após a compra da máquina preserva o limite de uma compra e o aprendizado',{timeout:12000},async t=>{
+ const store=memoria(),a=await ambiente(t,store,{tempoIA:80}),d=await duelo(a,'coop');
+ const p=a.controle.salas.get(d.codigo).partida,j=p.estado.jogadores[2];j.campo=[j.mao.shift()];
+ const comprou=esperar(d.host,'partida:estado',v=>v.revisao===2&&v.turno===2);
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);await comprou;
+ const salvo=store.dados.get(d.codigo).partida,quantidade=salvo.estado.jogadores[2].mao.length;
+ assert.equal(salvo.estado.jogadores[2].iaTurno.compras,1);assert.equal(salvo.estado.padroesIA[2].at(-1).tipo,'comprar');
+ await a.fechar();
+ const b=await ambiente(t,store,{tempoIA:20}),host=await b.cliente(),amigo=await b.cliente();
+ assert((await pedir(host,'sala:retomar',{...d.tokenA,modo:'coop'})).ok);
+ const avancou=esperar(host,'partida:estado',v=>v.revisao===3&&v.turno===1);
+ assert((await pedir(amigo,'sala:retomar',{...d.tokenB,modo:'coop'})).ok);await avancou;
+ const restaurada=b.controle.salas.get(d.codigo).partida;
+ assert.equal(restaurada.estado.jogadores[2].mao.length,quantidade,'não compra uma segunda carta depois de reconectar');
+ assert.deepEqual(restaurada.estado.padroesIA[2].map(a=>a.tipo),['comprar','encerrar']);
+});
+
+test('falha ao persistir a compra da IA restaura o limite e a memória antes de tentar novamente',{timeout:12000},async t=>{
+ const store=memoria(),a=await ambiente(t,store,{tempoIA:40}),d=await duelo(a,'coop');
+ const sala=a.controle.salas.get(d.codigo),j=sala.partida.estado.jogadores[2];j.campo=[j.mao.shift()];
+ const tamanho=j.mao.length,salvar=store.salvar.bind(store);let falhar=true,sinalizar;
+ const tentativa=new Promise(r=>{sinalizar=r;});
+ store.salvar=async s=>{if(falhar&&s.partida?.revisao===2){sinalizar();throw Error('Falha temporária ao salvar compra da IA');}await salvar(s);};
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);await tentativa;await new Promise(r=>setImmediate(r));
+ assert.equal(sala.partida.revisao,1);assert.equal(sala.partida.estado.jogadores[2].mao.length,tamanho);
+ assert.equal(sala.partida.estado.jogadores[2].iaTurno,undefined);assert.equal(sala.partida.estado.padroesIA?.[2],undefined);
+ const repetiu=esperar(d.host,'partida:estado',v=>v.revisao===2&&v.turno===2);falhar=false;await repetiu;
+ assert.equal(sala.partida.estado.jogadores[2].mao.length,tamanho+1);assert.equal(sala.partida.estado.jogadores[2].iaTurno.compras,1);
+});

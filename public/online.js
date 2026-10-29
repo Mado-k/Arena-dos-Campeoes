@@ -67,7 +67,7 @@
             espectador.close();
             if (!estado || estado.vencedor === null) return;
             const venceu = estado.cooperativo ? estado.vencedor === estado.equipes[estado.voce] : estado.vencedor === estado.voce;
-            const equipe = estado.cooperativo && (estado.equipes2v2 || estado.jogadores.filter(j => !j.maquina).length > 1);
+            const equipe = estado.cooperativo && estado.jogadores.some((_,i)=>i!==estado.voce&&estado.equipes[i]===estado.equipes[estado.voce]);
             tituloResultado.textContent = estado.vencedor === -1 ? 'Empate!' : compartilhada && estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : compartilhada && !estado.cooperativo
                 ? estado.jogadores[estado.vencedor].nome + ' venceu!'
                 : venceu ? equipe ? 'Sua equipe venceu!' : 'Você venceu!'
@@ -328,23 +328,65 @@
             else n.append(cab,maoComPilhas(i),campo);
             return n;
         }
-        function arenaQuatro(){
-            const janela=el('div',undefined,'arena-janela'+(focoArena?' arena-foco':''));
-            janela.setAttribute('aria-label',estado.cooperativo?'Mesa de duplas, frente a frente':'Mesa de quatro invocadores');
+        const eliminado=i=>estado.jogadores[i].eliminado||estado.jogadores[i].derrotados>=Motor.REGRAS.campeoesParaVencer;
+        const participantesAtivos=()=>estado.jogadores.map((_,i)=>i).filter(i=>!eliminado(i));
+        function ancoraDaMesa(){
+            if(!eliminado(estado.voce))return estado.voce;
+            const vivos=participantesAtivos();
+            return vivos.find(i=>!estado.torneio?.aguardando.includes(i))??vivos[0];
+        }
+        function assento(i,posicao,ativo=false){
+            const n=el('div',undefined,'assento assento-'+posicao);
+            n.dataset.ativo=String(ativo);n.append(lado(i,true));return n;
+        }
+        function arenaQuatro(janela){
             const arena=el('div',undefined,'arena-completa'+(estado.cooperativo?' arena-equipes':''));
-            const eu=estado.voce;
-            const ancora=estado.torneio?.rodada>1&&estado.jogadores[eu].eliminado?estado.jogadores.findIndex(j=>!j.eliminado):eu;
+            const vivos=participantesAtivos(),ancora=ancoraDaMesa();
+            const rivais=vivos.filter(i=>estado.equipes[i]!==estado.equipes[ancora]);
+            if(rivais.includes(alvoSelecionado))rivais.sort((a,b)=>Number(b===alvoSelecionado)-Number(a===alvoSelecionado));
             const oposto=Motor.adversarios(estado,ancora)[0]??(ancora+2)%4;
             const laterais=[0,1,2,3].filter(i=>i!==ancora&&i!==oposto);
             const posicoes=estado.cooperativo
-                ? [...estado.jogadores.map((_,i)=>i).filter(i=>estado.equipes[i]!==estado.equipes[eu]).map(i=>[i,'norte']),[eu,'sul'],...estado.jogadores.map((_,i)=>i).filter(i=>i!==eu&&estado.equipes[i]===estado.equipes[eu]).map(i=>[i,'sul'])]
+                ? [...rivais.map(i=>[i,'norte']),[ancora,'sul'],...vivos.filter(i=>i!==ancora&&estado.equipes[i]===estado.equipes[ancora]).map(i=>[i,'sul'])]
                 : [[oposto,'norte'],[laterais[0],'oeste'],[laterais[1],'leste'],[ancora,'sul']];
-            for(const [i,posicao] of posicoes){
-                const assento=el('div',undefined,'assento assento-'+posicao);
-                assento.dataset.ativo=String(i===ancora||i===oposto||i===estado.turno);
-                assento.append(lado(i,true));arena.append(assento);
+            for(const [i,posicao] of posicoes)if(!eliminado(i))arena.append(assento(i,posicao,i===ancora||i===oposto||i===estado.turno));
+            janela.append(arena);
+        }
+        function arenaConfrontos(janela){
+            const vivos=participantesAtivos(),ancora=ancoraDaMesa(),grupos=[];
+            if(estado.cooperativo){
+                const aliados=[ancora,...vivos.filter(i=>i!==ancora&&estado.equipes[i]===estado.equipes[ancora])];
+                const rivais=vivos.filter(i=>estado.equipes[i]!==estado.equipes[ancora]);
+                if(rivais.includes(alvoSelecionado))rivais.sort((a,b)=>Number(b===alvoSelecionado)-Number(a===alvoSelecionado));
+                for(let i=0;i<Math.max(aliados.length,rivais.length);i++)grupos.push([aliados[i],rivais[i]].filter(i=>i!==undefined));
+            }else if(estado.torneio){
+                for(const duelo of estado.torneio.duelos){const vivosDoDuelo=duelo.filter(i=>!eliminado(i));if(vivosDoDuelo.length)grupos.push(vivosDoDuelo);}
+                const usados=new Set(grupos.flat());for(const i of vivos)if(!usados.has(i))grupos.push([i]);
+                grupos.sort((a,b)=>Number(b.includes(ancora))-Number(a.includes(ancora)));
+            }else{
+                const rival=Motor.adversarios(estado,ancora)[0],restantes=vivos.filter(i=>i!==ancora&&i!==rival);
+                if(ancora!==undefined)grupos.push([ancora,rival].filter(i=>i!==undefined&&!eliminado(i)));
+                while(restantes.length)grupos.push(restantes.splice(0,2));
             }
-            janela.append(arena);return janela;
+            const arena=el('div',undefined,'arena-completa arena-fileiras');
+            for(const grupo of grupos){
+                const sul=grupo.includes(ancora)?ancora:grupo[0],norte=grupo.find(i=>i!==sul);
+                const confronto=el('section',undefined,'confronto-mesa');
+                const titulo=norte===undefined?`${estado.jogadores[sul].nome}${estado.torneio?.aguardando.includes(sul)?' · aguarda próxima rodada':''}`:`${estado.jogadores[sul].nome} × ${estado.jogadores[norte].nome}`;
+                confronto.append(el('h3',titulo,'confronto-titulo'));
+                if(norte!==undefined)confronto.append(assento(norte,'norte',grupo.includes(ancora)||grupo.includes(estado.turno)));
+                confronto.append(assento(sul,'sul',grupo.includes(ancora)||grupo.includes(estado.turno)));
+                arena.append(confronto);
+            }
+            janela.append(arena);
+        }
+        function arenaDaPartida(){
+            const janela=el('div',undefined,'arena-janela'+(focoArena?' arena-foco':''));
+            janela.setAttribute('aria-label','Campo de batalha');
+            if(!participantesAtivos().length)janela.append(el('p','Todos os invocadores foram eliminados. Consulte o resultado e o registro da partida.','arena-vazia'));
+            else if(estado.jogadores.length===4&&participantesAtivos().length>2)arenaQuatro(janela);
+            else arenaConfrontos(janela);
+            return janela;
         }
         function render() {
             if (!estado) return;
@@ -365,27 +407,25 @@
             const controles = el('div', undefined, 'barra-botoes');
             if (terminou) controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario'));
             else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn acao-encerrar' + (ativo() ? ' primario' : '') + (ativo() && estado.acoes === 0 ? ' acoes-esgotadas' : '')));
-            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
+            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);
             dica.setAttribute('role', 'status');
             barra.append(info, controles, dica);
             if(estado.pandora)barra.append(el('p', 'Pandora ativa: ' + estado.danoPandora + ' de dano no início do turno de cada criatura, até uma delas morrer. Usos: ' + estado.pandoraUsos + '/3.', 'nota-equipe'));
             if (estado.torneio) {
-                const t=estado.torneio,duelos=t.duelos.map(d=>d.map(i=>estado.jogadores[i].nome).join(' × ')).join(' · ');
+                const t=estado.torneio,duelos=t.duelos.map(d=>d.filter(i=>!eliminado(i))).filter(d=>d.length).map(d=>d.map(i=>estado.jogadores[i].nome).join(' × ')+(d.length===1?' · aguarda próxima rodada':'')).join(' · ');
                 barra.append(el('p',`${estado.jogadores.filter(j=>!j.eliminado).length===2?'Final':'Rodada '+t.rodada} · ${duelos}${t.aguardando.includes(estado.voce)?' · Você aguarda os outros duelos.':''}`,'nota-equipe'));
             }
             if (estado.cooperativo || estado.jogadores.some(j=>j.maquina)) barra.append(el('p', 'Dificuldade: ' + ({facil:'Fácil',normal:'Normal',dificil:'Difícil'}[estado.dificuldade] || 'Normal'), 'suave'));
             if (estado.cooperativo || estado.todosContraTodos) {
-                const rivais = estado.jogadores.map((j, i) => i).filter(i => estado.equipes[i] !== estado.equipes[estado.voce]);
-                const maquinas = el('section', undefined, 'equipe-online maquinas-online' + (rivais.length === 4 ? ' quatro-maquinas' : ''));
-                maquinas.setAttribute('aria-label', rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquinas adversárias' : 'Jogadores adversários');
-                for (const i of rivais) maquinas.append(lado(i));
+                const rivais = participantesAtivos().filter(i => estado.equipes[i] !== estado.equipes[estado.voce]);
                 const alvos = el('div', undefined, 'alvo-coop');
                 const label = el('label', estado.torneio ? 'Seu adversário' : rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquina alvo' : 'Adversário alvo');
                 const select = document.createElement('select');
                 select.setAttribute('aria-label', rivais.some(i=>estado.jogadores[i].maquina) ? 'Máquina alvo' : 'Adversário alvo');
-                for (const i of (estado.torneio ? Motor.adversarios(estado,estado.voce) : rivais)) {
+                const opcoesAlvo=(estado.torneio ? Motor.adversarios(estado,estado.voce) : rivais).filter(i=>!eliminado(i));
+                for (const i of opcoesAlvo) {
                     const option = new Option(estado.jogadores[i].nome + (estado.jogadores[i].eliminado ? ' · derrotada' : ''), String(i));
                     option.disabled = estado.jogadores[i].eliminado;
                     select.add(option);
@@ -393,23 +433,12 @@
                 select.value = String(alvoSelecionado);
                 select.disabled = !ativo() || Boolean(estado.torneio);
                 select.addEventListener('change', () => { alvoSelecionado = Number(select.value); render(); });
-                label.append(select); alvos.append(label); barra.append(alvos);
-                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? (estado.todosContraTodos ? 'Você foi eliminado. Acompanhe os jogadores que continuam na arena.' : 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.') : estado.torneio ? 'Mata-mata: enfrente seu adversário espelhado. Os vencedores avançam; quem já venceu aguarda a próxima rodada.' : estado.todosContraTodos ? 'Todos contra todos. Escolha o adversário alvo; vence o último jogador não eliminado.' : estado.equipes2v2 ? 'Duplas 2v2. Você e o aliado compartilham a vitória; cada um tem sua mão e seu campo.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
-                const aliados = el('section', undefined, 'aliados-online');
-                aliados.setAttribute('aria-label', 'Seus aliados');
-                for (let i = 0; i < estado.jogadores.length; i++) if (i !== estado.voce && estado.equipes[i] === estado.equipes[estado.voce]) {
-                    const detalhe = document.createElement('details');
-                    detalhe.open = i === estado.turno;
-                    const j = estado.jogadores[i];
-                    detalhe.append(el('summary', `${j.nome} · ${j.eliminado ? 'eliminado' : i === estado.turno ? 'jogando agora' : 'aliado'} · ${j.derrotados}/3 campeões derrotados`), lado(i));
-                    aliados.append(detalhe);
-                }
-                if(estado.jogadores.length===4){
-                    const opcoes=el('div',undefined,'arena-opcoes');
-                    opcoes.append(botao(focoArena?'Ver mesa completa':'Focar no meu duelo',()=>{focoArena=!focoArena;render();}),el('small','Toque em uma carta em campo para ler os detalhes. Na mesa completa, deslize para explorar.','suave'));
-                    tabuleiro.append(barra,opcoes,arenaQuatro());
-                }else tabuleiro.append(maquinas, barra, aliados, lado(estado.voce));
-            } else tabuleiro.append(lado(1 - estado.voce), barra, lado(estado.voce));
+                label.append(select); alvos.append(label); if(opcoesAlvo.length)barra.append(alvos);
+                barra.append(el('p', estado.jogadores[estado.voce].eliminado ? (estado.todosContraTodos ? 'Você foi eliminado. Acompanhe os jogadores que continuam na arena.' : 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.') : estado.torneio ? 'Mata-mata: enfrente seu adversário espelhado. Os vencedores avançam; quem já venceu aguarda a próxima rodada.' : estado.todosContraTodos ? 'Todos contra todos. Escolha o adversário alvo; vence o último jogador não eliminado.' : estado.equipes2v2 ? 'Duplas 2v2. Você e o aliado compartilham a vitória; cada um tem sua mão e seu campo.' : estado.jogadores.some((j,i)=>j.maquina&&estado.equipes[i]===estado.equipes[estado.voce]) ? 'As máquinas aliadas jogam automaticamente. Cada integrante tem sua própria mão e seu campo; a vitória é da equipe.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
+            }
+            const opcoes=el('div',undefined,'arena-opcoes');
+            opcoes.append(botao(focoArena?'Ver mesa completa':'Focar no meu duelo',()=>{focoArena=!focoArena;render();}),el('small','Toque em uma carta para ler os detalhes. Na mesa completa, deslize para explorar os confrontos.','suave'));
+            tabuleiro.append(barra,opcoes,arenaDaPartida());
             const lateral = el('aside', undefined, 'lateral');
             lateral.append(detalhe());
             if (estado.cooperativo || estado.todosContraTodos) {
@@ -434,7 +463,10 @@
             mesa.replaceChildren(tabuleiro, lateral);
             const janelaNova=mesa.querySelector('.arena-janela');
             if(janelaNova&&posicaoMesa){janelaNova.scrollLeft=posicaoMesa.x;janelaNova.scrollTop=posicaoMesa.y;}
-            else if(janelaNova&&!focoArena)janelaNova.scrollLeft=(janelaNova.scrollWidth-janelaNova.clientWidth)/2;
+            else if(janelaNova&&!focoArena){
+                const foco=janelaNova.querySelector('.lado-ativo')||janelaNova.querySelector('.assento[data-ativo="true"]');
+                if(foco){const r=foco.getBoundingClientRect(),j=janelaNova.getBoundingClientRect();janelaNova.scrollLeft=r.left-j.left+r.width/2-janelaNova.clientWidth/2;}
+            }
             if(!compartilhada&&!espectadorAvisado&&estado.torneio?.rodada>1&&estado.jogadores[estado.voce].eliminado&&estado.vencedor===null){espectadorAvisado=true;espectador.showModal();}
             if(preservar&&Date.now()>=rolagemTurnoAte){
                 const interacao=interacoesRolagem,geracao=sessao;
@@ -459,6 +491,7 @@
             if (estado && proximo.revisao !== estado.revisao) { escolha.close(); descarte.close(); }
             if (!estado || estado.numTurno !== proximo.numTurno) alvoSelecionado = null;
             estado = proximo;
+            const cartaSelecionada=localizar();if(cartaSelecionada&&eliminado(cartaSelecionada.dono))selecionada=null;
             const alvos = Motor.adversarios(estado, estado.voce);
             if (!alvos.includes(alvoSelecionado)) alvoSelecionado = alvos.includes(estado.alvo) ? estado.alvo : alvos[0] ?? null;
             aoMostrar();

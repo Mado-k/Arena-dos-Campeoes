@@ -59,8 +59,9 @@ O servidor precisa estar acessível aos convidados; não compartilhe a porta do 
 
 Abra **Local** e escolha **Player vs máquina** ou **Player vs player**. No
 individual solo, selecione de uma a quatro máquinas; no 2v2 solo, você e uma
-máquina enfrentam outras duas. A opção Equipe contra máquinas preserva uma a
-quatro pessoas contra igual número de máquinas. Entre pessoas no mesmo aparelho,
+máquina enfrentam outras duas. Em Equipe contra máquinas, escolha de uma a quatro adversárias e quantas
+pessoas jogarão no dispositivo. Cada equipe tem o mesmo tamanho; as vagas
+restantes do lado humano são preenchidas por máquinas aliadas ao iniciar. Entre pessoas no mesmo aparelho,
 escolha individual com duas a quatro ou 2v2 com quatro. Cada humano escolhe seu
 representante antes de começar. A cortina de troca de vez protege a próxima mão.
 O individual com mais de dois participantes usa mata-mata e final.
@@ -133,6 +134,21 @@ contra uma a quatro máquinas; 2v2 com um humano e uma máquina contra outras du
 e o co-op provisório com uma a quatro pessoas. No Local entre pessoas, escolha
 individual com duas a quatro pessoas ou 2v2 com quatro. Cada máquina sorteia um
 representante disponível ou a opção sem representante antes da distribuição.
+
+No lobby Local de Equipe contra máquinas, as adversárias aparecem acima das
+pessoas. Os controles ficam junto à respectiva equipe, e cada ficha mostra o total
+inicial de cartas. Pessoas veem a quantidade abaixo do bônus do representante;
+as máquinas exibem nome, representante e quantidade. Se houver uma pessoa e três
+adversárias, duas máquinas aliadas completam o 3 × 3. Aumentar o número de pessoas
+acima do tamanho escolhido aumenta a equipe automaticamente; reduzir pessoas
+preserva o tamanho da equipe e libera vagas para máquinas aliadas. Os representantes
+das máquinas são sorteados no lobby e enviados ao controlador, sem novo sorteio
+no início. Nomes e escolhas humanos são preservados ao ajustar as quantidades.
+
+`Partida` aceita `vagasEquipe` e `representantesMaquinas` para essa configuração
+Local. Sem essas opções, o co-op online mantém uma máquina por humano. As regras
+definitivas do co-op são um plano futuro da equipe, ligado à criação de novas
+cartas; não são uma pendência a resolver nesta atualização.
 
 No mata-mata, com quatro invocadores, os confrontos são `0 × 2` e `1 × 3`.
 Quantidade ímpar gera folga. O vencedor de um confronto aguarda, com seus turnos
@@ -390,3 +406,34 @@ A partir da versão 2.405, o changelog usa incrementos de 0.005 por recurso
 identificado na atualização. A versão 2.405 reúne onze recursos (+0.055 sobre a
 2.35), incluindo as correções de salas e distribuição que estavam em rascunho.
 O changelog descreve o comportamento para os jogadores, sem códigos de commit.
+
+### Campos ativos na arena
+
+A mesa compartilhada mantém o campo do jogador no mesmo espaço dos demais,
+organizado por confrontos. O adversário fica na posição espelhada, acima do jogador.
+No individual de quatro, a organização ao redor do centro é preservada; nos outros
+formatos, os confrontos ficam lado a lado. A final reúne apenas os classificados.
+Campos dos eliminados deixam de ser renderizados, sem remover seus registros do
+estado da partida, do histórico ou da persistência. Espectadores veem apenas os
+campos ativos e continuam sem acesso às mãos dos classificados. A opção de foco
+no duelo permanece disponível para telas menores.
+
+### Comportamento e adaptação das máquinas
+
+A IA prioriza usar cartas ou atacar antes de comprar e não escolhe encerrar se
+houver uma ação permitida. Cada máquina pode gastar no máximo uma ação de compra
+direta por turno; habilidades que compram cartas mantêm seus efeitos. Quando não
+há outra jogada após a compra, o turno avança mesmo que reste uma ação, respeitando
+o limite. Ataques e outras jogadas podem ser repetidos quando forem úteis.
+Os humanos mantêm as duas ações normais, inclusive a possibilidade de comprar duas vezes.
+
+`public/ia.js` usa as últimas 16 ações públicas de cada participante para adaptar
+as pontuações: reforça a defesa contra adversários que atacam frequentemente e
+favorece o alvo atacado recentemente por um aliado. Fácil mantém escolhas mais
+variadas; Normal e Difícil ponderam a adaptação ao avaliar jogadas legais.
+A memória contém apenas tipos de ação, alvos públicos e turnos; não contém
+identidades de cartas compradas nem consulta mãos/baralhos de adversários ou aliados.
+`padroesIA` e o contador individual `iaTurno` ficam no estado interno, fora da visão
+dos clientes. São persistidos e revertidos junto à ação se a gravação falhar.
+A adaptação pertence à partida e reinicia na revanche; não há treino externo nem
+mudança de atributos ou ações para beneficiar as máquinas.

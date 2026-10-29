@@ -193,3 +193,23 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [x] Nova métrica de versão: 0.005 por recurso; o changelog identifica os onze recursos desta atualização (2.405).
 
 - [x] Botão Encerrar turno maior e destacado durante a vez, com brilho suave ao acabar as ações e respeito a movimento reduzido.
+
+## Preparação das equipes no Local — rascunho 2.460
+
+- [x] Quantidade inicial de cartas em cada ficha, abaixo do bônus dos humanos.
+- [x] Adversárias acima das pessoas, com nome, representante e cartas; controles junto à equipe correspondente.
+- [x] Máquinas aliadas completam as vagas sem humanos para manter equipes do mesmo tamanho, de um a quatro invocadores por lado.
+- [x] Representantes previstos no lobby são preservados no início; mão e campo continuam individuais.
+- [x] Fundo roxo escuro dos versos restaurado, mantendo o desenho atual.
+
+As regras definitivas do co-op serão desenvolvidas com novas cartas e fazem parte
+de um plano futuro da equipe. Não precisam ser resolvidas agora. O co-op online
+mantém seu formato provisório; esta configuração adicional se aplica ao Local.
+
+- [x] Campos dos eliminados removidos da área visual de batalha, preservando o histórico e as opções dos espectadores.
+- [x] Campo do jogador integrado à mesa nos demais formatos, com confrontos alinhados e adversário na posição espelhada. A final mantém apenas os classificados.
+
+- [x] Máquinas priorizam usar cartas/atacar antes de comprar e só encerram sem jogadas permitidas ou sem ações.
+- [x] No máximo uma ação de compra direta por turno de cada máquina; humanos e habilidades de compra preservados.
+- [x] Adaptação aos padrões públicos dos adversários e coordenação dos alvos dos aliados, com memória limitada à partida.
+- [x] Limite e memória da IA persistem na retomada e são restaurados quando uma gravação falha.

@@ -15,14 +15,25 @@
         <button type="button" class="modo" id="modo-pessoas" aria-pressed="false"><h2>Player vs player</h2><p>De 2 a 4 pessoas. Escolha mata-mata ou duplas 2v2, com mãos individuais.</p></button>
     </div>
     <div class="config-painel" id="opcoes-local" hidden>
-        <div class="config-opcoes">
+        <div class="config-opcoes" id="controles-gerais-local">
             <div><label for="formato-local">Formato da batalha</label><select id="formato-local"><option value="livre">Duelo individual · mata-mata</option><option value="2v2">Duplas · 2 vs 2</option><option value="coop">Equipe contra máquinas</option></select></div>
-            <div><label id="quantidade-rotulo" for="quantidade-local">Máquinas adversárias</label><select id="quantidade-local"></select></div>
+            <div id="campo-quantidade-local"><label id="quantidade-rotulo" for="quantidade-local">Máquinas adversárias</label><select id="quantidade-local"></select></div>
             <div id="campo-dificuldade-local"><label for="dificuldade-local">Dificuldade das máquinas</label><select id="dificuldade-local"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select><p class="suave">Fácil explora jogadas simples; Normal equilibra ataque e preparo; Difícil considera também os riscos do campo. Todos têm duas ações.</p></div>
             <div><label for="baralho-local">Cartas no total</label><select id="baralho-local"><option value="20">20 cartas</option><option value="30">30 cartas</option><option value="40" selected>40 cartas</option></select></div>
         </div>
         <p id="resumo-local" class="suave" aria-live="polite"></p>
-        <div class="config-jogadores" id="participantes-local"></div>
+        <section class="equipe-config" id="equipe-adversaria-local" aria-labelledby="titulo-adversarios-local" hidden>
+            <h2 id="titulo-adversarios-local">Equipe adversária</h2>
+            <div class="controle-equipe"><label for="maquinas-equipe-local">Máquinas adversárias</label><select id="maquinas-equipe-local"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+            <div class="config-jogadores" id="maquinas-local"></div>
+        </section>
+        <section class="equipe-config" id="equipe-jogadores-local" aria-labelledby="titulo-aliados-local">
+            <h2 id="titulo-aliados-local" hidden>Sua equipe</h2>
+            <div id="controle-pessoas-local" class="controle-equipe" hidden></div>
+            <div class="config-jogadores" id="participantes-local"></div>
+        </section>
+        <p id="completar-equipe-local" class="suave" hidden></p>
+        <p id="aviso-distribuicao-local" class="status erro" role="alert" hidden></p>
         <p id="fonte-local" class="suave"></p><p id="erro-local" class="status erro" role="alert"></p>
         <button type="button" class="btn primario" id="comecar-local" disabled>Começar partida</button>
     </div>

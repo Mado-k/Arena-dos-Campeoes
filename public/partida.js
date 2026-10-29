@@ -19,13 +19,17 @@ class Partida {
     return Motor.tamanhoParaParticipantes(total, humanos * 2);
   }
 
-  constructor(jogadores, cartas, modo = 'multiplayer', tamanhoBaralho = 40, { dificuldade = 'normal', formato = 'livre', maquinas = 0 } = {}) {
+  constructor(jogadores, cartas, modo = 'multiplayer', tamanhoBaralho = 40, { dificuldade = 'normal', formato = 'livre', maquinas = 0, vagasEquipe, representantesMaquinas } = {}) {
     this.coop = modo === 'coop';
     this.local = modo === 'local';
     if (!IA.NIVEIS.includes(dificuldade)) throw new Error('Dificuldade inválida.');
     if (!['livre','2v2'].includes(formato)) throw new Error('Formato inválido.');
     if (!Number.isInteger(maquinas) || maquinas < 0 || maquinas > 4 || (!this.local && maquinas)) throw new Error('Quantidade de máquinas inválida.');
-    if (this.coop) maquinas = jogadores.length;
+    const tamanhoEquipe=this.coop?(vagasEquipe??jogadores.length):null;
+    if(vagasEquipe!==undefined&&(!this.coop||!Number.isInteger(vagasEquipe)||vagasEquipe<1||vagasEquipe>4||vagasEquipe<jogadores.length))throw new Error('A equipe precisa de uma a quatro vagas e espaço para todas as pessoas.');
+    const aliadas=this.coop?tamanhoEquipe-jogadores.length:0;
+    if (this.coop) maquinas = 2*tamanhoEquipe-jogadores.length;
+    if(representantesMaquinas!==undefined&&(!Array.isArray(representantesMaquinas)||representantesMaquinas.length!==maquinas))throw new Error('A lista de representantes deve corresponder às máquinas da partida.');
     const quantidade = jogadores.length + maquinas;
     if (this.local && (!jogadores.length || jogadores.length > 4 || quantidade < 2 || quantidade > 5)) throw new Error('O Local aceita de dois a cinco participantes, sendo até quatro pessoas.');
     if (!this.coop && !this.local && ![2,3,4].includes(jogadores.length)) throw new Error('O multiplayer aceita de dois a quatro jogadores.');
@@ -33,7 +37,7 @@ class Partida {
     if (formato === '2v2' && (this.coop || quantidade !== 4)) throw new Error('O 2v2 precisa de exatamente quatro invocadores.');
     this.dificuldade = dificuldade;
     this.ids = jogadores.map(j => j.id);
-    const nomes = [...jogadores.map(j => j.nome), ...Array.from({ length: maquinas }, (_, i) => `Máquina ${i + 1}`)];
+    const nomes = [...jogadores.map(j => j.nome), ...Array.from({ length: aliadas }, (_, i) => `Máquina aliada ${i + 1}`), ...Array.from({ length: maquinas-aliadas }, (_, i) => `Máquina ${i + 1}`)];
     const config = { nomes, tamanhoBaralho, todosContraTodos: !this.coop && formato !== '2v2' && quantidade > 2,
       torneio: !this.coop && formato !== '2v2' && quantidade > 2, equipes2v2: formato === '2v2' };
     config.reps = jogadores.map(j => {
@@ -43,12 +47,19 @@ class Partida {
       return Motor.normalizarCarta(rep);
     });
     const representantes = cartas.filter(c => Motor.norm(c.classe) === 'representante').map(Motor.normalizarCarta);
-    for (let i=0;i<maquinas;i++) config.reps.push([null,...representantes][Math.floor(Math.random()*(representantes.length+1))]);
+    for(let i=0;i<maquinas;i++){
+      if(representantesMaquinas===undefined)config.reps.push([null,...representantes][Math.floor(Math.random()*(representantes.length+1))]);
+      else{
+        const codigo=representantesMaquinas[i],rep=representantes.find(c=>c.codigo===codigo);
+        if(codigo!==null&&!rep)throw Object.assign(new Error('O representante de uma máquina não está disponível. Atualize a configuração antes de começar.'),{code:'REPRESENTANTE_INVALIDO'});
+        config.reps.push(rep||null);
+      }
+    }
     config.maquinas = nomes.map((_,i) => i >= jogadores.length);
     if (this.coop) {
-      config.equipes = nomes.map((_, i) => i < jogadores.length ? 0 : 1);
+      config.equipes = nomes.map((_, i) => i < tamanhoEquipe ? 0 : 1);
       config.comeca = 0;
-      config.ordemTurnos = jogadores.flatMap((_, i) => [i, i + jogadores.length]);
+      config.ordemTurnos = Array.from({length:tamanhoEquipe},(_,i)=>[i,i+tamanhoEquipe]).flat();
     } else if (formato === '2v2') config.equipes = [0,1,0,1];
     if (this.local && maquinas) config.comeca = 0;
     this.estado = Motor.novoJogo(config, cartas);
@@ -80,6 +91,7 @@ class Partida {
     }
     const resposta = ACOES[dados.tipo](proximo, dados);
     if (!resposta || !resposta.ok) return resposta || { erro: 'Não foi possível executar a ação.' };
+    IA.observar(this.estado,proximo,indice,dados.tipo,dados.alvo??Motor.indiceOponente(this.estado,indice));
     const redistribuiu = (proximo.redistribuicoes || 0) !== (this.estado.redistribuicoes || 0);
     const serieAnterior = this.estado.serieEvento || 0;
     this.estado = proximo;
@@ -97,14 +109,16 @@ class Partida {
 
   passoComputador() {
     if(this.estado.vencedor!==null||!this.estado.jogadores[this.estado.turno].maquina)return false;
-    const nome=this.estado.jogadores[this.estado.turno].nome;
+    const antes=this.estado,dono=antes.turno,nome=antes.jogadores[dono].nome;
     const serieAnterior=this.estado.serieEvento||0;
     const melhor=this.estado.acoes>0?IA.escolher(this.estado,this.dificuldade):null;
     if(melhor){
       this.estado=melhor.copia;
+      IA.observar(antes,this.estado,dono,melhor.tipo,melhor.pedido.alvo);
       this.log.push(melhor.res.registroCombate||melhor.res.registroHabilidade||`${nome} ${ROTULOS[melhor.tipo]}.`);
     }else{
-      Motor.encerrarTurno(this.estado);
+      this.estado=structuredClone(antes);Motor.encerrarTurno(this.estado);
+      IA.observar(antes,this.estado,dono,'encerrar');
       this.log.push(this.estado.vencedor===null?`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`:`${nome} encerrou o turno.`);
     }
     this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
