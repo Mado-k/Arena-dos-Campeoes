@@ -11,7 +11,7 @@ window.CARTAS_OFFLINE = [
   "origem": "memes",
   "ataque": 0,
   "defesa": 0,
-  "habilidade": "Compre uma carta do baralho. Se ela for do tipo metálico, fica na sua mão; caso contrário, vai para a pilha de descarte.",
+  "habilidade": "Ao ser lançada, retire a primeira carta do tipo metálico encontrada no baralho e coloque-a em sua mão. Se não houver carta metálica, descarte a Grávida dos Robôs.",
   "imagem": null
  },
  {

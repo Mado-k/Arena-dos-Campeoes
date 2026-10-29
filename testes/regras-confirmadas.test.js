@@ -20,10 +20,47 @@ function mesa() {
 }
 test('001 busca a primeira metálica a partir do topo e preserva a ordem das demais', () => {
   const {e,obter}=mesa(), j=e.jogadores[0];
-  const a=obter('n001',0,'apoio'), fundo=obter('n006',0,'baralho'), topo=obter('n023',0,'baralho'), outra=obter('n011',0,'baralho');
+  obter('n013',0,'campo');
+  const a=obter('n001',0,'mao'), fundo=obter('n006',0,'baralho'), topo=obter('n023',0,'baralho'), outra=obter('n011',0,'baralho');
   j.baralho=[fundo,topo,outra];
-  assert(M.executarHabilidade(e,a.uid).ok);
+  assert(M.colocarApoio(e,a.uid).ok);
   assert(j.mao.includes(topo)); assert.deepEqual(j.baralho,[fundo,outra]); assert.equal(j.descarte.length,0);
+  assert(j.apoio.includes(a));assert.equal(a.vinculo,j.campo[0].uid);assert.equal(e.acoes,1);
+  assert.equal(M.estadoHabilidade(e,a.uid).tipo,'passiva');
+  assert(M.executarHabilidade(e,a.uid).erro);assert.equal(e.acoes,1);
+});
+for(const vazio of [false,true]) test('001 sem metálica se descarta ao lançar, com baralho '+(vazio?'vazio':'não metálico'),()=>{
+  const {e,obter}=mesa(),j=e.jogadores[0];obter('n013',0,'campo');
+  const a=obter('n001',0,'mao'),outra=obter('n011',0,'baralho');j.baralho=vazio?[]:[outra];
+  const mao=j.mao.filter(c=>c!==a);
+  assert(M.colocarApoio(e,a.uid).ok);assert.deepEqual(j.mao,mao);assert(!j.apoio.includes(a));assert(j.descarte.includes(a));
+  assert.deepEqual(j.baralho,vazio?[]:[outra]);assert.equal(e.acoes,1);assert.equal(a.vinculo,undefined);
+});
+test('001 sem criatura ou ações não é lançada nem busca cartas',()=>{
+  const {e,obter}=mesa(),j=e.jogadores[0],a=obter('n001',0,'mao'),metal=obter('n006',0,'baralho');
+  j.campo=[];assert(M.colocarApoio(e,a.uid).erro);assert(j.mao.includes(a));assert(j.baralho.includes(metal));assert.equal(e.acoes,2);
+  obter('n013',0,'campo');e.acoes=0;assert(M.colocarApoio(e,a.uid).erro);assert(j.mao.includes(a));assert(j.baralho.includes(metal));
+});
+test('001 com Fuleco e só uma metálica permanece em apoio e não repete a busca em outro turno',()=>{
+  const {e,obter}=mesa(),j=e.jogadores[0];obter('n013',0,'campo');obter('n009',0,'apoio');
+  const a=obter('n001',0,'mao'),metal=obter('n006',0,'baralho'),outra=obter('n011',0,'baralho'),nova=obter('n023',0,'mao');j.baralho=[metal,outra];
+  assert(M.colocarApoio(e,a.uid).ok);assert(j.mao.includes(metal));assert(j.apoio.includes(a));assert.deepEqual(j.baralho,[outra]);
+  j.mao.splice(j.mao.indexOf(nova),1);j.baralho.push(nova);
+  M.encerrarTurno(e);M.encerrarTurno(e);assert(j.baralho.includes(nova));assert(j.apoio.includes(a));
+});
+test('001 anulada ao entrar não busca nem se descarta ou dispara ao acabar a anulação',()=>{
+  const {e,obter}=mesa(),j=e.jogadores[0];obter('n013',0,'campo');const inimigo=obter('n015',1,'campo');
+  const arma=obter('n004',1,'mao');e.jogadores[1].mao=e.jogadores[1].mao.filter(c=>c!==arma);inimigo.equip=[arma];
+  const a=obter('n001',0,'mao'),metal=obter('n006',0,'baralho');
+  assert(M.colocarApoio(e,a.uid).ok);assert(j.apoio.includes(a));assert(j.baralho.includes(metal));assert(M.estadoHabilidade(e,a.uid).anulada);
+  inimigo.equip=[];M.encerrarTurno(e);M.encerrarTurno(e);assert(j.baralho.includes(metal));assert(j.apoio.includes(a));
+});
+for(const modo of ['local','multiplayer','coop']) test('001 executa ao lançar pelo controlador no modo '+modo,()=>{
+  const p=new Partida([{id:'a',nome:'A'},{id:'b',nome:'B'}],cartas,modo),e=p.estado,j=e.jogadores[0];e.turno=0;
+  function mover(codigo,zona){let c;for(const dono of e.jogadores)for(const z of ['mao','baralho']){const k=dono[z].findIndex(x=>x.base.codigo===codigo);if(k>=0)c=dono[z].splice(k,1)[0];}assert(c);j[zona].push(c);return c;}
+  mover('n013','campo');const a=mover('n001','mao'),metal=mover('n006','baralho');j.baralho=[metal];
+  assert(p.agir('a',{tipo:'apoio',uid:a.uid,revisao:0}).ok);assert(p.estado.jogadores[0].mao.some(c=>c.uid===metal.uid));assert.equal(p.estado.acoes,1);
+  assert.equal(p.visao('a').jogadores[0].apoio[0].base.codigo,'n001');
 });
 for (const codigo of ['n013','n015']) test('D007 recupera 1 de defesa da criatura no próprio turno, sem ultrapassar o máximo: '+codigo, () => {
   const {e,obter}=mesa(), j=e.jogadores[0], c=obter(codigo,0,'campo');
@@ -163,7 +200,7 @@ test('009 duplica quantidade de cartas de 001, 005 e 006, sem duplicar instânci
     const {e,obter}=mesa();obter('n009',0,'apoio');const [a,b]=e.jogadores;
     let fonte,alvos;
     if(codigo==='n001') {
-      fonte=obter(codigo,0,'apoio');alvos=[obter('n006',0,'baralho'),obter('n023',0,'baralho')];
+      obter('n013',0,'campo');fonte=obter(codigo,0,'mao');alvos=[obter('n006',0,'baralho'),obter('n023',0,'baralho')];
     } else if(codigo==='n005') {
       fonte=obter(codigo,0,'mao');alvos=[obter('n028',0,'descarte'),obter('n032',0,'descarte')];
     } else {
@@ -171,7 +208,7 @@ test('009 duplica quantidade de cartas de 001, 005 e 006, sem duplicar instânci
       const alvo=obter('n011',1,'campo');alvos=[obter('n026',1,'mao'),obter('n027',1,'mao')];
       alvo.equip=alvos;b.mao=b.mao.filter(x=>!alvos.includes(x));alvo.defesa+=alvos.reduce((n,x)=>n+x.base.defesa,0);alvo.defesaMax=alvo.defesa;
     }
-    let r=M.executarHabilidade(e,fonte.uid);
+    let r=codigo==='n001'?M.colocarApoio(e,fonte.uid):M.executarHabilidade(e,fonte.uid);
     for(let i=0;r.pergunta&&i<8;i++)r=M.executarHabilidade(e,fonte.uid,r.pergunta.opcoes[0].valor);
     assert(r.ok,codigo);for(const x of alvos)assert((codigo==='n006'?b.descarte:a.mao).includes(x),codigo);
     const todas=[...(e.reservaCentral||[]),...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]))];

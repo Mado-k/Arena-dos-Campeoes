@@ -107,12 +107,12 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .carta-verso .verso-emblema::before,.carta-verso .verso-emblema::after { content:''; position:absolute; background:#71879188; inset:49% 15%; }
 .carta-verso .verso-emblema::after { inset:15% 49%; }
 .arena-janela { overflow:auto; max-width:100%; border:1px solid var(--borda); border-radius:16px; background:radial-gradient(ellipse at center,#203b35 0,#121f25 65%,#0e141e 100%); scrollbar-width:thin; }
-.arena-completa { position:relative; margin:0 auto; width:1500px; height:1320px; }
-.arena-completa .assento { position:absolute; width:360px; height:560px; }
-.arena-completa .assento-sul { left:570px; top:750px; }
-.arena-completa .assento-norte { left:570px; top:10px; transform:rotate(180deg); }
-.arena-completa .assento-oeste { left:105px; top:410px; transform:rotate(90deg); }
-.arena-completa .assento-leste { left:1035px; top:410px; transform:rotate(-90deg); }
+.arena-completa { position:relative; margin:0 auto; width:1820px; height:1660px; }
+.arena-completa .assento { position:absolute; width:360px; height:720px; }
+.arena-completa .assento-sul { left:730px; top:930px; }
+.arena-completa .assento-norte { left:730px; top:10px; transform:rotate(180deg); }
+.arena-completa .assento-oeste { left:185px; top:470px; transform:rotate(90deg); }
+.arena-completa .assento-leste { left:1275px; top:470px; transform:rotate(-90deg); }
 .arena-equipes { display:grid; grid-template-columns:repeat(2,360px); gap:48px 24px; justify-content:center; width:780px; height:auto; padding:16px; }
 .arena-equipes .assento { position:relative; inset:auto; transform:none; }
 .arena-equipes .assento-norte { transform:rotate(180deg); }
@@ -125,21 +125,22 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-completa .campo-mesa .fileira-wrap { width:100%; margin:0; }
 .arena-completa .fileira-wrap h4 { font-size:.6rem; margin:3px 0; }
 .arena-completa .fileira { gap:5px; padding:2px; justify-content:safe center; }
-.arena-completa .c-wrap,.arena-completa .slot-vazio { width:54px; flex:0 0 54px; }
-.arena-completa .carta-online { gap:1px; width:54px; height:78px; min-height:78px; padding:4px; font-size:.55rem; overflow:hidden; }
-.arena-completa .carta-online .c-arte { height:21px; }
-.arena-completa .carta-online .c-nome { font-size:.55rem; height:2.4em; }
-.arena-completa .carta-online .c-desc,.arena-completa .carta-online .c-topo,.arena-completa .carta-online .tipo-hab,.arena-completa .carta-online .etqs { display:none; }
-.arena-completa .carta-online .c-stats { flex-direction:column; gap:0; line-height:1.1; font-size:.5rem; margin:2px 0; }
-.arena-completa .campo-mesa .carta-online { display:block; flex:none; }
+.arena-completa .c-wrap,.arena-completa .slot-vazio { width:84.375px; flex:0 0 84.375px; }
+.arena-completa .carta-online { gap:1px; width:84.375px; height:121.875px; min-height:121.875px; padding:5px; font-size:.55rem; overflow:hidden; }
+.arena-completa .carta-online .c-arte { height:27.5px; flex:0 0 27.5px; }
+.arena-completa .carta-online .c-nome { font-size:.75rem; height:2.4em; max-height:2.4em; flex:none; }
+.arena-completa .carta-online .c-topo,.arena-completa .carta-online .tipo-hab,.arena-completa .carta-online .etqs { display:none; }
+.arena-completa .carta-online .c-stats { flex-direction:row; flex-wrap:nowrap; gap:3px; line-height:1.1; font-size:.625rem; margin:2px 0; flex:none; }
+.arena-completa .carta-online .c-desc { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; max-height:2.4em; line-height:1.2; font-size:.625rem; overflow:hidden; overflow-wrap:anywhere; flex:none; }
+.arena-completa .campo-mesa .carta-online { display:flex; flex-direction:column; flex:none; }
 .arena-completa .lado-adversario .campo-mesa .c-arte img { transform:none; }
-.arena-completa .equips { max-height:24px; overflow:auto; }
+.arena-completa .equips { max-height:30px; overflow:auto; }
 .arena-completa .equips .equip { font-size:.5rem; padding:2px; }
-.arena-completa .slot-vazio { min-height:78px; height:78px; font-size:.55rem; }
-.arena-completa .mao-com-pilhas { --largura-carta:54px; --altura-carta:78px; gap:4px; }
-.arena-completa .mao-com-pilhas [data-zona="mao"] .fileira { min-height:78px; padding:2px; }
-.arena-completa .mao-com-pilhas [data-zona="mao"] .c-wrap { width:54px; flex-basis:54px; }
-.arena-completa .mao-com-pilhas .pilha-cartas,.arena-completa .mao-com-pilhas .pilha-cartas .carta-verso { width:48px; height:70px; }
+.arena-completa .slot-vazio { min-height:121.875px; height:121.875px; font-size:.55rem; }
+.arena-completa .mao-com-pilhas { --largura-carta:84.375px; --altura-carta:121.875px; gap:4px; }
+.arena-completa .mao-com-pilhas [data-zona="mao"] .fileira { min-height:121.875px; padding:2px; }
+.arena-completa .mao-com-pilhas [data-zona="mao"] .c-wrap { width:84.375px; flex-basis:84.375px; }
+.arena-completa .mao-com-pilhas .pilha-cartas,.arena-completa .mao-com-pilhas .pilha-cartas .carta-verso { width:75px; height:109.375px; }
 .arena-completa .pilha-compra .btn,.arena-completa .pilha-descarte .btn { font-size:.6rem; padding:3px; width:auto; }
 .arena-completa .pilha-compra .acao-compra { min-height:30px; padding:6px 9px; }
 .arena-completa .pilha-compra,.arena-completa .pilha-descarte { gap:4px; }
@@ -164,8 +165,8 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-foco .arena-completa .carta-online { width:110px; height:170px; min-height:170px; font-size:.7rem; }
 .arena-foco .arena-completa .carta-online .c-nome { font-size:.75rem; }
 .arena-foco .arena-completa .carta-online .c-stats { flex-direction:row; gap:6px; font-size:.7rem; }
-.arena-foco .arena-completa .carta-online .c-desc { display:block; font-size:.65rem; }
-.arena-foco .arena-completa .carta-online .c-arte { height:45px; }
+.arena-foco .arena-completa .carta-online .c-desc { display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; max-height:3.9em; line-height:1.3; font-size:.65rem; }
+.arena-foco .arena-completa .carta-online .c-arte { height:45px; flex-basis:45px; }
 .arena-foco .arena-completa .mao-com-pilhas { --largura-carta:110px; --altura-carta:170px; }
 .arena-foco .arena-completa .c-wrap,.arena-foco .arena-completa .mao-com-pilhas [data-zona="mao"] .c-wrap { width:110px; flex-basis:110px; }
 @media(min-width:1700px){.mesa-online:has(.arena-janela){max-width:1800px;}}
@@ -182,12 +183,12 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-equipes .assento-norte { grid-row:1; }
 .arena-equipes .assento-sul { grid-row:2; }
 .arena-fileiras { display:flex; justify-content:safe center; align-items:start; gap:24px; width:max-content; min-width:100%; height:auto; padding:16px; box-sizing:border-box; }
-.arena-fileiras .confronto-mesa { display:grid; grid-template-columns:360px; grid-template-rows:auto 560px 560px; gap:20px; min-width:0; }
+.arena-fileiras .confronto-mesa { display:grid; grid-template-columns:360px; grid-template-rows:auto 720px 720px; gap:20px; min-width:0; }
 .arena-fileiras .confronto-titulo { grid-row:1; color:var(--ouro-claro); font-size:1rem; text-align:center; margin:0; }
 .arena-fileiras .assento { position:relative; inset:auto; transform:none; }
 .arena-fileiras .assento-norte { grid-row:2; transform:rotate(180deg); }
 .arena-fileiras .assento-sul { grid-row:3; }
-.confronto-mesa:not(:has(.assento-norte)) { grid-template-rows:auto 560px; }
+.confronto-mesa:not(:has(.assento-norte)) { grid-template-rows:auto 720px; }
 .confronto-mesa:not(:has(.assento-norte)) .assento-sul { grid-row:2; }
 .arena-vazia { padding:24px; color:var(--suave); text-align:center; }
 .arena-foco .arena-fileiras { display:flex; min-width:0; align-items:stretch; }
@@ -195,3 +196,23 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-foco .arena-fileiras .confronto-titulo { order:-1; }
 .arena-foco .arena-fileiras .assento { display:block; }
 .arena-foco .arena-fileiras .confronto-mesa:not(:has([data-ativo="true"])) { display:none; }
+
+/* Novo aumento de 25% na mesa completa; leitura acompanha a página. */
+.carta-online { touch-action:manipulation; }
+.carta-online .c-leitura,.carta-online .c-textos { display:contents; }
+/* Só o bloco de leitura compensa a rotação do assento. Arte e posição ficam iguais. */
+.arena-completa .assento { --giro-leitura:0deg; --largura-texto:100%; }
+.arena-completa .assento-norte { --giro-leitura:180deg; }
+.arena-completa .assento-oeste { --giro-leitura:-90deg; --largura-texto:78px; }
+.arena-completa .assento-leste { --giro-leitura:90deg; --largura-texto:78px; }
+.arena-completa .carta-online .c-leitura { display:grid; place-items:center; flex:1; width:100%; min-height:0; }
+.arena-completa .carta-online .c-textos { display:flex; flex-direction:column; gap:1px; width:var(--largura-texto); transform:rotate(var(--giro-leitura)); }
+.arena-foco .arena-completa .assento { --giro-leitura:0deg; --largura-texto:100%; }
+.arena-foco .arena-completa .carta-online .c-leitura,.arena-foco .arena-completa .carta-online .c-textos { display:contents; }
+.alternar-tabuleiro { min-height:50px; padding:13px 24px; border-width:2px; font-size:1rem; font-weight:800; box-shadow:0 0 0 3px #e8b04a2b,0 6px 20px #0005; }
+.alternar-tabuleiro:focus-visible { outline:3px solid var(--ouro-claro); outline-offset:4px; }
+.arena-completa .equip { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+@media(max-width:600px){.alternar-tabuleiro{width:100%;}}
+
+.arena-foco .arena-completa .mao-com-pilhas .pilha-cartas,
+.arena-foco .arena-completa .mao-com-pilhas .pilha-cartas .carta-verso { width:48px; height:70px; }

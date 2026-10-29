@@ -239,7 +239,9 @@ As decisões que ainda precisam de confirmação e a lista de verificações est
   diretos, mas podem ser removidos ou anulados por habilidades.
 - D007 recupera 1 ponto de defesa da criatura no início de cada turno do dono, até
   o máximo. Sua defesa continua 400; os jogadores não voltam a ter vida própria.
-- n001 busca a primeira metálica do baralho; n008 captura passivamente cartas
+- n001 busca automaticamente a primeira metálica do baralho ao entrar em apoio,
+  sem ação adicional; se não houver metálica, a própria auxiliar vai ao descarte;
+  n008 captura passivamente cartas
   adversárias do universo Normal em jogo, devolvendo anexos de outros universos
   à mão do dono anterior; n009 duplica passivamente os efeitos numéricos das outras
   cartas do próprio dono enquanto estiver em apoio.
@@ -437,3 +439,36 @@ identidades de cartas compradas nem consulta mãos/baralhos de adversários ou a
 dos clientes. São persistidos e revertidos junto à ação se a gravação falhar.
 A adaptação pertence à partida e reinicia na revanche; não há treino externo nem
 mudança de atributos ou ações para beneficiar as máquinas.
+
+### Dois cliques/toques e apresentação das cartas (2.480)
+
+Um clique ou toque seleciona a carta para leitura. Dois consecutivos na mesma
+carta da própria mão executam sua jogada principal: invocar criatura, colocar
+auxiliar, equipar item/arma ou lançar um feitiço. As validações de turno, ações,
+vínculo e equipamento continuam no controlador/motor. Cartas de outros jogadores
+e cartas já em campo continuam disponíveis para inspeção; o atalho não dispara
+ataques ou habilidades nelas. Os botões do painel permanecem disponíveis.
+
+Na versão 2.480, as cartas do tabuleiro completo passaram de 54 × 78
+para 67,5 × 97,5, com texto contido e descrição completa no painel. Mãos ocultas,
+pilhas e espaços do campo acompanham o aumento, e os assentos reservam mais espaço
+para evitar sobreposição. O foco no duelo preserva as dimensões anteriores.
+O botão que alterna as visualizações tem tamanho e destaque maiores, incluindo
+largura completa no celular. O changelog mostra a versão atual e as descrições
+das mudanças, sem contagem de recursos ou avisos do valor de incremento.
+
+### Leitura da mesa e Grávida dos Robôs (2.495)
+
+Um novo aumento de 25% leva as cartas do tabuleiro completo a 84,375 × 121,875
+pixels. Pilhas passam a 75 × 109,375; o foco no duelo mantém 110 × 170 e pilhas
+48 × 70. Assentos e arena acomodam o novo tamanho. O bloco de texto compensa
+a rotação do assento: nomes, atributos e descrições seguem a orientação da página,
+mantendo a posição das cartas e a orientação das artes voltada para o centro.
+
+A Grávida dos Robôs (n001) tem habilidade passiva de entrada em apoio. Colocá-la
+consome uma ação e dispara a busca, sem botão ou segundo custo. Busca a primeira
+metálica a partir do topo, preservando a ordem das demais cartas. Fuleco permite
+buscar até duas; se houver só uma, ela é suficiente para a Grávida permanecer.
+Sem nenhuma metálica no baralho de compra, a própria Grávida é descartada. Continua
+exigindo uma criatura vinculada e espaço em apoio. Anulação impede a habilidade
+de entrada; remover a anulação depois não dispara a busca retroativamente.

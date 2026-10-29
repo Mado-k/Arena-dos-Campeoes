@@ -40,12 +40,14 @@
             if (dados.indisponivel) jogarNovamente.disabled = true;
         });
         let estado = null, ocupado = false, pausada = false, selecionada = null, sessao = 0, alvoSelecionado = null, resultadoMostrado = false;
+        let ultimoToqueCarta=null;
         let focoArena=matchMedia('(max-width:760px)').matches,espectadorAvisado=false;
         const espectador=document.createElement('dialog');espectador.className='escolha-online resultado-partida';espectador.setAttribute('aria-label','Acompanhar a final');
         espectador.append(el('h2','Você foi eliminado'),el('p','A próxima rodada começou. Quer assistir aos classificados ou sair da sala?','suave'));
         const opcoesEspectador=el('div',undefined,'resultado-botoes');opcoesEspectador.append(botao('Assistir',()=>espectador.close()),botao('Sair da sala',()=>{espectador.close();aoSair();}));espectador.append(opcoesEspectador);document.body.append(espectador);
         let resultadoPendente=false,timerResultado,rolagemTurnoAte=0,interacoesRolagem=0;
         for(const evento of ['wheel','touchmove','pointerdown','keydown'])window.addEventListener(evento,()=>{interacoesRolagem++;},{passive:true});
+        window.addEventListener('pointerdown',evento=>{if(!evento.target.closest?.('.carta-online'))ultimoToqueCarta=null;},{passive:true});
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
         const turnos = criarAvisosTurno(() => agir('encerrar'));
@@ -90,6 +92,7 @@
         function agir(tipo, uid, valor) {
             if (!ativo()) return;
             const pedidoSessao = sessao;
+            ultimoToqueCarta=null;
             ocupado = true;
             escolha.close();
             render();
@@ -154,11 +157,11 @@
             if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
             return linha;
         }
-        function localizar() {
+        function localizar(uid = selecionada) {
             for (let dono = 0; dono < estado.jogadores.length; dono++) for (const zona of ['mao', 'campo', 'apoio', 'descarte']) {
                 for (const c of estado.jogadores[dono][zona]) {
-                    if (c.uid === selecionada) return { c, dono, zona };
-                    for (const eq of c.equip) if (eq.uid === selecionada) return { c: eq, dono, zona: 'equip' };
+                    if (c.uid === uid) return { c, dono, zona };
+                    for (const eq of c.equip) if (eq.uid === uid) return { c: eq, dono, zona: 'equip' };
                 }
             }
             return null;
@@ -167,7 +170,7 @@
             const painel = el('div', undefined, 'painel detalhe-online');
             const encontrada = localizar();
             if (!encontrada) {
-                painel.append(el('p', 'Clique em uma carta para ler a descrição completa e ver o que você pode fazer com ela.', 'painel-vazio'));
+                painel.append(el('p', 'Selecione uma carta para ler os detalhes. Dois cliques ou toques jogam uma carta da sua mão.', 'painel-vazio'));
                 return painel;
             }
             const { c, dono, zona } = encontrada, d = Motor.descricao(c.base);
@@ -214,8 +217,24 @@
             if (!ativo() && estado.vencedor === null) painel.append(el('p', 'Aguarde seu turno para jogar. Você pode continuar consultando as cartas.', 'nota'));
             return painel;
         }
+        function jogarDaMao(uid){
+            const encontrada=localizar(uid);
+            if(!encontrada||encontrada.dono!==estado.voce||encontrada.zona!=='mao'||!ativo()||estado.acoes<=0)return;
+            const c=encontrada.c,classe=Motor.classeDe(c);
+            if(Motor.ehCriatura(c))agir('invocar',uid);
+            else if(classe==='auxiliar')agir('apoio',uid);
+            else if(Motor.consumivel(c)||classe==='feitico')agir('habilidade',uid);
+            else if(['arma','item'].includes(classe))agir('equipar',uid);
+        }
+        function tocarCarta(uid,evento){
+            const instante=performance.now();
+            const duplo=evento.detail!==0&&ultimoToqueCarta?.uid===uid&&instante-ultimoToqueCarta.instante<=550;
+            ultimoToqueCarta=evento.detail===0||duplo?null:{uid,instante};
+            selecionar(uid);
+            if(duplo)jogarDaMao(uid);
+        }
         function carta(c) {
-            const b = botao('', () => selecionar(c.uid), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : ''));
+            const b = botao('', evento => tocarCarta(c.uid,evento), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : ''));
             b.dataset.carta = String(c.uid);
             b.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
             b.setAttribute('aria-label', c.base.nome);
@@ -223,7 +242,11 @@
             const topo = el('div', undefined, 'c-topo');
             topo.append(el('span', c.base.classe, 'classe'), el('span', c.base.elemento || ''));
             const d = Motor.descricao(c.base);
-            b.append(topo, arte(c.base), el('p', c.base.nome, 'c-nome'), stats(c), el('p', d.texto, 'c-desc'), selo(d), etiquetas(c));
+            b.title=[c.base.nome,d.texto,'Dois cliques ou toques jogam cartas da sua mão.'].filter(Boolean).join(' · ');
+            const leitura=el('div',undefined,'c-leitura'),textos=el('div',undefined,'c-textos');
+            textos.append(el('p', c.base.nome, 'c-nome'), stats(c), el('p', d.texto, 'c-desc'), selo(d), etiquetas(c));
+            leitura.append(textos);
+            b.append(topo, arte(c.base), leitura);
             return b;
         }
         function zona(titulo, cartas, { limite, dica = '', apoio = false, campo = false } = {}) {
@@ -437,7 +460,7 @@
                 barra.append(el('p', estado.jogadores[estado.voce].eliminado ? (estado.todosContraTodos ? 'Você foi eliminado. Acompanhe os jogadores que continuam na arena.' : 'Você foi eliminado. Acompanhe e torça pelos aliados que continuam em jogo.') : estado.torneio ? 'Mata-mata: enfrente seu adversário espelhado. Os vencedores avançam; quem já venceu aguarda a próxima rodada.' : estado.todosContraTodos ? 'Todos contra todos. Escolha o adversário alvo; vence o último jogador não eliminado.' : estado.equipes2v2 ? 'Duplas 2v2. Você e o aliado compartilham a vitória; cada um tem sua mão e seu campo.' : estado.jogadores.some((j,i)=>j.maquina&&estado.equipes[i]===estado.equipes[estado.voce]) ? 'As máquinas aliadas jogam automaticamente. Cada integrante tem sua própria mão e seu campo; a vitória é da equipe.' : estado.jogadores.filter(j => !j.maquina).length === 1 ? 'Você enfrenta uma máquina, com sua própria mão e seu próprio campo.' : 'Mão e campo individuais. Combine os ataques com os aliados; apenas você pode jogar suas cartas.', 'nota-equipe'));
             }
             const opcoes=el('div',undefined,'arena-opcoes');
-            opcoes.append(botao(focoArena?'Ver mesa completa':'Focar no meu duelo',()=>{focoArena=!focoArena;render();}),el('small','Toque em uma carta para ler os detalhes. Na mesa completa, deslize para explorar os confrontos.','suave'));
+            opcoes.append(botao(focoArena?'Ver tabuleiro completo':'Focar no duelo',()=>{ultimoToqueCarta=null;focoArena=!focoArena;render();},true,'btn primario alternar-tabuleiro'),el('small','Um toque seleciona; dois jogam cartas da sua mão. Deslize para explorar o tabuleiro completo.','suave'));
             tabuleiro.append(barra,opcoes,arenaDaPartida());
             const lateral = el('aside', undefined, 'lateral');
             lateral.append(detalhe());
@@ -488,7 +511,7 @@
                 const nome = estado.jogadores[estado.turno].nome;
                 turnos.notificar(`${nome} encerrou o turno. Agora é a vez de ${proximo.jogadores[proximo.turno].nome}.`);
             }
-            if (estado && proximo.revisao !== estado.revisao) { escolha.close(); descarte.close(); }
+            if (estado && proximo.revisao !== estado.revisao) { ultimoToqueCarta=null; escolha.close(); descarte.close(); }
             if (!estado || estado.numTurno !== proximo.numTurno) alvoSelecionado = null;
             estado = proximo;
             const cartaSelecionada=localizar();if(cartaSelecionada&&eliminado(cartaSelecionada.dono))selecionada=null;
@@ -502,7 +525,7 @@
                 mesa.querySelector('[data-jogador="'+proximo.turno+'"] .campo-mesa')?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
             }
         });
-        socket.on('partida:pausa', dados=>{pausada=Boolean(dados.pausada);render();});
-        return { pausar(){pausada=true;render();}, limpar() { rolagemTurnoAte=0; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); espectador.close(); espectadorAvisado=false; resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
+        socket.on('partida:pausa', dados=>{ultimoToqueCarta=null;pausada=Boolean(dados.pausada);render();});
+        return { pausar(){pausada=true;render();}, limpar() { ultimoToqueCarta=null; rolagemTurnoAte=0; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); espectador.close(); espectadorAvisado=false; resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

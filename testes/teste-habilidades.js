@@ -24,10 +24,10 @@ function mesa() {
 let t;
 
 // n001
-t = mesa(); let a = t.apoio(t.A, 'n001'); t.deck(t.A, 'n011'); let r = M.executarHabilidade(t.e, a.uid);
-ok(r.erro && t.A.descarte.length === 0 && t.A.mao.length === 0 && t.e.acoes === 2, 'n001 sem metálica não gasta ação nem descarta');
-t = mesa(); a = t.apoio(t.A, 'n001'); t.deck(t.A, 'n006'); r = M.executarHabilidade(t.e, a.uid);
-ok(r.ok && t.A.mao.length === 1 && t.A.descarte.length === 0, 'n001 metálica fica na mão');
+t = mesa(); t.campo(t.A, 'n013'); let a = t.mao(t.A, 'n001'); t.deck(t.A, 'n011'); let r = M.colocarApoio(t.e, a.uid);
+ok(r.ok && t.A.descarte.includes(a) && t.A.mao.length === 0 && t.e.acoes === 1, 'n001 sem metálica vai ao descarte ao lançar');
+t = mesa(); t.campo(t.A, 'n013'); a = t.mao(t.A, 'n001'); const metalica = t.deck(t.A, 'n006'); r = M.colocarApoio(t.e, a.uid);
+ok(r.ok && t.A.mao.includes(metalica) && t.A.apoio.includes(a) && t.e.acoes === 1, 'n001 busca metálica automaticamente sem outra ação');
 // n002 Pandora: dano imediato e sem repetição nos turnos seguintes
 t = mesa(); let s = t.mao(t.A, 'n002'); let ca = t.campo(t.A, 'n013'); let cb = t.campo(t.B, 'n015');
 r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.e.pandoraUsos===1 && t.A.descarte.includes(s), 'n002');
@@ -99,7 +99,7 @@ t = mesa(); t.campo(t.A, 'n038'); const arm = t.mao(t.A, 'n006'); ok(M.equipar(t
 // Iara anula game
 t = mesa(); t.campo(t.B, 'n012'); ca = t.campo(t.A, 'n035'); ok(M.estadoHabilidade(t.e, ca.uid).disponivel === false, 'iara anula game');
 // lança do pirarucu silencia auxiliar
-t = mesa(); t.campo(t.B, 'n013'); t.equip(t.B, 'n004'); a = t.apoio(t.A, 'n001'); ok(!M.estadoHabilidade(t.e, a.uid).disponivel, 'peixe');
+t = mesa(); t.campo(t.B, 'n013'); t.equip(t.B, 'n004'); a = t.apoio(t.A, 'n001'); ok(M.estadoHabilidade(t.e, a.uid).anulada, 'peixe');
 // ataque normal + curupira usa estado
 // estadoHabilidade passiva
 t = mesa(); ca = t.campo(t.A, 'n003'); eq(M.estadoHabilidade(t.e, ca.uid).tipo, 'passiva', 'passiva');

@@ -20,7 +20,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 | Carta | Regra confirmada |
 | --- | --- |
 | n002 — Caixa de Pandora | 10 de dano no início do turno do dono de cada criatura, de todos os lados, até uma criatura morrer. Três usos; depois fica permanentemente no descarte. Auxiliares não recebem dano. |
-| n001 | Busca a primeira metálica a partir do topo do baralho. Não descarta as cartas ignoradas nem muda sua ordem. |
+| n001 | Ao entrar em apoio, busca automaticamente a primeira metálica a partir do topo, sem outra ação. Não altera a ordem das demais. Sem metálica, a própria Grávida vai ao descarte. |
 | n008 — Heimdall | Passiva: captura para a sua mão as cartas do universo Normal já em jogo ou jogadas posteriormente pelo adversário. Inclui criaturas, auxiliares e equipamentos. Anexos de outros universos voltam à mão do dono anterior. Capturar não conta como derrotar; proteções e anulações continuam valendo. Não acessa cartas escondidas. |
 | n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
 | n013 — Hércules | Multiplica cumulativamente o ataque base por 2 a cada três turnos próprios em batalha: 7 → 14 → 28. |
@@ -213,3 +213,18 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 - [x] No máximo uma ação de compra direta por turno de cada máquina; humanos e habilidades de compra preservados.
 - [x] Adaptação aos padrões públicos dos adversários e coordenação dos alvos dos aliados, com memória limitada à partida.
 - [x] Limite e memória da IA persistem na retomada e são restaurados quando uma gravação falha.
+
+## Interação e legibilidade — 2.480
+
+- [x] Dois cliques/toques na carta da própria mão executam a jogada principal; primeiro clique seleciona para leitura.
+- [x] Regras de turno, ações, auxiliares e equipamentos preservadas; cartas de oponentes e do campo continuam apenas selecionáveis pelo atalho.
+- [x] Cartas da mesa completa 25% maiores, descrições contidas e painel com texto completo; assentos ajustados para evitar sobreposição.
+- [x] Alternância entre foco e tabuleiro completo mais destacada e acessível no celular.
+- [x] Changelog mostra versão atual e mudanças, removendo contadores e avisos de incremento.
+
+## Leitura da mesa e Grávida dos Robôs — 2.495
+
+- [x] Cartas do tabuleiro completo e versos aumentados em mais 25%, com assentos ajustados.
+- [x] Bloco de texto das cartas na orientação normal da página, preservando posições e artes.
+- [x] Grávida dos Robôs passiva ao entrar em apoio, com busca automática sem segunda ação; sem metálica, a própria auxiliar é descartada.
+- [x] Busca respeita Fuleco, anulação e vínculo com criatura; não repete em turnos seguintes.

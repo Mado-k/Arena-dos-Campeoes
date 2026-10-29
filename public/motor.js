@@ -749,6 +749,15 @@
         }
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
+        const habilidade = HAB[inst.base.codigo];
+        if (habilidade?.aoLancar) {
+            const motivo = silenciada(estado, inst);
+            if (motivo) logAutomatico(estado, `${inst.base.nome}: habilidade ao lançar anulada. ${motivo}`);
+            else {
+                const resultado = habilidade.aoLancar({ estado, j, inst, potencia: fatorHabilidade(estado, inst) });
+                logAutomatico(estado, `${inst.base.nome}: ${resultado.texto}`);
+            }
+        }
         verificarPresenca(estado);
         return { ok: true };
     }
@@ -869,10 +878,10 @@
 
     const HAB = {
         n001: {
-            tipo: 'ativa', local: ['apoio'], botao: 'Buscar carta metálica',
-            texto: 'Retire a primeira carta do tipo metálico encontrada no baralho e coloque-a em sua mão.',
-            detalhe: 'Busca a partir do topo do baralho, sem descartar as demais cartas nem mudar sua ordem. Gasta 1 ação.',
-            exec(c) {
+            tipo: 'passiva',
+            texto: 'Ao ser lançada, retire a primeira carta do tipo metálico encontrada no baralho e coloque-a em sua mão. Se não houver carta metálica, descarte a Grávida dos Robôs.',
+            detalhe: 'Executa automaticamente ao entrar em apoio, sem gastar outra ação. Busca a partir do topo do baralho de compra, sem descartar as demais cartas nem mudar sua ordem. Se encontrar uma metálica, permanece vinculada à sua criatura. Pode ser anulada por outras cartas.',
+            aoLancar(c) {
                 let n = 0;
                 for (let k = 0; k < c.potencia; k++) {
                     const i = c.j.baralho.findLastIndex(x => norm(x.base.elemento) === 'metalico');
@@ -880,7 +889,10 @@
                     c.j.mao.push(c.j.baralho.splice(i, 1)[0]);
                     n++;
                 }
-                return n ? { ok: true, texto: `buscou ${n} carta(s) metálica(s) a partir do topo do baralho e colocou na mão.` } : erro('Não há cartas metálicas no seu baralho.');
+                if (n) return { texto: `buscou ${n} carta(s) metálica(s) a partir do topo do baralho e colocou na mão.` };
+                c.j.apoio.splice(c.j.apoio.indexOf(c.inst), 1);
+                paraDescarte(c.j, c.inst);
+                return { texto: 'não encontrou cartas metálicas no baralho de compra e foi para a pilha de descarte.' };
             }
         },
         n002: {
