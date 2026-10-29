@@ -24,15 +24,15 @@ function mensagemInicio(err){
   return 'Não foi possível carregar as cartas do banco. Confira os Logs do serviço no Render para identificar a causa.';
 }
 async function carregarComPrazo(loader,prazo){let timer;try{return await Promise.race([Promise.resolve().then(loader),new Promise((_,r)=>{timer=setTimeout(()=>r(Object.assign(Error('Tempo esgotado'),{code:'TEMPO_CARTAS_ESGOTADO'})),prazo);})]);}finally{clearTimeout(timer);}}
-module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null}={}){
-  const salas=new Map(),timers=new Map();
+module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,tempoReconexao=10*60*1000,armazenamento=null,tempoIA=1200}={}){
+  const salas=new Map(),timers=new Map(),timersIA=new Map();
   const snapshot=sala=>({...sala,salvando:false,revanche:[...(sala.revanche||[])],iniciando:false,partida:sala.partida?.salvar()||null});
   async function persistir(sala){if(armazenamento)await armazenamento.salvar(snapshot(sala));}
   function pausa(sala){const terminou=sala.partida&&sala.partida.estado.vencedor!==null;io.to(sala.codigo).emit('partida:pausa',{pausada:!terminou&&sala.jogadores.some(j=>!j.conectado),ausentes:terminou?[]:sala.jogadores.filter(j=>!j.conectado).map(j=>j.nome),prazoMs:tempoReconexao});}
   function publicar(sala){io.to(sala.codigo).emit('sala',publico(sala));pausa(sala);}
   function atualizarPartida(sala){pausa(sala);for(const j of sala.jogadores)if(j.conectado&&j.socketId)io.to(j.socketId).emit('partida:estado',sala.partida.visao(j.id));}
   async function removerSala(sala,motivo){
-    clearTimeout(timers.get(sala.codigo));timers.delete(sala.codigo);salas.delete(sala.codigo);
+    clearTimeout(timers.get(sala.codigo));timers.delete(sala.codigo);clearTimeout(timersIA.get(sala.codigo));timersIA.delete(sala.codigo);salas.delete(sala.codigo);
     io.to(sala.codigo).emit('partida:encerrada',{motivo,final:true});
     if(armazenamento)await armazenamento.excluir(sala.codigo);
   }
@@ -43,6 +43,24 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
     const prazo=Math.max(0,Math.min(...ausentes.map(j=>j.desconectadoEm+tempoReconexao))-Date.now());
     const timer=setTimeout(()=>{removerSala(sala,'O prazo para reconectar terminou. A partida foi encerrada.').catch(err=>console.error('Falha ao encerrar sessão:',err.code||err.message));},prazo);
     timer.unref?.();timers.set(sala.codigo,timer);
+  }
+  function cancelarIA(sala){clearTimeout(timersIA.get(sala.codigo));timersIA.delete(sala.codigo);}
+  function agendarIA(sala){
+    const p=sala.partida;
+    if(timersIA.has(sala.codigo)||!p||!p.coop||p.estado.vencedor!==null||!p.estado.jogadores[p.estado.turno].maquina||sala.jogadores.some(j=>!j.conectado))return;
+    const timer=setTimeout(async()=>{
+      timersIA.delete(sala.codigo);
+      if(salas.get(sala.codigo)!==sala||sala.partida!==p||sala.jogadores.some(j=>!j.conectado))return;
+      if(sala.salvando){agendarIA(sala);return;}
+      const antes=p.salvar();sala.salvando=true;
+      try{
+        if(!p.passoComputador())return;
+        sala.atualizadoEm=Date.now();await persistir(sala);
+        if(sala.partida===p)atualizarPartida(sala);
+      }catch(err){if(sala.partida===p)sala.partida=Partida.restaurar(antes);console.error('Falha ao salvar jogada da máquina:',err.code||err.message);}
+      finally{sala.salvando=false;agendarIA(sala);}
+    },tempoIA);
+    timer.unref?.();timersIA.set(sala.codigo,timer);
   }
   const pronto=(async()=>{
     if(!armazenamento)return;
@@ -66,7 +84,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       if(!sala||!j)return;
       socket.leave(sala.codigo);
       if((sala.partida&&sala.partida.estado.vencedor===null)||sala.iniciando){
-        sala.partida=null;sala.iniciando=false;
+        cancelarIA(sala);sala.partida=null;sala.iniciando=false;
         io.to(sala.codigo).emit('partida:encerrada',{motivo:'Um jogador abandonou a partida. Preparem uma nova partida.'});
       }
       sala.jogadores=sala.jogadores.filter(x=>x!==j);
@@ -118,7 +136,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       socket.data.sala=sala.codigo;socket.data.jogadorId=j.id;socket.join(sala.codigo);
       await persistir(sala);agendar(sala);
       socket.emit('sessao',{codigo:sala.codigo,token:dados.token,jogadorId:j.id,nome:j.nome,modo:sala.modo});
-      publicar(sala);if(sala.partida)atualizarPartida(sala);responder({ok:true,sala:publico(sala)});
+      publicar(sala);if(sala.partida)atualizarPartida(sala);agendarIA(sala);responder({ok:true,sala:publico(sala)});
     });
     tratar('sala:pronto',async(valor,responder)=>{
       const sala=salaAtual(),j=jogadorAtual(sala);if(!j||sala.partida||sala.iniciando)return;
@@ -154,11 +172,11 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       const antes=sala.partida.salvar(),res=sala.partida.agir(j.id,dados);
       if(res.ok){
         sala.salvando=true;
-        try{sala.partida.jogarComputador();sala.atualizadoEm=Date.now();await persistir(sala);}
+        try{sala.atualizadoEm=Date.now();await persistir(sala);}
         catch(err){sala.partida=Partida.restaurar(antes);throw err;}
         finally{sala.salvando=false;}
       }
-      if(!res.pergunta)atualizarPartida(sala);responder(res);
+      if(!res.pergunta)atualizarPartida(sala);agendarIA(sala);responder(res);
     });
     socket.on('partida:sincronizar',()=>{const sala=salaAtual();if(jogadorAtual(sala)&&sala.partida)atualizarPartida(sala);});
     tratar('partida:revanche',async(aceitar,responder)=>{
@@ -168,6 +186,7 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       if(typeof aceitar!=='boolean')return responder({erro:'Resposta inválida.'});
       sala.revanche=sala.revanche||new Set();if(aceitar)sala.revanche.add(j.id);
       if(!aceitar||sala.revanche.size===sala.jogadores.length){
+        cancelarIA(sala);
         const empatou=sala.partida.estado.vencedor===-1;
         sala.partida=null;sala.revanche=new Set();sala.jogadores.forEach(x=>{x.pronto=false;});
         io.to(sala.codigo).emit('partida:encerrada',{empate:empatou,revanche:aceitar,motivo:aceitar?'Todos aceitaram jogar novamente. Confiram os representantes e fiquem prontos.':'A partida foi encerrada.'});
@@ -183,5 +202,5 @@ module.exports=function iniciarSalas(io,carregarCartas,{tempoCarregamento=20000,
       publicar(sala);agendar(sala);persistir(sala).catch(err=>console.error('Falha ao salvar desconexão:',err.code||err.message));
     });
   });
-  return {pronto,salas,fechar(){for(const timer of timers.values())clearTimeout(timer);timers.clear();}};
+  return {pronto,salas,fechar(){for(const timer of [...timers.values(),...timersIA.values()])clearTimeout(timer);timers.clear();timersIA.clear();}};
 };

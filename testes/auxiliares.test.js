@@ -5,6 +5,15 @@ const Partida = require('../partida');
 const catalogo = Array.from({ length: 40 }, (_, i) => ({ codigo: 'teste' + i, nome: 'Carta ' + i, classe: 'campeão', ataque: 5, defesa: 20 }));
 const jogadores = [{ id: 'a', nome: 'A' }, { id: 'b', nome: 'B' }];
 const todas = j => [...j.mao, ...j.baralho, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]);
+for(const modo of ['multiplayer','local','coop'])for(const classe of ['campeão','besta'])test(`auxiliar exige criatura vinculada e recusa não gasta ação: ${modo}/${classe}`,()=>{
+  const p=new Partida(jogadores,catalogo,modo);p.estado.turno=0;
+  const j=p.estado.jogadores[0],aux=j.mao[2],criatura=j.mao[0];
+  aux.base={...aux.base,classe:'auxiliar'};criatura.base={...criatura.base,classe};
+  const antes=p.salvar();assert(p.agir('a',{tipo:'apoio',uid:aux.uid,revisao:0}).erro);assert.deepEqual(p.salvar(),antes);
+  assert(p.agir('a',{tipo:'invocar',uid:criatura.uid,revisao:0}).ok);
+  assert(p.agir('a',{tipo:'apoio',uid:aux.uid,revisao:1}).ok);
+  assert.equal(p.estado.jogadores[0].apoio[0].vinculo,criatura.uid);assert.equal(p.estado.acoes,0);
+});
 function preparar(modo = 'multiplayer') {
   const p = new Partida(jogadores, catalogo, modo);
   p.estado.turno = 0;

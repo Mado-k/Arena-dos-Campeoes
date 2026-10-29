@@ -294,3 +294,18 @@ horizontal quando necessário. Compra e descarte ficam junto à mão; pilhas vaz
 mantêm a posição, sem desenho de cartas. O botão de compra fica acima da pilha.
 Em telas pequenas, as duas pilhas ficam abaixo da fileira da mão, nas extremidades.
 Movimento reduzido desativa os voos; limpar a mesa cancela animações pendentes.
+
+## Ajustes da mesa e IA (versão 2.1)
+
+Esta revisão usa o incremento de 0.2 solicitado por Luciano. O lado adversário
+espelha mão, pilhas, apoio e batalha, com a descrição acima da imagem nas cartas.
+Compra, versos e cartas da mão compartilham dimensões por tamanho de tela.
+Auxiliares exigem um campeão ou besta em batalha, validado pelo motor e pela interface.
+
+`Partida.passoComputador()` aplica uma única jogada ou encerra o turno da máquina.
+O Local agenda esses passos com pausas de 1,1 a 1,4 segundo; o co-op online agenda
+um passo a cada 1,2 segundo, salvando e publicando cada estado antes de continuar.
+Desconexões pausam a sequência; a retomada continua do último passo salvo. Timers
+são cancelados ao encerrar a sala/servidor. `jogarComputador()` continua disponível
+sem pausas para testes e simulações. Animações duram cerca de 760 ms e respeitam
+movimento reduzido.

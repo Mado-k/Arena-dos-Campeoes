@@ -186,7 +186,11 @@
             if (sua && zona === 'mao') {
                 const cl = Motor.classeDe(c);
                 if (Motor.ehCriatura(c)) acoes.append(botao('Colocar em batalha', () => agir('invocar', c.uid), pode, 'btn primario'));
-                if (cl === 'auxiliar') acoes.append(botao('Colocar em apoio', () => agir('apoio', c.uid), pode, 'btn primario'));
+                if (cl === 'auxiliar') {
+                    const temCriatura=estado.jogadores[estado.voce].campo.length>0;
+                    acoes.append(botao('Colocar em apoio', () => agir('apoio', c.uid), pode&&temCriatura, 'btn primario'));
+                    if(!temCriatura)acoes.append(el('p','Coloque um campeão ou besta em batalha antes de usar auxiliares.','nota'));
+                }
                 if (['arma', 'item'].includes(cl) && !Motor.consumivel(c)) acoes.append(botao('Equipar', () => agir('equipar', c.uid), pode, 'btn primario'));
             }
             if (sua && zona === 'campo') {
@@ -308,8 +312,8 @@
                 zona('Em batalha', j.campo, { limite: Motor.REGRAS.maxCampo, dica: 'campeão ou besta', campo: true }),
                 zona('Apoio', j.apoio, { limite: Motor.REGRAS.maxApoio, dica: 'auxiliares', apoio: true, campo: true })
             );
-            n.append(cab, campo);
-            n.append(maoComPilhas(i));
+            if(aliada)n.append(cab,campo,maoComPilhas(i));
+            else n.append(cab,maoComPilhas(i),campo);
             return n;
         }
         function render() {
@@ -395,7 +399,7 @@
             const antes = movimentos.capturar(estado);
             if(antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
                 resultadoPendente=true;clearTimeout(timerResultado);
-                timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},520);
+                timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},850);
             }
             if (estado && proximo.vencedor === null && proximo.numTurno > estado.numTurno) {
                 const nome = estado.jogadores[estado.turno].nome;

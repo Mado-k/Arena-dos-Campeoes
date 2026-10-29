@@ -87,33 +87,26 @@ class Partida {
     return { ok: true };
   }
 
-  jogarComputador() {
-    if (!this.coop) return;
-    // Processa todas as máquinas consecutivas quando turnos de humanos são pulados.
-    let turnos = 0;
-    const limiteTurnos = this.estado.jogadores.filter(j => j.maquina).length;
-    while (this.estado.vencedor === null && this.estado.jogadores[this.estado.turno].maquina && turnos++ < limiteTurnos) {
-      const indice = this.estado.turno;
-      const nome = this.estado.jogadores[indice].nome;
-      const limite = this.estado.jogadores[indice].acoesPorTurno;
-      for (let passo = 0; passo < limite && this.estado.acoes > 0 && this.estado.vencedor === null && !this.estado.jogadores[indice].eliminado; passo++) {
-        const melhor = IA.escolher(this.estado, this.dificuldade);
-        if (!melhor) break;
-        const serieAnterior = this.estado.serieEvento || 0;
-        this.estado = melhor.copia;
-        this.revisao++;
-        this.log.push(melhor.res.registroCombate || melhor.res.registroHabilidade || `${nome} ${ROTULOS[melhor.tipo]}.`);
-        this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
-      }
-      if (this.estado.vencedor === null) {
-        const serieAnterior = this.estado.serieEvento || 0;
-        Motor.encerrarTurno(this.estado);
-        this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
-        this.revisao++;
-        this.log.push(`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`);
-      }
-      this.log = this.log.slice(-100);
+  passoComputador() {
+    if(!this.coop||this.estado.vencedor!==null||!this.estado.jogadores[this.estado.turno].maquina)return false;
+    const nome=this.estado.jogadores[this.estado.turno].nome;
+    const serieAnterior=this.estado.serieEvento||0;
+    const melhor=this.estado.acoes>0?IA.escolher(this.estado,this.dificuldade):null;
+    if(melhor){
+      this.estado=melhor.copia;
+      this.log.push(melhor.res.registroCombate||melhor.res.registroHabilidade||`${nome} ${ROTULOS[melhor.tipo]}.`);
+    }else{
+      Motor.encerrarTurno(this.estado);
+      this.log.push(`${nome} encerrou o turno. Vez de ${this.estado.jogadores[this.estado.turno].nome}.`);
     }
+    this.log.push(...(this.estado.eventosPublicos||[]).filter(x=>x.seq>serieAnterior).map(x=>x.texto));
+    this.revisao++;this.log=this.log.slice(-100);return true;
+  }
+
+  jogarComputador() {
+    // Execução sem espera para simulações. Interfaces publicam um passo por vez.
+    const limite=this.estado.jogadores.length*4;
+    for(let i=0;i<limite&&this.passoComputador();i++);
   }
 
   static restaurar(dados) {

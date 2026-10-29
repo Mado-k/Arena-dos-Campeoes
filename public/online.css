@@ -72,3 +72,23 @@
     .mao-com-pilhas > [data-zona="descarte"] { grid-column:2; grid-row:2; }
     .pilha-compra .btn,.pilha-descarte .btn { max-width:145px; }
 }
+
+/* A mesa adversária inteira se volta para o centro da arena. */
+.lado-adversario .campo-mesa { margin-top:18px; padding-bottom:0; }
+.lado-adversario .campo-mesa .carta-online { display:flex; flex-direction:column-reverse; }
+.lado-adversario .campo-mesa .c-topo { margin-top:8px; }
+.mao-com-pilhas { --largura-carta:145px; --altura-carta:245px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.mao-com-pilhas > [data-zona="mao"] { grid-column:1/-1; grid-row:1; }
+.mao-com-pilhas > [data-zona="baralho"] { grid-column:1; grid-row:2; }
+.mao-com-pilhas > [data-zona="descarte"] { grid-column:2; grid-row:2; }
+.lado-adversario .mao-com-pilhas > [data-zona="mao"] { grid-row:2; }
+.lado-adversario .mao-com-pilhas > [data-zona="baralho"],
+.lado-adversario .mao-com-pilhas > [data-zona="descarte"] { grid-row:1; }
+.mao-com-pilhas [data-zona="mao"] .carta-online { width:var(--largura-carta); height:var(--altura-carta); min-height:var(--altura-carta); flex:none; overflow:hidden; }
+.mao-com-pilhas .carta-verso,.mao-com-pilhas .pilha-cartas { width:var(--largura-carta); height:var(--altura-carta); flex-basis:var(--largura-carta); }
+.mao-com-pilhas .c-desc { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+.mao-com-pilhas .verso-emblema { font-size:2.5rem; }
+@media(max-width:380px){
+    .mao-com-pilhas { --largura-carta:120px; --altura-carta:220px; gap:8px; }
+    .mao-com-pilhas [data-zona="mao"] .c-wrap { width:120px; flex-basis:120px; }
+}

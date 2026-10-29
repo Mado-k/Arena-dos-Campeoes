@@ -128,6 +128,7 @@ test('008 captura Normais já em campo e devolve anexos dos outros universos ao 
   const c=obter('n013',1,'campo'),arma=obter('n006',1,'mao'),item=obter('n026',1,'mao'),aux=obter('n022',1,'apoio');
   c.equip=[arma,item];b.mao=b.mao.filter(x=>x!==arma&&x!==item);aux.vinculo=c.uid;
   const f=obter('n008',0,'mao'),secreto=b.mao[0],defeitos=b.derrotados;
+  if(!a.campo.length)obter('n023',0,'campo');
   assert(M.colocarApoio(e,f.uid).ok);assert(a.mao.includes(c));assert.equal(b.campo.length,0);assert.equal(b.apoio.length,0);
   for(const anexo of [arma,item,aux]) assert(b.mao.includes(anexo));
   assert(b.mao.includes(secreto));assert.equal(b.derrotados,defeitos);assert.equal(c.defesa,c.base.defesa);assert.equal(c.equip.length,0);
@@ -144,6 +145,7 @@ test('008 captura futuras criaturas e equipamentos Normais sem gastar ação adi
 test('008 respeita proteção divina e anulação por equipamento; passiva volta quando bloqueio sai', () => {
   const {e,obter}=mesa(),[a,b]=e.jogadores,c=obter('n013',1,'campo'),f=obter('n008',0,'mao'),arma=obter('n004',1,'mao');
   c.equip=[arma];b.mao=b.mao.filter(x=>x!==arma);
+  if(!a.campo.length)obter('n023',0,'campo');
   assert(M.colocarApoio(e,f.uid).ok);assert(b.campo.includes(c));assert(M.silenciada(e,f));
   c.equip=[];b.mao.push(arma);M.encerrarTurno(e);assert(a.mao.includes(c));
   const outro=obter('n011',1,'campo'),protecao=obter('n025',1,'apoio');outro.base={...outro.base,universo:'normal'};
@@ -151,6 +153,7 @@ test('008 respeita proteção divina e anulação por equipamento; passiva volta
 });
 test('008 não devolve para o dono cartas roubadas ao ser removida e não conta captura como derrota', () => {
   const {e,obter}=mesa(),[a,b]=e.jogadores,c=obter('n013',1,'campo'),f=obter('n008',0,'mao');
+  if(!a.campo.length)obter('n023',0,'campo');
   assert(M.colocarApoio(e,f.uid).ok);a.apoio=[];a.mao.push(f);M.encerrarTurno(e);
   assert(a.mao.includes(c));assert.equal(b.derrotados,0);
 });

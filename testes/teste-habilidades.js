@@ -40,7 +40,7 @@ t = mesa(); s = t.mao(t.A, 'n005'); r = M.executarHabilidade(t.e, s.uid); ok(r.e
 t = mesa(); t.campo(t.A, 'n013'); let gg = t.equip(t.A, 'n006'); cb = t.campo(t.B, 'n010'); let it = t.equip(t.B, 'n026');
 let d0 = cb.defesa; r = M.executarHabilidade(t.e, gg.uid); ok(r.ok && !cb.equip.length && t.B.descarte.includes(it) && cb.defesa === d0 - 11, 'n006');
 // n008
-t = mesa(); a = t.mao(t.A, 'n008'); let a2 = t.campo(t.B, 'n013'); r = M.colocarApoio(t.e, a.uid);
+t = mesa(); t.campo(t.A,'n023'); a = t.mao(t.A, 'n008'); let a2 = t.campo(t.B, 'n013'); r = M.colocarApoio(t.e, a.uid);
 ok(r.ok && t.A.mao.includes(a2) && t.B.campo.length === 0 && M.descricao(a.base).tipo === 'passiva', 'n008 captura passiva');
 // n009
 t = mesa(); a = t.apoio(t.A, 'n009'); ca = t.campo(t.A, 'n013'); cb = t.campo(t.B, 'n015');

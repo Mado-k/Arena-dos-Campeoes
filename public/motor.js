@@ -708,6 +708,7 @@
         const { j, i, inst } = cartaDaMao(estado, uid);
         if (!inst) return erro('Essa carta não está na sua mão.');
         if (classeDe(inst) !== 'auxiliar') return erro('Só auxiliares vão para a zona de apoio.');
+        if (!j.campo.some(ehCriatura)) return erro('Coloque um campeão ou uma besta em batalha antes de jogar um auxiliar.');
         if (j.apoio.length >= REGRAS.maxApoio) return erro(`Só pode haver ${REGRAS.maxApoio} auxiliares na batalha.`);
 
         j.mao.splice(i, 1);

@@ -100,6 +100,39 @@ test('revanche fica indisponível se alguém voltar ao lobby antes da confirmaç
  assert((await pedir(d.host,'sala:sair',{})).ok);assert((await cancelou).indisponivel);
  assert((await pedir(d.amigo,'partida:revanche',true)).erro);assert(sala.partida);
 });
+test('IA online publica e persiste uma ação por etapa antes de passar ao humano', {timeout:12000},async t=>{
+ const store=memoria(),gravacoes=[],salvar=store.salvar.bind(store);
+ store.salvar=async s=>{if(s.partida)gravacoes.push(s.partida.revisao);await salvar(s);};
+ const a=await ambiente(t,store,{tempoIA:40}),d=await duelo(a,'coop'),sala=a.controle.salas.get(d.codigo);
+ const quadros=[];d.host.on('partida:estado',v=>quadros.push({rev:v.revisao,turno:v.turno,acoes:v.acoes}));
+ const humano=esperar(d.host,'partida:estado',v=>v.turno===1&&v.revisao>=4);
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);
+ assert.equal(sala.partida.estado.turno,2);assert.equal(sala.partida.revisao,1);
+ await humano;
+ assert(quadros.some(q=>q.rev===2&&q.turno===2&&q.acoes===1));
+ assert(quadros.some(q=>q.rev===3&&q.turno===2&&q.acoes===0));
+ assert(gravacoes.includes(2)&&gravacoes.includes(3)&&gravacoes.includes(4));
+ assert.equal(store.dados.get(d.codigo).partida.revisao,4);
+});
+test('desconexão pausa uma máquina pendente e retomada continua os passos', {timeout:12000},async t=>{
+ const a=await ambiente(t,memoria(),{tempoIA:70}),d=await duelo(a,'coop'),sala=a.controle.salas.get(d.codigo);
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);
+ const pausa=esperar(d.host,'partida:pausa',v=>v.pausada);d.amigo.close();await pausa;
+ await new Promise(r=>setTimeout(r,110));assert.equal(sala.partida.revisao,1);
+ const novo=await a.cliente(),passo=esperar(d.host,'partida:estado',v=>v.revisao===2);
+ assert((await pedir(novo,'sala:retomar',{...d.tokenB,modo:'coop'})).ok);await passo;
+ assert.equal(sala.partida.estado.acoes,1);
+});
+test('reinício durante o turno da IA retoma do último passo salvo após todos voltarem', {timeout:12000},async t=>{
+ const store=memoria(),a=await ambiente(t,store,{tempoIA:90}),d=await duelo(a,'coop');
+ assert((await pedir(d.host,'partida:acao',{tipo:'encerrar',revisao:0})).ok);await a.fechar();
+ const b=await ambiente(t,store,{tempoIA:50}),h=await b.cliente(),outro=await b.cliente();
+ assert((await pedir(h,'sala:retomar',{...d.tokenA,modo:'coop'})).ok);
+ await new Promise(r=>setTimeout(r,80));assert.equal(b.controle.salas.get(d.codigo).partida.revisao,1);
+ const passo=esperar(h,'partida:estado',v=>v.revisao===2);
+ assert((await pedir(outro,'sala:retomar',{...d.tokenB,modo:'coop'})).ok);await passo;
+ assert.equal(store.dados.get(d.codigo).partida.revisao,2);
+});
 test('armazenamento MySQL usa parâmetros e serializa atualizações na ordem',async()=>{
  const linhas=new Map(),chamadas=[];const pool={async query(sql,args){chamadas.push({sql,args});if(sql.startsWith('SELECT'))return [[...linhas].map(([codigo,estado])=>({codigo,estado}))];if(sql.startsWith('INSERT'))linhas.set(args[0],args[1]);if(sql.startsWith('DELETE'))linhas.delete(args[0]);return [[]];}};
  const store=criarArmazenamento(pool);await Promise.all([store.salvar({codigo:'ABCDE',valor:1}),store.salvar({codigo:'ABCDE',valor:2})]);

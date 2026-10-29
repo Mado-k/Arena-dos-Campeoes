@@ -8,7 +8,7 @@
             const zonas=new Map(),cartas=new Map(),locais=new Map();
             for(const lado of mesa.querySelectorAll('[data-jogador]')){
                 const dono=Number(lado.dataset.jogador);
-                for(const z of lado.querySelectorAll('[data-zona]'))zonas.set(dono+':'+z.dataset.zona,z.getBoundingClientRect());
+                for(const z of lado.querySelectorAll('[data-zona]'))zonas.set(dono+':'+z.dataset.zona,(z.querySelector('.pilha-cartas')||z).getBoundingClientRect());
                 for(const c of lado.querySelectorAll('[data-carta]'))cartas.set(c.dataset.carta,c.getBoundingClientRect());
             }
             estado.jogadores.forEach((j,dono)=>{
@@ -24,13 +24,16 @@
             const carta=document.createElement('div');carta.className='carta-verso carta-em-movimento';carta.dataset.movimento=tipo;carta.setAttribute('aria-hidden','true');
             const emblema=document.createElement('span');emblema.className='verso-emblema';emblema.textContent='A';carta.append(emblema);
             document.body.append(carta);
-            const ponto=r=>({x:Math.max(0,Math.min(innerWidth-58,r.left+r.width/2-29)),y:Math.max(0,Math.min(innerHeight-82,r.top+r.height/2-41))});
+            const largura=origem.width<=165?origem.width:145;
+            const altura=origem.height<=350?origem.height:245;
+            carta.style.width=largura+'px';carta.style.height=altura+'px';
+            const ponto=r=>({x:Math.max(0,Math.min(innerWidth-largura,r.left+r.width/2-largura/2)),y:Math.max(0,Math.min(innerHeight-altura,r.top+r.height/2-altura/2))});
             const a=ponto(origem),b=ponto(destino);
-            const animacao=carta.animate([
-                {transform:`translate(${a.x}px,${a.y}px) rotate(-8deg)`,opacity:.8},
-                {transform:`translate(${(a.x+b.x)/2}px,${Math.min(a.y,b.y)-25}px) rotate(4deg)`,opacity:1,offset:.5},
-                {transform:`translate(${b.x}px,${b.y}px) rotate(0deg)`,opacity:0.1}
-            ],{duration:480,easing:'ease-in-out'});
+            const quadros=[0,.25,.5,.75,1].map(t=>({
+                transform:`translate(${a.x+(b.x-a.x)*t}px,${a.y+(b.y-a.y)*t-Math.sin(Math.PI*t)*18}px) rotate(${Math.sin(Math.PI*t)*3}deg)`,
+                opacity:t===1?.15:1,offset:t
+            }));
+            const animacao=carta.animate(quadros,{duration:760,easing:'cubic-bezier(.4,0,.2,1)'});
             const limpar=()=>{carta.remove();ativas.delete(animacao);};
             animacao.onfinish=limpar;animacao.oncancel=limpar;ativas.add(animacao);
         }

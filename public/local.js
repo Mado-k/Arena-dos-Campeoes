@@ -12,7 +12,7 @@
         const indice=partida.estado.turno;
         if(partida.estado.jogadores[indice].maquina){
             mostrar();const geracao=sessao;
-            timer=setTimeout(()=>{if(geracao!==sessao||!partida)return;partida.jogarComputador();proximo();},350);return;
+            timer=setTimeout(()=>{if(geracao!==sessao||!partida)return;partida.passoComputador();proximo();},1100+Math.random()*300);return;
         }
         if(indice!==humanoAtual){humanoAtual=indice;mesa.limpar();$('vez-local').textContent='Vez de '+partida.estado.jogadores[indice].nome;$('passar-local').hidden=false;}
         else mostrar();

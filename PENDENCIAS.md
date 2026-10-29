@@ -117,6 +117,10 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 ## Melhorias solicitadas implementadas
 
+- [x] Versão 2.1 (+0.2): campo adversário completamente espelhado, descrição acima
+  da imagem, pilhas do tamanho das cartas da mão, animações mais suaves e IA por
+  passos com pausa. Auxiliares exigem campeão/besta em campo.
+
 - [x] Versão 1.9: mãos ocultas com versos, pilhas de compra/descarte junto à mão e
   animações de compra, jogada e descarte, respeitando movimento reduzido.
 
