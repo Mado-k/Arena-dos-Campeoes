@@ -221,3 +221,55 @@ test('redistribuição online aparece aos dois sem revelar a ordem dos baralhos 
   assert(p.agir('a',{tipo:'comprar',revisao:0}).ok);
   for(const id of p.ids){const v=p.visao(id);assert(v.log.some(l=>l.startsWith('Os dois baralhos acabaram.')));assert.equal(v.reservaCentralTotal,1);assert.equal(v.reservaCentral,undefined);for(const j of v.jogadores)assert.equal(j.baralho,undefined);}
 });
+
+for (const modo of ['local','multiplayer','coop']) test(`Irineu mantém confusão visível e publica o autoataque em ${modo}`,()=>{
+  const p=new Partida([{id:'a',nome:'A'},{id:'b',nome:'B'}],cartas,modo),e=p.estado;e.turno=0;
+  const alvo=modo==='coop'?2:1;
+  function mover(codigo,dono,zona){let c;for(const j of e.jogadores)for(const z of ['mao','baralho']){const k=j[z].findIndex(x=>x.base.codigo===codigo);if(k>=0)c=j[z].splice(k,1)[0];}assert(c,codigo);e.jogadores[dono][zona].push(c);return c;}
+  const irineu=mover('n020',0,'campo'),criatura=mover('n015',alvo,'campo');
+  mover('n009',0,'apoio');const antes=criatura.defesa,dano=M.ataqueTotal(criatura,criatura.base,e);
+  assert(p.agir('a',{tipo:'habilidade',uid:irineu.uid,alvo,revisao:p.revisao}).ok);
+  assert(p.visao('b').log.some(l=>/confundiu/.test(l)));assert.equal(p.estado.acoes,1);
+  for(let turno=1;turno<=2;turno++){
+    assert(p.agir('a',{tipo:'encerrar',revisao:p.revisao}).ok);
+    const c=p.estado.jogadores[alvo].campo[0];assert.equal(c.defesa,antes-dano*turno);
+    assert.equal(c.st.confusao,3-turno,'efeito visível durante o turno atingido');
+    assert(p.visao('a').log.some(l=>/atacou a si mesma:.*DEF restante:/.test(l)));
+    const restaurada=Partida.restaurar(p.salvar());assert.deepEqual(restaurada.visao('a'),p.visao('a'));
+    do {assert(M.encerrarTurno(p.estado).ok);}while(p.estado.turno!==0);
+    assert.equal(Number(p.estado.jogadores[alvo].campo[0].st.confusao)||0,2-turno);
+  }
+  assert(p.agir('a',{tipo:'encerrar',revisao:p.revisao}).ok);
+  assert.equal(p.estado.jogadores[alvo].campo[0].defesa,antes-dano*2,'não repete depois de expirar');
+});
+test('Irineu sem Fuleco causa um autoataque, conserva recarga e pontua derrota por confusão',()=>{
+  const {e,obter}=mesa(),a=obter('n020',0,'campo'),b=obter('n035',1,'campo');b.defesa=4;e.jogadores[1].derrotados=2;
+  assert(M.executarHabilidade(e,a.uid).ok);assert.equal(a.rec,3);assert.equal(b.st.confusao,1);
+  assert(M.encerrarTurno(e).ok);assert.equal(e.vencedor,0);assert.equal(e.jogadores[1].derrotados,3);
+  assert(e.eventosPublicos.some(x=>/atacou a si mesma: 4 de dano.*DEF restante: 0/.test(x.texto)));
+});
+test('Thor paralisa Game, bloqueia contra-ataque e publica a duração sem gastar ações recusadas',()=>{
+  const {e,obter}=mesa(),a=obter('n020',0,'campo'),b=obter('n012',1,'campo'),thor=obter('n017',0,'mao');
+  const r=M.executarHabilidade(e,thor.uid);assert(r.ok);assert.match(r.registroHabilidade,/paralisada por 1/);
+  assert.equal(e.acoes,1);const defesa=a.defesa;const ataque=M.atacar(e);assert(ataque.ok);assert.equal(a.defesa,defesa);assert.match(ataque.registroCombate,/Contra-ataque: 0 de dano.*paralisada/);
+  assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,1);const antes=e.acoes;assert(M.atacar(e).erro);assert.equal(e.acoes,antes);
+  assert(M.comprarAcao(e).ok);assert.equal(e.acoes,antes-1);assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,0);
+});
+test('Thor informa por que não paralisa outro universo e preserva a duração maior já aplicada',()=>{
+  const {e,obter}=mesa(),thor=obter('n017',0,'mao'),b=obter('n015',1,'campo');
+  const r=M.executarHabilidade(e,thor.uid);assert(r.ok);assert.equal(b.st.paralisia,undefined);assert.match(r.registroHabilidade,/não.*Game/);
+  // Simula nova obtenção do feitiço antes de acabar uma paralisia mais longa.
+  e.jogadores[0].descarte=e.jogadores[0].descarte.filter(c=>c!==thor);e.jogadores[0].mao.push(thor);b.base.universo='game';b.st.paralisia=2;
+  assert(M.executarHabilidade(e,thor.uid).ok);assert.equal(b.st.paralisia,2);
+});
+test('Thor também bloqueia a habilidade ativa da criatura e permite as demais ações',()=>{
+  const {e,obter}=mesa(),thor=obter('n017',0,'mao'),b=obter('n020',1,'campo');obter('n015',0,'campo');b.base.universo='game';
+  assert(M.executarHabilidade(e,thor.uid).ok);assert(M.encerrarTurno(e).ok);
+  assert.equal(M.estadoHabilidade(e,b.uid).disponivel,false);assert.match(M.estadoHabilidade(e,b.uid).motivo,/paralisada/);
+  const antes=e.acoes;assert.match(M.executarHabilidade(e,b.uid).erro,/paralisada/);assert.equal(e.acoes,antes);
+  assert(M.encerrarTurno(e).ok);assert(M.encerrarTurno(e).ok);assert.equal(M.estadoHabilidade(e,b.uid).disponivel,true);
+});
+test('Irineu sem alvo não gasta ação nem entra em recarga',()=>{
+  const {e,obter}=mesa(),a=obter('n020',0,'campo');e.jogadores[1].campo=[];
+  assert(M.executarHabilidade(e,a.uid).erro);assert.equal(e.acoes,2);assert.equal(a.rec,0);
+});

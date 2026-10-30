@@ -8,7 +8,7 @@
         if (classe) n.className = classe;
         return n;
     };
-    window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {}, aoAbrirDescarte = () => {}, compartilhada = false } = {}) {
+    window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {}, aoAbrirDescarte = () => {}, aoConfirmarInicio = () => {}, confirmarInicioTurno = () => true, exibirResultadoPadrao = true, compartilhada = false } = {}) {
         const mesa = el('section', undefined, 'jogo mesa-online');
         mesa.hidden = true;
         mesa.setAttribute('aria-label', 'Mesa da partida online');
@@ -53,7 +53,7 @@
         for(const dialogo of [escolha,descarte,resultado,espectador])dialogo.addEventListener('cancel',evento=>{evento.preventDefault();fecharDialogo(dialogo);});
         const aviso = el('p', '', 'instrucao');
         aviso.setAttribute('role', 'status');
-        const turnos = criarAvisosTurno(() => agir('encerrar'),{aoConfirmar:()=>render(),preservarVista:acao=>{const vista=capturarVista();acao();restaurarVista(vista);}});
+        const turnos = criarAvisosTurno(() => agir('encerrar'),{aoConfirmar:()=>{render();aoConfirmarInicio();},preservarVista:acao=>{const vista=capturarVista();acao();restaurarVista(vista);}});
 
         function capturarVista(){
             if(mesa.hidden)return null;
@@ -98,7 +98,7 @@
         function mostrarResultado() {
             const vista=capturarVista();
             espectador.close();
-            if (!estado || estado.vencedor === null) return;
+            if (!exibirResultadoPadrao || !estado || estado.vencedor === null) return;
             const venceu = estado.cooperativo ? estado.vencedor === estado.equipes[estado.voce] : estado.vencedor === estado.voce;
             const equipe = estado.cooperativo && estado.jogadores.some((_,i)=>i!==estado.voce&&estado.equipes[i]===estado.equipes[estado.voce]);
             tituloResultado.textContent = estado.vencedor === -1 ? 'Empate!' : compartilhada && estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : compartilhada && !estado.cooperativo
@@ -187,7 +187,7 @@
         function etiquetas(c) {
             const linha = el('div', undefined, 'etqs');
             const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Turnos do Dino', copia: 'Habilidade copiada' };
-            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k], 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
+            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k] + (['confusao','paralisia'].includes(k) ? ` · ${Number(c.st[k])} turno(s)` : ''), 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
             if (Motor.fatorHabilidade(estado,c) === 2) linha.append(el('span','Efeitos ×2','etq bom'));
             if(c.base.codigo==='n002')linha.append(el('span', Motor.descartePermanente(c)?'Descarte permanente · 3/3 usos':'Pandora: '+(c.usos.n002||0)+'/3 usos', 'etq'));
             if(c.st.dino)linha.append(el('span',c.st.dino+' turno(s) restantes · '+(c.st.danoDino||4)+' de dano ao encerrar','etq'));
@@ -248,7 +248,8 @@
                 const alvo = estado.jogadores[alvoSelecionado ?? Motor.indiceOponente(estado, estado.voce)]?.campo[0];
                 const dano = alvo ? Motor.ataqueTotal(c, alvo.base, estado) : null;
                 const nomeAlvo = (estado.cooperativo || estado.todosContraTodos) && alvo ? ` · ${estado.jogadores[alvoSelecionado].nome}` : '';
-                acoes.append(botao('Atacar criatura inimiga' + nomeAlvo + (alvo ? ` · ${dano} de dano` : ''), () => agir('atacar'), pode && Boolean(alvo), 'btn primario'));
+                acoes.append(botao('Atacar criatura inimiga' + nomeAlvo + (alvo ? ` · ${dano} de dano` : ''), () => agir('atacar'), pode && Boolean(alvo) && !(c.st.paralisia > 0), 'btn primario'));
+                if(c.st.paralisia > 0)painel.append(el('p','Sua criatura está paralisada: não pode atacar, contra-atacar nem usar habilidades. Você ainda pode comprar ou jogar outras cartas permitidas.','nota'));
                 acoes.append(botao('Eliminar carta',()=>confirmarEliminacao(c),pode,'btn eliminar-carta'));
                 if (!alvo) painel.append(el('p', 'O alvo selecionado não tem criatura em batalha para atacar.', 'nota'));
             }
@@ -489,12 +490,13 @@
             const barra = el('div', undefined, 'barra');
             const info = el('div', undefined, 'turno-info');
             const vencedor = estado.vencedor === -1 ? 'Empate!' : terminou ? (estado.cooperativo ? estado.equipes2v2 ? `A equipe ${estado.vencedor+1} venceu!` : estado.vencedor === 0 ? 'A equipe venceu!' : 'As máquinas venceram!' : estado.jogadores[estado.vencedor].nome + ' venceu!') : '';
-            info.append(el('strong', terminou ? vencedor : `Turno ${estado.numTurno} · vez de ${estado.jogadores[estado.turno].nome}`));
+            info.append(el('strong', terminou ? exibirResultadoPadrao ? vencedor : 'Treino concluído' : `Turno ${estado.numTurno} · vez de ${estado.jogadores[estado.turno].nome}`));
             info.append(el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.tamanhoBaralho / estado.jogadores.length} por participante${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
-            if (terminou) controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario'));
+            if (terminou) { if(exibirResultadoPadrao)controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario')); }
             else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn acao-encerrar' + (ativo() ? ' primario' : '') + (ativo() && estado.acoes === 0 ? ' acoes-esgotadas' : '')));
-            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
+            const instrucaoFim = exibirResultadoPadrao ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : 'Consulte o tabuleiro e use as opções do guia para continuar.';
+            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? instrucaoFim : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
             const dica = el('p', instrucao, aviso.className);
             dica.setAttribute('role', 'status');
@@ -558,14 +560,14 @@
                 if(foco){const r=foco.getBoundingClientRect(),j=janelaNova.getBoundingClientRect();janelaNova.scrollLeft=r.left-j.left+r.width/2-janelaNova.clientWidth/2;}
             }
             if(!compartilhada&&!espectadorAvisado&&estado.torneio?.rodada>1&&estado.jogadores[estado.voce].eliminado&&estado.vencedor===null){espectadorAvisado=true;espectador.showModal();}
-            turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada && !estado.jogadores[estado.voce].eliminado && !estado.torneio?.aguardando.includes(estado.voce), numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado, nome:estado.jogadores[estado.voce].nome });
-            if (terminou && !resultadoMostrado && !resultadoPendente) mostrarResultado();
+            turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada && !estado.jogadores[estado.voce].eliminado && !estado.torneio?.aguardando.includes(estado.voce), numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado, nome:estado.jogadores[estado.voce].nome, confirmarInicio:confirmarInicioTurno(estado) });
+            if (terminou && exibirResultadoPadrao && !resultadoMostrado && !resultadoPendente) mostrarResultado();
             if(Date.now()>=rolagemTurnoAte)restaurarVista(vista);
         }
         socket.on('partida:estado', proximo => {
             let vista=capturarVista();
             const antes = movimentos.capturar(estado);
-            if(antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+            if(exibirResultadoPadrao&&antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
                 resultadoPendente=true;clearTimeout(timerResultado);
                 timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},850);
             }

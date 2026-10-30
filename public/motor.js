@@ -544,11 +544,9 @@
         }
 
         if (c && c.st.confusao) {
-            c.st.confusao = Number(c.st.confusao) - 1;
-            if (!c.st.confusao) delete c.st.confusao;
             const d = ataqueTotal(c, c.base, estado);
             c.defesa -= d;
-            log(estado, `${c.base.nome} está confusa e atacou a si mesma: ${d} de dano.`);
+            logAutomatico(estado, `${c.base.nome} está confusa e atacou a si mesma: ${d} de dano. DEF restante: ${Math.max(0,c.defesa)}. Confusão por ${Number(c.st.confusao)} turno(s), incluindo este.`);
             if (c.defesa <= 0) morrer(estado, estado.turno, c);
         }
         verificarPresenca(estado);
@@ -645,6 +643,10 @@
         const c = j.campo[0];
         if (c) {
             if (c.st.paralisia > 0) c.st.paralisia--;
+            if (c.st.confusao > 0) {
+                c.st.confusao = Number(c.st.confusao) - 1;
+                if (!c.st.confusao) delete c.st.confusao;
+            }
         }
         for (const aux of j.apoio.slice()) {
             if (!efeitosBrutos(aux).dino || !(aux.st.dino > 0)) continue;
@@ -858,13 +860,13 @@
             morrer(estado, indiceOponente(estado), t);
         } else {
             const f2 = ferivel(estado, estado.turno, a, t.base);
-            if (f2.ok) {
+            if (f2.ok && !(t.st.paralisia > 0)) {
                 const d2 = ataqueTotal(t, a.base, estado);
                 a.defesa -= d2;
                 texto += ` Contra-ataque: ${d2} de dano.`;
                 contato(estado, t, a);
             } else {
-                texto += ` Contra-ataque: 0 de dano (${f2.motivo}).`;
+                texto += ` Contra-ataque: 0 de dano (${t.st.paralisia > 0 ? `${t.base.nome} está paralisada` : f2.motivo}).`;
             }
             registrar();
             if (a.defesa <= 0) morrer(estado, estado.turno, a);
@@ -988,16 +990,17 @@
             }
         },
         n017: {
-            tipo: 'ativa', consumivel: true, local: ['mao'], botao: 'Lançar feitiço',
+            tipo: 'ativa', consumivel: true, publica: true, local: ['mao'], botao: 'Lançar feitiço',
             texto: 'Causa 3 de dano e paralisa por 1 turno os seres do universo game.',
-            detalhe: 'Uma criatura paralisada não ataca nem usa habilidades no próximo turno do dono dela.',
+            detalhe: 'A paralisia afeta criaturas do universo Game: impede atacar, contra-atacar e usar habilidades até terminar o próximo turno do dono. Contra outros universos, causa somente os 3 de dano.',
             exec(c) {
                 const t = c.o.campo[0];
                 if (t && norm(t.base.universo) === 'game') {
-                    t.st.paralisia = c.potencia;
+                    const b = bloqueio(c, t); if (b) return erro(b);
+                    t.st.paralisia = Math.max(Number(t.st.paralisia) || 0, c.potencia);
                     return { ok: true, texto: `${t.base.nome} foi paralisada por ${t.st.paralisia} turno(s).` };
                 }
-                return { ok: true, texto: '' };
+                return { ok: true, texto: `${t?.base.nome || 'O alvo'} não é do universo Game: recebe o dano, mas não fica paralisada.` };
             }
         },
         n018: passiva('Causa o dobro de dano em criaturas do tipo metálico.'),
@@ -1021,7 +1024,7 @@
             }
         },
         n020: {
-            tipo: 'ativa', local: ['campo'], botao: 'Confundir o oponente',
+            tipo: 'ativa', publica: true, local: ['campo'], botao: 'Confundir o oponente',
             texto: 'Deixa o oponente confuso e faz com que ele ataque a si mesmo por 1 turno. Recarga de 3 turnos para usar de novo.',
             detalhe: 'No início do próximo turno do adversário, a criatura dele se ataca e sofre o próprio dano.',
             exec(c) {

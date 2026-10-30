@@ -31,8 +31,9 @@
         let ultimoAvisado = null, timer, turnoConfirmado=null, turnoPendente=null;
         ok.addEventListener('click',()=>preservarVista(()=>{turnoConfirmado=turnoPendente;inicio.close();aoConfirmar();}));
         return {
-            atualizar({ acoes, suaVez, numTurno, vencedor, ocupado = false, nome = '' }) {
+            atualizar({ acoes, suaVez, numTurno, vencedor, ocupado = false, nome = '', confirmarInicio = true }) {
                 if(!suaVez||vencedor!==null){inicio.close();turnoPendente=null;}
+                else if(!confirmarInicio){inicio.close();turnoPendente=null;turnoConfirmado=numTurno;}
                 else if(acoes>0&&turnoConfirmado!==numTurno){
                     clearTimeout(timer);mensagem.hidden=true;janela.close();
                     turnoPendente=numTurno;

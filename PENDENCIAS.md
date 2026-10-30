@@ -294,3 +294,18 @@ continuam reservadas para etapa futura.
 - [x] Incluídos OK de início de turno, treino de 18 etapas, arenas, seleção de alvos e dificuldades.
 - [x] Completadas prontidão, convite, reconexão, espectadores, habilidades, estados e representantes.
 - [x] Incluídos catálogo, filtros, detalhes e changelog; índice ampliado com os assuntos disponíveis.
+
+## Irineu e Thor Circuito — 2.595
+
+- [x] Confusão preserva sua etiqueta durante o turno afetado e publica autoataque, dano e defesa restante; expira no encerramento do dono.
+- [x] Confusão letal segue a pontuação normal de campeões e o encerramento de partida.
+- [x] Paralisia impede contra-ataque além de ataque e habilidade; o painel indica o bloqueio e as etiquetas mostram duração.
+- [x] Thor publica aplicação/alcance; nova aplicação não encurta uma paralisia existente.
+- [x] Mantidos os limites do catálogo: Irineu 1 turno/recarga 3; Thor 1 turno contra universo Game; Fuleco amplia duração.
+
+## Avisos do treino — 2.600
+
+- [x] HUD de início de turno aparece só na explicação inicial, com o OK destacado.
+- [x] Próximos turnos continuam pelo roteiro, sem nova confirmação em modal.
+- [x] Conclusão pelo guia sem aviso duplicado de vitória, preservando replay e acesso ao Local.
+- [x] Partidas normais mantêm seus avisos e resultados completos.

@@ -589,3 +589,21 @@ representantes, ações e pilhas, combate e eliminação, arenas e alvos, habili
 e estados, máquinas e dificuldades, mata-mata e espectadores, retomada e
 visualização, catálogo, changelog e resultados/revanche. As habilidades completas
 de cada carta continuam disponíveis pelo catálogo e pelo painel da partida.
+
+### Confusão e paralisia (2.595)
+
+Irineu publica o autoataque de início de turno, incluindo dano e defesa restante.
+A confusão permanece na carta durante a vez afetada e só diminui no encerramento.
+Thor Circuito publica a aplicação da paralisia contra universo Game, ou informa
+quando causa apenas dano contra outro universo. Paralisia também impede
+contra-ataques; o painel desabilita atacar e explica as ações ainda possíveis.
+As etiquetas mostram duração e reaplicar Thor não encurta uma paralisia maior.
+Os valores do catálogo e a amplificação pelo Fuleco foram mantidos.
+
+### Avisos do treino (2.600)
+
+A partida para iniciantes apresenta o HUD de início de turno somente na explicação
+inicial, com destaque no OK. Nas próximas vezes humanas, o guia continua sem nova
+confirmação. A conclusão usa o próprio guia, sem modal ou botão de resultado
+redundante; Jogar novamente reinicia o treino e Jogar no Local abre o modo normal.
+As partidas normais preservam a confirmação de cada turno e o resultado completo.
