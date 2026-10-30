@@ -309,3 +309,11 @@ continuam reservadas para etapa futura.
 - [x] Próximos turnos continuam pelo roteiro, sem nova confirmação em modal.
 - [x] Conclusão pelo guia sem aviso duplicado de vitória, preservando replay e acesso ao Local.
 - [x] Partidas normais mantêm seus avisos e resultados completos.
+
+## Orientação da Partida TUTORIAL — 2.620
+
+- [x] Nome atualizado nos acessos; CTA principal da homepage trocado com Jogar agora.
+- [x] Guia ampliado, progresso visível e botão de ajuda com maior contraste.
+- [x] Setas animadas para a ação atual, inclusive nos diálogos, sem interceptar cliques.
+- [x] Lembrete do botão de ajuda após 15 segundos sem avanço, reiniciado por etapa.
+- [x] Orientação acompanha rolagem e tamanho da tela; movimento reduzido respeitado.

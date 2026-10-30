@@ -2,6 +2,7 @@
     'use strict';
     const $=id=>document.getElementById(id),eventos=new Map();
     let treino=null,timer,geracao=0,alvoPasso=null;
+    const setas=criarSetasTutorial({guia:document.querySelector('.guia-iniciante'),ajuda:$('mostrar-passo')});
     const emitir=()=>{const v=treino.visao();for(const fn of eventos.get('partida:estado')||[])fn(v);atualizarGuia();};
     const transporte={on(n,fn){if(!eventos.has(n))eventos.set(n,[]);eventos.get(n).push(fn);},timeout(){return this;},emit(n,d,cb){
         if(n==='partida:sincronizar'){emitir();return;}
@@ -13,7 +14,7 @@
     // Ritmo curto apenas nesta página, sem alterar partidas normais.
     RITMO_ARENA.avisoTurno=900;
     function iniciar(){
-        clearTimeout(timer);geracao++;mesa.limpar();
+        clearTimeout(timer);geracao++;setas.limpar();mesa.limpar();
         try{treino=new TreinoIniciante(window.CARTAS_OFFLINE);$('iniciar-treino').hidden=true;emitir();}
         catch(e){$('treino-erro').hidden=false;$('treino-erro').textContent=e.message;}
     }
@@ -23,7 +24,8 @@
         timer=setTimeout(()=>{if(atual!==geracao)return;treino.passoComputador();emitir();programarIA();},1200);
     }
     function destino(){
-        if(!treino||treino.partida.estado.turno!==0||treino.partida.estado.vencedor!==null)return null;
+        if(!treino)return $('iniciar-treino');
+        if(treino.partida.estado.turno!==0||treino.partida.estado.vencedor!==null)return null;
         const p=treino.etapa;if(!p)return null;
         const inicio=document.querySelector('.aviso-sua-vez[open]');
         if(inicio)return inicio.querySelector('button');
@@ -44,10 +46,13 @@
     function destacar(){
         for(const n of document.querySelectorAll('.passo-destacado'))n.classList.remove('passo-destacado');
         alvoPasso=destino();alvoPasso?.classList.add('passo-destacado');
+        const e=treino?.partida.estado,modal=document.querySelector('dialog[open]');
+        setas.atualizar(alvoPasso,{chave:`${geracao}:${treino?.etapa?.numero||0}:${e?.numTurno||0}:${modal?.getAttribute('aria-label')||''}`,aguardando:Boolean(treino&&e.vencedor===null&&e.turno===0&&!modal)});
     }
     function atualizarGuia(){
         const e=treino.partida.estado,p=treino.etapa,ganhou=e.vencedor===0,inicio=document.querySelector('.aviso-sua-vez[open]');
-        $('guia-progresso').textContent=ganhou?'Treino concluído · sua primeira vitória':`Partida guiada · etapa ${p?.numero||treino.totalEtapas} de ${treino.totalEtapas} · 10 cartas`;
+        $('guia-progresso').textContent=ganhou?'Partida TUTORIAL concluída':`Partida TUTORIAL · etapa ${p?.numero||treino.totalEtapas} de ${treino.totalEtapas}`;
+        $('guia-avanco').hidden=false;$('guia-avanco').max=treino.totalEtapas;$('guia-avanco').value=ganhou?treino.totalEtapas:(p?.numero||1)-1;
         $('guia-titulo').textContent=ganhou?'Você aprendeu jogando!':inicio?'Sua vez de jogar':e.turno===1?'Observe a máquina':p.titulo;
         $('guia-texto').textContent=ganhou?'Você usou as pilhas, combinou cartas, substituiu sua campeã e venceu três campeões. Agora experimente o Local ou jogue este treino novamente.':inicio?'Este aviso indica quando você pode jogar. Clique em OK para começar. No treino ele aparece só nesta explicação; nas partidas normais, aparece a cada nova vez sua.':e.turno===1?'A máquina prepara o próximo confronto. Quando ela terminar, continue pela próxima dica.':p.texto;
         $('mostrar-passo').hidden=ganhou||e.turno===1;$('treino-concluido').hidden=!ganhou;$('reiniciar-treino').hidden=!ganhou;
@@ -55,6 +60,7 @@
     }
     $('iniciar-treino').onclick=iniciar;
     $('reiniciar-treino').onclick=iniciar;
-    $('mostrar-passo').onclick=()=>{destacar();alvoPasso?.scrollIntoView({block:'center',inline:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});alvoPasso?.focus({preventScroll:true});};
+    $('mostrar-passo').onclick=()=>{destacar();setas.ajudar();alvoPasso?.scrollIntoView({block:'center',inline:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});alvoPasso?.focus({preventScroll:true});};
     new MutationObserver(()=>destacar()).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','aria-pressed']});
+    destacar();
 })();

@@ -607,3 +607,15 @@ inicial, com destaque no OK. Nas próximas vezes humanas, o guia continua sem no
 confirmação. A conclusão usa o próprio guia, sem modal ou botão de resultado
 redundante; Jogar novamente reinicia o treino e Jogar no Local abre o modo normal.
 As partidas normais preservam a confirmação de cada turno e o resultado completo.
+
+### Partida TUTORIAL e orientação visual (2.620)
+
+A homepage prioriza Jogar Partida TUTORIAL e mantém Jogar agora ao lado.
+O modo guiado usa o nome Partida TUTORIAL em seus acessos. O guia tem fonte maior,
+barra de etapas e Mostrar onde clicar em destaque. Setas animadas apontam para
+cartas, ações e confirmações, acompanhando rolagem e redimensionamento sem bloquear
+cliques. Alvos fora da área visível podem ser encontrados pelo botão de ajuda.
+Depois de 15 segundos sem avançar, uma segunda seta lembra desse botão; o lembrete
+reinicia por etapa e é suspenso na vez da máquina e em confirmações modais.
+A preferência por movimento reduzido mantém setas estáticas. A partida continua
+com dez cartas, 18 etapas e o mesmo roteiro de regras.
