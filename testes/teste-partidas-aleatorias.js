@@ -8,7 +8,7 @@ const reps = CARTAS.filter((c) => c.classe === 'representante');
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 assert.ok(CARTAS.every((c) => M.HAB[c.codigo]), 'toda carta tem habilidade definida: ' + CARTAS.filter((c) => !M.HAB[c.codigo]).map((c) => c.codigo));
 
-const todas = (j) => { const ids = []; for (const z of ['baralho', 'mao', 'campo', 'apoio', 'descarte']) for (const c of j[z]) { ids.push(c.uid); c.equip.forEach((e) => ids.push(e.uid)); } return ids; };
+const todas = (j) => { const ids = []; for (const z of ['baralho', 'mao', 'campo', 'apoio', 'descarte','feiticos']) for (const c of j[z]) { ids.push(c.uid); c.equip.forEach((e) => ids.push(e.uid)); } return ids; };
 function conferir(e, tam) {
   e.jogadores.forEach((j) => {
     const ids = todas(j);
@@ -20,7 +20,7 @@ function conferir(e, tam) {
       if (camp) assert.ok(armas <= 1 && itens <= 1); else { assert.equal(armas, 0); assert.ok(itens <= 3); }
     });
   });
-  const cartas = [...(e.reservaCentral || []), ...e.jogadores.flatMap(j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]))];
+  const cartas = [...(e.reservaCentral || []), ...e.jogadores.flatMap(j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte,...(j.feiticos||[])].flatMap(c => [c, ...c.equip]))];
   assert.equal(cartas.length,tam,'sumiu/apareceu carta');
   assert.equal(new Set(cartas.map(c => c.uid)).size,tam,'instância repetida entre jogadores/centro');
   assert.equal(new Set(cartas.map(c => c.base.codigo)).size, tam, 'carta repetida entre jogadores');

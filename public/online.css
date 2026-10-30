@@ -300,3 +300,34 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-foco .arena-completa .cartas-de-costas > .carta-verso,
 .arena-foco .arena-completa .pilha-compra,
 .arena-foco .arena-completa .pilha-descarte { zoom:1.25; }
+
+/* O topo de ambos os descartes é público e não gira sua descrição. */
+.topo-descarte { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:6px; box-sizing:border-box; border:1px solid var(--ouro); border-radius:8px; background:var(--painel-2); overflow:hidden; }
+.topo-descarte .c-arte { width:100%; height:50%; min-height:32px; flex:none; transform:none!important; display:flex; }
+.topo-descarte .c-arte img { position:static!important; transform:none!important; width:100%!important; height:100%!important; object-fit:contain; }
+.topo-descarte .retrato-pixel,.topo-descarte .retrato-dino,.topo-descarte .inicial { transform:none!important; max-width:100%; }
+.topo-descarte-nome { color:var(--ouro-claro); font:800 .66rem/1.2 var(--fonte); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+.topo-descarte-classe { color:var(--suave); font-size:.55rem; }
+.arena-palco { display:flex; align-items:stretch; width:max-content; min-width:100%; }
+.feiticos-em-campo { flex:0 0 128px; width:128px; display:flex; flex-direction:column; justify-content:center; gap:14px; padding:12px 8px; box-sizing:border-box; }
+.pandora-em-campo { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+.pandora-em-campo h4 { margin:0; font-size:.7rem; color:var(--ouro-claro); }
+.pandora-em-campo .carta-online { width:110px; height:180px; min-height:180px; padding:8px; }
+.pandora-em-campo .c-arte { width:100%; height:48px; flex:0 0 48px; display:flex; }
+.pandora-em-campo .c-nome { font-size:.75rem; }
+.pandora-em-campo .c-desc { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; font-size:.6rem; }
+.pandora-em-campo .tipo-hab,.pandora-em-campo .etqs { display:none; }
+.pandora-em-campo .carta-online { animation:pandora-presenca 2.2s ease-in-out infinite; }
+@keyframes pandora-presenca { 50% { box-shadow:0 0 0 3px #b28ac63b; } }
+.arena-foco .arena-palco > .arena-completa { flex:0 0 calc(100vw - 48px); width:calc(100vw - 48px); max-width:624px; box-sizing:border-box; }
+@media(prefers-reduced-motion:reduce) { .pandora-em-campo .carta-online { animation:none; } }
+
+.pandora-em-campo :is(.c-stats,.c-topo) { display:none; }
+.pandora-em-campo .c-desc { -webkit-line-clamp:4; }
+.pandora-em-campo .retrato-pixel .pix-tampa { transform:translateY(-3px); }
+.pandora-em-campo .retrato-pixel .pix-aura { animation:aura-pixel 1.4s steps(2,end) infinite; }
+@media(prefers-reduced-motion:reduce) { .pandora-em-campo .pix-aura { animation:none!important; } }
+
+/* Encerrar fica junto à compra em qualquer visão, sem reduzir a área de toque. */
+.arena-completa .pilha-compra .acao-encerrar { width:100%; max-width:132px; min-height:44px; margin-top:6px; padding:8px 5px; font-size:.8rem; line-height:1.2; white-space:normal; }
+.arena-foco .arena-completa .pilha-compra .acao-encerrar { min-height:44px; font-size:.8rem; padding:8px 5px; }

@@ -36,3 +36,10 @@ Os personagens de `sprites.js` usam retângulos e coordenadas inteiras, sem
 suavização de bordas, gradientes ou fontes de emoji. As poses são animadas por CSS
 e pelo diretor de cenas. Os desenhos são ilustrações próprias para os efeitos;
 as futuras artes oficiais das cartas continuam tendo prioridade.
+
+
+`estados-extra.svg` é um atlas original em grade nativa de 16×16 px: doze linhas
+de estados, quatro quadros por linha, com pixels inteiros e paletas curtas.
+Os modelos são gerados por `scripts/gerar-estados.js`, utilizando glifos próprios
+de `sprites.js`. Regenerar com `node scripts/gerar-estados.js`. Cada célula tem
+recorte próprio para impedir vazamento entre quadros. Não utiliza imagens externas.

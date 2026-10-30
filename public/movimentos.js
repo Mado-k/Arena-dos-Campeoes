@@ -12,7 +12,7 @@
                 for(const c of lado.querySelectorAll('[data-carta]'))cartas.set(c.dataset.carta,c.getBoundingClientRect());
             }
             estado.jogadores.forEach((j,dono)=>{
-                for(const zona of ['mao','campo','apoio','descarte'])for(const c of j[zona]){
+                for(const zona of ['mao','campo','apoio','descarte','feiticos'])for(const c of j[zona]||[]){
                     locais.set(String(c.uid),{dono,zona});
                     for(const eq of c.equip)locais.set(String(eq.uid),{dono,zona});
                 }

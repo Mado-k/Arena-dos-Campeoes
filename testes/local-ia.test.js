@@ -3,7 +3,7 @@ const M=require('../public/motor'),IA=require('../public/ia'),Partida=require('.
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const catalogo=Array.from({length:40},(_,i)=>({codigo:'local'+i,nome:'Campeão '+i,classe:'campeão',ataque:4,defesa:20}));
 const pessoas=n=>Array.from({length:n},(_,i)=>({id:'p'+i,nome:'Pessoa '+i}));
-const todas=e=>[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]))];
+const todas=e=>[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]))];
 for(const n of [1,2,3,4])test(`cinco cartas totais para cada humano e máquina com ${n} pessoas`,()=>{
  const p=new Partida(pessoas(n),catalogo,'coop',20),e=p.estado;
  assert.equal(e.tamanhoBaralho,Math.max(20,10*n));

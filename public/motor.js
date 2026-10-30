@@ -100,7 +100,7 @@
     // Somente dados públicos e escalares: nunca incluir cartas de mãos ou baralhos.
     function efeitoVisual(estado, dados) {
         const evento = { seq: (estado.serieVisual || 0) + 1 };
-        for (const chave of ['tipo','codigo','elemento','origem','dono','alvo','alvoDono','dano','defesa','valor','ultimo','zonaOrigem','zonaAlvo','copiada','atributo','rotulo']) {
+        for (const chave of ['tipo','codigo','elemento','origem','dono','alvo','alvoDono','dano','defesa','valor','ultimo','zonaOrigem','zonaAlvo','copiada','atributo','rotulo','nome','classe','imagem','universo','descricao','ataque','defesaBase']) {
             if (typeof dados[chave] === 'string' || Number.isFinite(dados[chave])) evento[chave] = dados[chave];
         }
         estado.serieVisual = evento.seq;
@@ -166,8 +166,8 @@
     function localizar(estado, uid) {
         for (let dono = 0; dono < estado.jogadores.length; dono++) {
             const j = estado.jogadores[dono];
-            for (const zona of ['mao', 'campo', 'apoio', 'descarte']) {
-                const inst = j[zona].find((c) => c.uid === uid);
+            for (const zona of ['mao', 'campo', 'apoio', 'descarte', 'feiticos']) {
+                const inst = (j[zona]||[]).find((c) => c.uid === uid);
                 if (inst) return { dono, zona, inst };
             }
             for (const zona of ['campo', 'apoio']) {
@@ -191,10 +191,15 @@
     function silenciada(estado, inst) {
         const loc = localizar(estado, inst.uid);
         if (!loc) return null;
+        if(loc.zona==='campo'&&inst.st.paralisia>0)return `${inst.base.nome} está paralisada: suas habilidades estão suspensas por ${inst.st.paralisia} oportunidade(s) de ação do dono.`;
+        if(loc.zona==='apoio'){
+            const portador=estado.jogadores[loc.dono].campo.find(c=>inst.vinculo==null||c.uid===inst.vinculo);
+            if(portador?.st.paralisia>0)return `${portador.base.nome} está paralisada: seus auxiliares vinculados não podem executar habilidades.`;
+        }
         for (const indice of adversarios(estado, loc.dono)) {
             const oc = estado.jogadores[indice].campo[0];
             if (!oc) continue;
-            const efo = efeitosBrutos(oc);
+            const efo = oc.st.paralisia>0?{}:efeitosBrutos(oc);
             if (efo.anulaUniverso && efo.anulaUniverso.some(v => norm(v) === norm(inst.base.universo))) {
                 return `${oc.base.nome} anula as habilidades de cartas do universo ${inst.base.universo}.`;
             }
@@ -292,7 +297,7 @@
 
     function impassePorDescarte(estado) {
         if (estado.cooperativo || (estado.redistribuicoes || 0) < REGRAS.redistribuicoesParaEmpate) return false;
-        if (estado.jogadores.some(j => j.mao.length || j.baralho.length || j.campo.length || j.apoio.length)) return false;
+        if (estado.jogadores.some(j => j.mao.length || j.baralho.length || j.campo.length || j.apoio.length || j.feiticos?.length)) return false;
         const descartadas = estado.jogadores.reduce((n,j) => n + j.descarte.length, (estado.reservaCentral || []).length);
         return descartadas === estado.tamanhoBaralho;
     }
@@ -326,8 +331,8 @@
         if (estado.todosContraTodos) {
             for (const j of estado.jogadores) if (!j.eliminado && j.derrotados >= REGRAS.campeoesParaVencer) {
                 j.eliminado = true;
-                for (const zona of ['mao','baralho','campo','apoio']) {
-                    for (const c of j[zona].splice(0)) paraDescarte(j,c);
+                for (const zona of ['mao','baralho','campo','apoio','feiticos']) {
+                    for (const c of (j[zona]||[]).splice(0)) paraDescarte(j,c);
                 }
                 logAutomatico(estado, `${j.nome} foi eliminado; suas cartas restantes foram para o descarte.`);
             }
@@ -363,14 +368,30 @@
         }
     }
 
+    function fontePandora(estado) {
+        for(let dono=0;dono<estado.jogadores.length;dono++){
+            const inst=estado.jogadores[dono].feiticos?.find(c=>c.base.codigo==='n002');
+            if(inst)return{inst,dono};
+        }
+        return null;
+    }
+    function encerrarPandora(estado,motivo) {
+        estado.pandora=false;
+        const fonte=fontePandora(estado);
+        if(fonte){
+            const j=estado.jogadores[fonte.dono];j.feiticos.splice(j.feiticos.indexOf(fonte.inst),1);
+            paraDescarte(j,fonte.inst);
+            efeitoVisual(estado,{tipo:'pandora-fim',codigo:'n002',origem:fonte.inst.uid,dono:fonte.dono,alvo:fonte.inst.uid,alvoDono:fonte.dono});
+        }
+        logAutomatico(estado,'O efeito de Pandora terminou '+motivo+'.');
+    }
+
     // criatura sem defesa sai de batalha; campeão derrotado conta para a vitória do adversário
     function morrer(estado, dono, inst) {
         const j = estado.jogadores[dono];
         const ef = efeitosDe(estado, inst);
-        if (estado.pandora) {
-            estado.pandora = false;
-            logAutomatico(estado, 'O efeito de Pandora terminou com a derrota de ' + inst.base.nome + '.');
-        }
+        const terminarPandora=estado.pandora;
+        if(terminarPandora)estado.pandora=false;
         const i = j.campo.indexOf(inst);
         if (i >= 0) j.campo.splice(i, 1);
         const campeao = ehCampeao(inst);
@@ -391,6 +412,7 @@
             efeitoVisual(estado,{tipo:'heranca',codigo:'n023',origem:inst.uid,dono,alvo:inst.uid,alvoDono:dono,valor:ef.fenrir});
             logAutomatico(estado, `${nome} deixou uma herança: o próximo campeão de ${j.nome} entra com +${ef.fenrir} de defesa.`);
         }
+        if(terminarPandora)encerrarPandora(estado,'com a derrota de '+nome);
     }
 
     // remove um item/arma equipado (perde o bônus de defesa que ele dava)
@@ -407,6 +429,20 @@
 
     // gatilhos que dependem de duas criaturas frente a frente (lobisomem)
     function verificarPresenca(estado) {
+        // Uma recusa passiva também vale quando é copiada ou recebe anexos por efeito.
+        estado.jogadores.forEach((j,dono)=>j.campo.forEach(c=>{
+            if(!efeitosDe(estado,c).semEquip)return;
+            for(const eq of c.equip.slice()){
+                efeitoVisual(estado,{tipo:'recusa',codigo:c.base.codigo,origem:c.uid,dono,alvo:eq.uid,alvoDono:dono});
+                removerEquip(estado,dono,c,eq);
+                logAutomatico(estado,`${c.base.nome} recusou ${eq.base.nome}; o equipamento foi para o descarte.`);
+            }
+            for(const a of j.apoio.filter(a=>a.vinculo==null||a.vinculo===c.uid)){
+                efeitoVisual(estado,{tipo:'recusa',codigo:c.base.codigo,origem:c.uid,dono,alvo:a.uid,alvoDono:dono});
+                j.apoio.splice(j.apoio.indexOf(a),1);paraDescarte(j,a);
+                logAutomatico(estado,`${c.base.nome} recusou ${a.base.nome}; o auxiliar foi para o descarte.`);
+            }
+        }));
         capturarNormais(estado);
         const anuladas={};
         estado.jogadores.forEach((j,dono)=>{
@@ -570,7 +606,8 @@
             if (c.st.queimadura) danos.push(['A queimadura', c.st.queimadura]);
             for (const [origem, valor] of danos) {
                 c.defesa -= valor;
-                efeitoVisual(estado,{tipo:origem==='O veneno'?'veneno':origem==='A queimadura'?'fogo':'pandora',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,dano:valor,defesa:Math.max(0,c.defesa)});
+                const fonte=origem==='A Caixa de Pandora'?fontePandora(estado):null;
+                efeitoVisual(estado,{tipo:origem==='O veneno'?'veneno':origem==='A queimadura'?'fogo':'pandora',...(origem==='A Caixa de Pandora'?{codigo:'n002'}:{}),origem:fonte?.inst.uid??c.uid,dono:fonte?.dono??estado.turno,alvo:c.uid,alvoDono:estado.turno,dano:valor,defesa:Math.max(0,c.defesa)});
                 logAutomatico(estado, `${origem} causou ${valor} de dano a ${c.base.nome}. DEF restante: ${Math.max(0,c.defesa)}.`);
                 if (c.defesa <= 0) { morrer(estado, estado.turno, c); c = null; break; }
             }
@@ -647,7 +684,7 @@
                 equipe: equipes[i], maquina: Boolean(config.maquinas && config.maquinas[i]),
                 eliminado: false, acoesPorTurno: REGRAS.acoesPorTurno,
                 rep: (config.reps && config.reps[i]) || null,
-                baralho: [], mao: [], campo: [], apoio: [], descarte: [],
+                baralho: [], mao: [], campo: [], apoio: [], descarte: [], feiticos: [],
                 derrotados: 0,
                 bonusCampeao: 0
             })),
@@ -656,7 +693,7 @@
             serieVisual: 0, efeitosVisuais: [],
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
-            pandora: false, pandoraUsos: 0, pandoraVersao: 2,
+            pandora: false, pandoraUsos: 0, pandoraVersao: 3, paralisiaVersao: 2, dinoVersao: 2,
             reservaCentral: [],
             log: [],
             proxUid: 1
@@ -677,7 +714,6 @@
         const j = atual(estado);
         const c = j.campo[0];
         if (c) {
-            if (c.st.paralisia > 0) c.st.paralisia--;
             if (c.st.confusao > 0) {
                 c.st.confusao = Number(c.st.confusao) - 1;
                 if (!c.st.confusao) delete c.st.confusao;
@@ -685,6 +721,12 @@
         }
         for (const aux of j.apoio.slice()) {
             if (!efeitosBrutos(aux).dino || !(aux.st.dino > 0)) continue;
+            // A cada dois encerramentos próprios; turnos alheios não avançam o Dino.
+            if(aux.st.dino%2===0){
+                aux.st.dino--;
+                logAutomatico(estado,`${aux.base.nome} prepara o salto: próximo ataque no próximo encerramento do dono; restam ${aux.st.dino} turno(s).`);
+                continue;
+            }
             const ef = efeitosDe(estado, aux);
             const idx = indiceOponente(estado), inimigo = estado.jogadores[idx]?.campo[0];
             let acertou=false;
@@ -713,6 +755,7 @@
             verificarFim(estado);
             if (estado.vencedor !== null) break;
         }
+        avancarParalisia(estado,c,Math.max(0,estado.acoes));
         redistribuirDescartes(estado);
         if (estado.vencedor !== null) return { ok: true };
         // Pula eliminados, inclusive quando o dano do início do turno elimina alguém.
@@ -804,13 +847,14 @@
         if (!inst) return erro('Essa carta não está na sua mão.');
         if (classeDe(inst) !== 'auxiliar') return erro('Só auxiliares vão para a zona de apoio.');
         if (!j.campo.some(ehCriatura)) return erro('Coloque um campeão ou uma besta em batalha antes de jogar um auxiliar.');
+        if(efeitosDe(estado,j.campo[0]).semEquip)return erro(`${j.campo[0].base.nome} recusa auxiliares vinculados. Escolha outra criatura.`);
         if (j.apoio.length >= REGRAS.maxApoio) return erro(`Só pode haver ${REGRAS.maxApoio} auxiliares na batalha.`);
 
         j.mao.splice(i, 1);
         inst.vinculo = j.campo[0]?.uid ?? null;
         j.apoio.push(inst);
         if (efeitosBrutos(inst).dino) {
-            const fator=fatorHabilidade(estado,inst);inst.st.dino=3*fator;inst.st.danoDino=4*fator;
+            const fator=fatorHabilidade(estado,inst);inst.st.dino=6*fator;inst.st.danoDino=4*fator;
         }
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
@@ -976,14 +1020,14 @@
         n002: {
             tipo: 'ativa', consumivel: true, publica: true, local: ['mao'], botao: 'Lançar feitiço',
             texto: 'Todos os campeões e bestas em batalha sofrem 10 de dano no início do turno do dono, inclusive os do invocador, até uma criatura em batalha morrer.',
-            detalhe: 'Até 3 usos por partida, recuperando a carta do descarte entre os usos. Após o terceiro, fica permanentemente no descarte. Auxiliares não recebem dano. Não acumula enquanto o efeito estiver ativo. Campeões derrotados contam para a vitória; bestas não.',
+            detalhe: 'Permanece à esquerda do tabuleiro enquanto seu efeito estiver ativo; depois vai ao descarte. Até 3 usos por partida, recuperando a carta do descarte entre os usos. Após o terceiro, fica permanentemente no descarte. Auxiliares não recebem dano. Não acumula enquanto o efeito estiver ativo. Campeões derrotados contam para a vitória; bestas não.',
             exec(c) {
                 const usos = Math.max(c.inst.usos.n002 || 0,c.estado.pandoraUsos || 0);
                 if (usos >= 3) return erro('A Caixa de Pandora atingiu o limite de 3 usos e fica permanentemente no descarte.');
                 if (c.estado.pandora) return erro('O efeito de Pandora já está ativo. Aguarde a derrota de uma criatura.');
                 c.inst.usos.n002 = c.estado.pandoraUsos = usos + 1;
                 c.estado.pandora = true;
-                c.estado.pandoraVersao = 2;
+                c.estado.pandoraVersao = 3;
                 c.estado.danoPandora = 10 * c.potencia;
                 return { ok:true, texto: `ativou a Caixa de Pandora (${usos + 1}/3 usos): ${c.estado.danoPandora} de dano no início do turno de cada criatura, até uma delas morrer.` };
             }
@@ -1048,14 +1092,14 @@
         },
         n017: {
             tipo: 'ativa', consumivel: true, publica: true, local: ['mao'], botao: 'Lançar feitiço',
-            texto: 'Causa 3 de dano e paralisa por 1 turno os seres do universo game.',
-            detalhe: 'A paralisia afeta criaturas do universo Game: impede atacar, contra-atacar e usar habilidades até terminar o próximo turno do dono. Contra outros universos, causa somente os 3 de dano.',
+            texto: 'Causa 3 de dano e paralisa a criatura do universo Game e seus auxiliares por 1 turno e 1 ação do dono (3 ações).',
+            detalhe: 'Bloqueia ataques, contra-ataques e habilidades ativas/passivas da criatura, além das habilidades dos auxiliares vinculados, por três oportunidades de ação do dono: duas no próximo turno e a primeira do seguinte. Comprar, equipar, lançar cartas da mão e eliminar voluntariamente continuam permitidos. Encerrar sem agir também faz passar as oportunidades restantes. Contra outros universos, causa somente os 3 de dano. Fuleco duplica a duração para seis ações.',
             exec(c) {
                 const t = c.o.campo[0];
                 if (t && norm(t.base.universo) === 'game') {
                     const b = bloqueio(c, t); if (b) return erro(b);
-                    t.st.paralisia = Math.max(Number(t.st.paralisia) || 0, c.potencia);
-                    return { ok: true, texto: `${t.base.nome} foi paralisada por ${t.st.paralisia} turno(s).` };
+                    t.st.paralisia = Math.max(Number(t.st.paralisia) || 0, 3*c.potencia);
+                    return { ok: true, texto: `${t.base.nome} foi paralisada por ${t.st.paralisia} oportunidade(s) de ação do dono.` };
                 }
                 return { ok: true, texto: `${t?.base.nome || 'O alvo'} não é do universo Game: recebe o dano, mas não fica paralisada.` };
             }
@@ -1082,22 +1126,22 @@
         },
         n020: {
             tipo: 'ativa', publica: true, local: ['campo'], botao: 'Confundir o oponente',
-            texto: 'Deixa o oponente confuso e faz com que ele ataque a si mesmo por 1 turno. Recarga de 3 turnos para usar de novo.',
-            detalhe: 'No início do próximo turno do adversário, a criatura dele se ataca e sofre o próprio dano.',
+            texto: 'Deixa a criatura adversária confusa e faz com que ela ataque a si mesma por 2 turnos do dono. Recarga de 3 turnos para usar de novo.',
+            detalhe: 'No início de cada um dos dois próximos turnos do dono, a criatura se ataca e sofre o próprio dano. Fuleco amplia a confusão para quatro turnos; a recarga continua em três turnos.',
             exec(c) {
                 if (c.inst.rec > 0) return erro(`A habilidade está recarregando: faltam ${c.inst.rec} turno(s) seus.`);
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const b = bloqueio(c, r.t); if (b) return erro(b);
                 if (r.t.st.confusao) return erro(`${r.t.base.nome} já está confusa.`);
-                r.t.st.confusao = c.potencia;
+                r.t.st.confusao = 2*c.potencia;
                 c.inst.rec = 3;
-                return { ok: true, texto: `confundiu ${r.t.base.nome}: ela vai atacar a si mesma no início dos próximos ${c.potencia} turno(s) do adversário.` };
+                return { ok: true, texto: `confundiu ${r.t.base.nome}: ela vai atacar a si mesma no início dos próximos ${r.t.st.confusao} turno(s) do adversário.` };
             }
         },
         n021: passiva('Sopra bolhas no oponente, distraindo os auxiliares dele e impedindo que usem habilidades.',
             'Funciona enquanto a arma estiver equipada na criatura em batalha.'),
-        n022: passiva('No fim de cada um dos três turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após o terceiro, bate em um cacto e vai para o descarte.',
-            'O turno em que entra em apoio já conta. Funciona automaticamente, sem ação extra ou contra-ataque; não aumenta o ataque da sua criatura. No co-op e no Local entre várias pessoas, atinge o adversário selecionado. Sem alvo, ou se anulada, o turno também conta. Sai antes se sua criatura vinculada morrer.'),
+        n022: passiva('A cada dois turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após três ataques, bate em um cacto sobre o descarte do dono e é descartado.',
+            'Ataca no fim do 2º, 4º e 6º turnos próprios; o turno em que entra já conta. Fuleco amplia para 8 de dano e seis execuções, a cada dois turnos. Sem ação extra ou contra-ataque; não aumenta o ataque da sua criatura. Atinge o adversário selecionado. Sem alvo, ou se anulada, a execução é consumida. A câmera acompanha a corrida até o cacto antes do descarte. Sai antes se sua criatura vinculada morrer.'),
         n023: passiva('Ao ser derrotada, a próxima carta de campeão que você colocar em batalha recebe +100 de defesa.'),
         n024: {
             tipo: 'ativa', consumivel: true, local: ['mao'], botao: 'Lançar feitiço',
@@ -1220,7 +1264,7 @@
             }
         },
         n037: passiva('Só pode ser ferido por cartas do tipo fantasma.'),
-        n038: passiva('Não é possível equipar auxiliares, itens nem armas nesta carta.'),
+        n038: passiva('Recusa auxiliares, itens, armas e quaisquer outros anexos vinculados a esta carta.', 'Impede novos anexos e descarta os que já estiverem vinculados quando a passiva passar a valer, inclusive por cópia. Não concede imunidade geral a habilidades nem a feitiços adversários.'),
         n039: {
             tipo: 'ativa', local: ['campo'], botao: 'Igualar a defesa',
             texto: 'Faz o oponente ter a mesma defesa que você.',
@@ -1344,6 +1388,7 @@
         const res = h.exec(c);
         if (res.erro || res.pergunta) return res;
 
+        if(zona==='mao'&&h.consumivel)efeitoVisual(estado,{tipo:'feitico-lancado',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,nome:inst.base.nome,classe:inst.base.classe,elemento:inst.base.elemento,universo:inst.base.universo,imagem:inst.base.imagem,ataque:inst.base.ataque,defesaBase:inst.base.defesa,descricao:descricao(inst.base).texto});
         const codigoVisual=res.copiada||inst.base.codigo;
         const propria=['n005','n019','n024','n031','n035'].includes(codigoVisual);
         const alvoVisual=propria?(j.campo[0]||inst):alvoAntes;
@@ -1373,7 +1418,7 @@
                 texto += ` ${alvoDano.base.nome} perdeu ${d} de defesa.`;
             }
             log(estado, texto);
-            paraDescarte(j, inst);
+            if(inst.base.codigo==='n002'&&estado.pandora){j.feiticos??=[];j.feiticos.push(inst);}else paraDescarte(j, inst);
             if (alvoDano && alvoDano.defesa <= 0 && o.campo.includes(alvoDano)) morrer(estado, indiceOponente(estado), alvoDano);
         } else {
             log(estado, texto);
@@ -1390,12 +1435,29 @@
         return executarHabilidade(estado, uid, escolha);
     }
 
+    function avancarParalisia(estado,inst,quantidade) {
+        if(!inst||!(inst.st.paralisia>0)||quantidade<=0)return;
+        inst.st.paralisia=Math.max(0,inst.st.paralisia-quantidade);
+        if(!inst.st.paralisia){
+            logAutomatico(estado,`A paralisia de ${inst.base.nome} terminou; a criatura e seus auxiliares podem agir novamente.`);
+            verificarPresenca(estado);verificarFim(estado);
+        }
+    }
+    function acaoComTempo(fn){
+        return function(estado,...args){
+            const inst=atual(estado).campo[0],acoes=estado.acoes,turno=estado.turno;
+            const res=fn(estado,...args);
+            if(res?.ok&&estado.turno===turno&&estado.acoes<acoes)avancarParalisia(estado,inst,acoes-estado.acoes);
+            return res;
+        };
+    }
+
     const Motor = {
         REGRAS, EFEITOS, HAB, TEXTOS, adversarios, indiceOponente, norm, classeDe, ehCampeao, ehCriatura, temEfeito, consumivel, descartePermanente, podeComprar, fatorHabilidade, tamanhoParaParticipantes,
         normalizarCarta, tituloNome, descricao, estadoHabilidade, silenciada,
         novoJogo, encerrarTurno, localizar, ataqueTotal, ataqueFeitico, ferivel,
-        comprarAcao, eliminarCarta, invocar, colocarApoio, equipar, lancarFeitico, atacar,
-        executarHabilidade, usarHabilidade: executarHabilidade
+        comprarAcao:acaoComTempo(comprarAcao), eliminarCarta:acaoComTempo(eliminarCarta), invocar:acaoComTempo(invocar), colocarApoio:acaoComTempo(colocarApoio), equipar:acaoComTempo(equipar), lancarFeitico:acaoComTempo(lancarFeitico), atacar:acaoComTempo(atacar),
+        executarHabilidade:acaoComTempo(executarHabilidade), usarHabilidade:acaoComTempo(executarHabilidade)
     };
 
     if (typeof module !== 'undefined' && module.exports) module.exports = Motor;

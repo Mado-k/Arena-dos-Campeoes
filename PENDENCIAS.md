@@ -19,13 +19,16 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 | Carta | Regra confirmada |
 | --- | --- |
-| n002 — Caixa de Pandora | 10 de dano no início do turno do dono de cada criatura, de todos os lados, até uma criatura morrer. Três usos; depois fica permanentemente no descarte. Auxiliares não recebem dano. |
+| n002 — Caixa de Pandora | 10 de dano no início do turno do dono de cada criatura, de todos os lados, até uma criatura morrer. Três usos; depois fica permanentemente no descarte. Auxiliares não recebem dano. Permanece à esquerda na zona de feitiços ativos e só vai ao descarte quando o efeito acaba. |
 | n001 | Ao entrar em apoio, busca automaticamente a primeira metálica a partir do topo, sem outra ação. Não altera a ordem das demais. Sem metálica, a própria Grávida vai ao descarte. |
 | n008 — Heimdall | Passiva: captura para a sua mão as cartas do universo Normal já em jogo ou jogadas posteriormente pelo adversário. Inclui criaturas, auxiliares e equipamentos. Anexos de outros universos voltam à mão do dono anterior. Capturar não conta como derrotar; proteções e anulações continuam valendo. Não acessa cartas escondidas. |
 | n009 — Fuleco | Passiva enquanto estiver em apoio: duplica os efeitos numéricos das outras cartas do próprio dono. Não beneficia o adversário. |
 | n013 — Hércules | Multiplica cumulativamente o ataque base por 2 a cada três turnos próprios em batalha: 7 → 14 → 28. |
 | n019 — Kitsune | Retorna à mão com os itens, armas e auxiliares vinculados, recuperando os atributos. Uma utilização da habilidade por partida, inclusive quando copiada. |
-| n022 — Dino | Passiva: 4 de dano à criatura inimiga no fim de cada um de três turnos próprios; depois vai ao descarte; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
+| n022 — Dino | Passiva: 4 de dano à criatura inimiga no fim do 2º, 4º e 6º turnos próprios; depois colide com o cacto sobre o descarte do dono e é descartado; vai ao descarte antes do prazo se a criatura vinculada morrer, inclusive besta. |
+| n017 — Thor Circuito | Paralisa criatura Game e seus apoios por 3 oportunidades de ação do dono, sem bloquear compras/equipamentos/cartas da mão; Fuleco amplia para 6. |
+| n020 — Irineu | Confusão por 2 turnos do dono, ou 4 com Fuleco. Autoataque no início; recarga 3 preservada. |
+| n038 — Benito | Recusa auxiliares e equipamentos vinculados, inclusive por cópia; não concede imunidade geral a feitiços ou habilidades inimigas. |
 | n025 | Mantida a proteção contra dano e efeitos divinos enquanto estiver em apoio, conforme confirmação do item anterior. |
 | n033 — Oni Zumbi | Dobra o ataque base quando equipa item; bestas continuam sem poder equipar armas. |
 | n034 — Guss | Executa imediatamente a habilidade ativa copiada; uma passiva copiada passa a valer imediatamente, incluindo gatilhos de presença. |
@@ -34,7 +37,7 @@ Ataque/defesa zero nos apoios são válidos; não há ajustes manuais.
 
 Duplica danos de habilidades, bônus de ataque/defesa, multiplicadores, quantidade de
 cartas obtidas/removidas e duração dos efeitos. Exemplos: veneno 2 → 4, queimadura
-7 → 14, paralisia 1 → 2 turnos, defesa de equipamento 11 → 22, Dino 4 de dano/3 turnos →
+7 → 14, paralisia 3 → 6 oportunidades de ação, defesa de equipamento 11 → 22, Dino 4 de dano/3 turnos →
 8 de dano/6 turnos e recuperação do D007 1 → 2. O ataque básico da criatura não dobra.
 Custos de ações, recargas, intervalos de ativação e limites de uso único não dobram.
 Os efeitos já aplicados conservam seus valores e duração; ao sair ou ser anulado,
@@ -353,3 +356,30 @@ continuam reservadas para etapa futura.
 - [x] Os valores exibidos distinguem dano, defesa igualada, bônus e reserva de Fenrir.
 - [ ] Aguardar Luciano enviar o design da Grávida dos Robôs para criar seu personagem.
 - [ ] Avaliação prática de Luciano: estilo dos sprites, ritmo e câmera nos seus aparelhos.
+
+
+## Estados e feitiços — 3.970 (Gigante, rascunho)
+
+**Autorização atualizada:** Luciano autorizou commit e push desta entrega junto à revisão 3.990.
+
+- [x] Thor paralisa criatura e apoios por três oportunidades; compras e outras ações do invocador continuam disponíveis.
+- [x] Irineu mantém confusão por dois turnos; Fuleco amplia as novas durações.
+- [x] Benito recusa anexos e os descarta quando recebe a passiva por cópia, sem ganhar imunidade geral.
+- [x] Doze estados com sprites animados próprios; Kappa/Ran aprovados preservados.
+- [x] Feitiços adversários saem da mão, revelam-se no centro e liberam o efeito de lá; câmera acompanha.
+- [x] Pandora permanece à esquerda, centralizada verticalmente, e ataca da própria carta.
+- [x] Encerramento de Pandora envia a carta ao descarte com a animação padrão; limite de três usos preservado.
+- [x] Topo dos dois descartes com face visível; resto da mão adversária permanece privado.
+- [x] Zona de feitiços ativos incluída em conservação, persistência, restauração e reciclagem.
+- [x] Histórico com níveis em todas as versões, sem divulgar a fórmula de versionamento no changelog.
+- [x] Luciano autorizou commit e push ao concluir a revisão do Dino e do botão de encerrar turno.
+
+
+## Dino e controles — 3.990 (Média)
+
+- [x] Três ataques automáticos no 2º, 4º e 6º turnos do dono, sem avançar em turnos alheios.
+- [x] Fuleco mantém o intervalo e amplia dano/execuções para 8 de dano e seis ataques.
+- [x] Cacto sobre o descarte do dono, corrida até a colisão e descarte animado posterior.
+- [x] Colisão também ao terminar o prazo sem alvo ou com habilidade bloqueada, sem inventar dano.
+- [x] Encerrar turno abaixo da pilha de compra em todos os modos/visões; tutorial aponta para o novo botão.
+- [x] Salvamentos antigos migram o prazo do Dino uma única vez; salvamentos atuais preservam a preparação.

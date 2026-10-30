@@ -197,10 +197,10 @@
         function etiquetas(c) {
             const linha = el('div', undefined, 'etqs');
             const efeitos = { veneno: 'Envenenada', queimadura: 'Pegando fogo', paralisia: 'Paralisada', confusao: 'Confusa', zumbi: 'Zumbi', dino: 'Turnos do Dino', copia: 'Habilidade copiada' };
-            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k] + (['confusao','paralisia'].includes(k) ? ` · ${Number(c.st[k])} turno(s)` : ''), 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
+            for (const k of Object.keys(efeitos)) if (c.st[k]) linha.append(el('span', efeitos[k] + (k==='paralisia'?` · ${Number(c.st[k])} ação(ões) do dono`:k==='confusao'?` · ${Number(c.st[k])} turno(s)`: ''), 'etq ' + (['dino', 'copia'].includes(k) ? 'bom' : 'ruim')));
             if (Motor.fatorHabilidade(estado,c) === 2) linha.append(el('span','Efeitos ×2','etq bom'));
-            if(c.base.codigo==='n002')linha.append(el('span', Motor.descartePermanente(c)?'Descarte permanente · 3/3 usos':'Pandora: '+(c.usos.n002||0)+'/3 usos', 'etq'));
-            if(c.st.dino)linha.append(el('span',c.st.dino+' turno(s) restantes · '+(c.st.danoDino||4)+' de dano ao encerrar','etq'));
+            if(c.base.codigo==='n002')linha.append(el('span', Motor.descartePermanente(c)?(estado.jogadores.some(j=>j.feiticos?.some(f=>f.uid===c.uid))?'Último uso ativo · descarte permanente ao terminar':'Descarte permanente · 3/3 usos'):'Pandora: '+(c.usos.n002||0)+'/3 usos', 'etq'));
+            if(c.st.dino)linha.append(el('span',c.st.dino+' turno(s) restantes · '+(c.st.danoDino||4)+' de dano a cada 2 turnos · próximo em '+(c.st.dino%2===0?2:1)+' turno(s)','etq'));
             if (c.rec) linha.append(el('span', 'Recarga: ' + c.rec, 'etq'));
             if (c.habilidade?.anulada || /peixes/.test(c.habilidade?.motivo || '')) linha.append(el('span', /peixes/.test(c.habilidade.motivo) ? 'Peixe' : 'Habilidade anulada', 'etq ruim'));
             return linha;
@@ -216,20 +216,23 @@
                 efeito.setAttribute('aria-label',efeito.title);linha.append(efeito);
             }
             const extras=[];
-            if(c.st.paralisia)extras.push(['raio','Paralisia']);
+            if(c.st.paralisia)extras.push(['paralisia','Paralisia · '+c.st.paralisia+' ações']);
             if(c.st.confusao)extras.push(['confusao','Confusão']);
             if(c.st.zumbi)extras.push(['zumbi','Zumbi']);
-            if(c.habilidade?.anulada){const motivo=c.habilidade.motivo||'';extras.push([/peixes/.test(motivo)?'peixe':/bolhas/.test(motivo)?'bolha':'canto',/peixes/.test(motivo)?'Peixe':/bolhas/.test(motivo)?'Distraído':'Anulada']);}
+            if(c.habilidade?.anulada&&!c.st.paralisia){const motivo=c.habilidade.motivo||'';extras.push([/paralisad/.test(motivo)?'paralisia':/peixes/.test(motivo)?'peixe':/bolhas/.test(motivo)?'bolha':'canto',/paralisad/.test(motivo)?'Paralisia':/peixes/.test(motivo)?'Peixe':/bolhas/.test(motivo)?'Distraído':'Anulada']);}
+            if(c.st.copia)extras.push(['copia','Cópia']);
+            if(c.rec)extras.push(['recarga','Recarga · '+c.rec]);
+            if(c.st.dino)extras.push(['dino-estado','Dino · '+c.st.dino]);
+            if(c.base.codigo==='n009'&&!c.habilidade?.anulada)extras.push(['amplifica','Efeitos ×2']);
             for(const [tipo,nome]of extras){
-                const efeito=el('span',undefined,'estado-pixel estado-'+tipo),sprite=el('span',undefined,'mini-estado');
-                if(window.ArenaSprites)sprite.innerHTML=ArenaSprites.glifo(tipo);
+                const efeito=el('span',undefined,'estado-pixel estado-'+tipo),sprite=el('span',undefined,'sprite-estado-extra sprite-'+tipo);
                 sprite.setAttribute('aria-hidden','true');efeito.title=nome;efeito.setAttribute('aria-label',nome);efeito.append(sprite,el('span',nome));linha.append(efeito);
             }
             return linha.childElementCount?linha:null;
         }
         function localizar(uid = selecionada) {
-            for (let dono = 0; dono < estado.jogadores.length; dono++) for (const zona of ['mao', 'campo', 'apoio', 'descarte']) {
-                for (const c of estado.jogadores[dono][zona]) {
+            for (let dono = 0; dono < estado.jogadores.length; dono++) for (const zona of ['mao', 'campo', 'apoio', 'descarte','feiticos']) {
+                for (const c of estado.jogadores[dono][zona]||[]) {
                     if (c.uid === uid) return { c, dono, zona };
                     for (const eq of c.equip) if (eq.uid === uid) return { c: eq, dono, zona: 'equip' };
                 }
@@ -245,7 +248,7 @@
                 return painel;
             }
             const { c, dono, zona } = encontrada, d = Motor.descricao(c.base);
-            const lugares = { mao: 'na mão', campo: 'em batalha', apoio: 'em apoio', equip: 'equipada', descarte: 'no descarte' };
+            const lugares = { mao: 'na mão', campo: 'em batalha', apoio: 'em apoio', equip: 'equipada', descarte: 'no descarte', feiticos:'em efeito ativo' };
             painel.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
             painel.append(el('p', `${c.base.codigo || 'Carta #' + c.base.numero} · ${lugares[zona]}${dono !== estado.voce ? ' · de ' + estado.jogadores[dono].nome : ''}`, 'codigo'), el('h3', c.base.nome));
             const chips = el('div', undefined, 'chips');
@@ -331,7 +334,7 @@
             if(!duplo||!executarPorToques(uid))mostrarDescricaoDepois(uid);
         }
         function carta(c) {
-            const b = botao('', evento => tocarCarta(c.uid,evento), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : ''));
+            const b = botao('', evento => tocarCarta(c.uid,evento), true, 'c carta-online' + (c.uid === selecionada ? ' selecionada' : '')+(c.st.paralisia>0?' paralisada':''));
             b.dataset.carta = String(c.uid);
             b.dataset.elemento = Motor.norm(c.base.elemento) || 'neutro';
             b.dataset.classe = Motor.classeDe(c);
@@ -411,6 +414,7 @@
             if(sua){topo.setAttribute('aria-label',`Comprar carta do seu baralho (${j.baralhoTotal} cartas)`);topo.title='Comprar uma carta · gasta 1 ação';}
             if(j.baralhoTotal)topo.append(verso());else topo.append(el('span','Vazio','pilha-vazia'));
             compra.append(topo,el('span',j.baralhoTotal+' carta(s)','pilha-contagem'));
+            if(sua&&estado.vencedor===null)compra.append(botao('Encerrar turno',()=>agir('encerrar'),ativo(),'btn acao-encerrar'+(ativo()?' primario':'')+(ativo()&&estado.acoes===0?' acoes-esgotadas':'')));
             let mao;
             if(sua)mao=zona('Sua mão',j.mao);
             else {
@@ -427,7 +431,12 @@
             descarteArea.append(abrir);
             const monte=botao('',()=>abrirDescarte(i),true,'pilha-cartas pilha-interativa pilha-ver-descarte');
             monte.setAttribute('aria-label',`Ver descarte de ${j.nome} (${j.descarte.length} cartas)`);monte.title='Consultar descarte · não gasta ação';
-            if(j.descarte.length)monte.append(verso());else monte.append(el('span','Vazio','pilha-vazia'));
+            if(j.descarte.length){
+                const ultima=j.descarte.at(-1),face=el('div',undefined,'topo-descarte');
+                face.dataset.topoDescarte=String(ultima.uid);face.append(arte(ultima.base),el('span',ultima.base.nome,'topo-descarte-nome'),el('small',Motor.tituloNome(ultima.base.classe),'topo-descarte-classe'));
+                monte.append(face);monte.title='Topo: '+ultima.base.nome+' · clique para consultar o descarte';
+                monte.setAttribute('aria-label',`Ver descarte de ${j.nome}: ${ultima.base.nome} no topo (${j.descarte.length} cartas)`);
+            }else monte.append(el('span','Vazio','pilha-vazia'));
             descarteArea.append(monte,el('span',j.descarte.length+' carta(s)','pilha-contagem'));
             area.append(compra,mao,descarteArea);return area;
         }
@@ -539,6 +548,17 @@
             if(!participantesAtivos().length)janela.append(el('p','Todos os invocadores foram eliminados. Consulte o resultado e o registro da partida.','arena-vazia'));
             else if(estado.jogadores.length===4&&participantesAtivos().length>2)arenaQuatro(janela);
             else arenaConfrontos(janela);
+            const ativas=estado.jogadores.flatMap((j,dono)=>(j.feiticos||[]).map(c=>({c,dono})));
+            if(ativas.length){
+                const palco=el('div',undefined,'arena-palco'),rail=el('aside',undefined,'feiticos-em-campo');
+                rail.setAttribute('aria-label','Feitiços em efeito');
+                for(const {c,dono}of ativas){
+                    const local=el('section',undefined,'pandora-em-campo');local.dataset.jogador=String(dono);local.dataset.zona='feiticos';
+                    local.append(el('h4','Efeito ativo'),carta(c),el('small',estado.jogadores[dono].nome,'suave'));
+                    rail.append(local);
+                }
+                palco.append(rail,...janela.childNodes);janela.append(palco);
+            }
             return janela;
         }
         function render(vista=capturarVista()) {
@@ -554,7 +574,6 @@
             info.append(el('small', `${estado.tamanhoBaralho} cartas únicas · divisão inicial: ${estado.tamanhoBaralho / estado.jogadores.length} por participante${estado.reservaCentralTotal ? ' · ' + estado.reservaCentralTotal + ' carta(s) no centro' : ''}`, 'suave'));
             const controles = el('div', undefined, 'barra-botoes');
             if (terminou) { if(exibirResultadoPadrao)controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario')); }
-            else controles.append(botao('Encerrar turno', () => agir('encerrar'), ativo(), 'btn acao-encerrar' + (ativo() ? ' primario' : '') + (ativo() && estado.acoes === 0 ? ' acoes-esgotadas' : '')));
             const instrucaoFim = exibirResultadoPadrao ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : 'Consulte o tabuleiro e use as opções do guia para continuar.';
             const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? instrucaoFim : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
             aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
@@ -627,6 +646,9 @@
         function aplicarEstado(proximo) {
             let vista=capturarVista();
             const antes = movimentos.capturar(estado);
+            for(const [uid,origem]of efeitos?.consumirOrigens?.()||[]){
+                if(antes){antes.cartas.set(uid,origem);antes.locais.set(uid,{dono:origem.dono,zona:'lancamento'});}
+            }
             if(exibirResultadoPadrao&&antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
                 resultadoPendente=true;clearTimeout(timerResultado);
                 timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},1150);

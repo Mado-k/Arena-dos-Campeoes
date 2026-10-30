@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const M=require('../public/motor'),Treino=require('../public/treino'),ctx={window:{}};
 vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../public/cartas-offline.js'),'utf8'),ctx);
 const cartas=JSON.parse(JSON.stringify(ctx.window.CARTAS_OFFLINE));
-const todas=e=>e.jogadores.flatMap(j=>['mao','baralho','campo','apoio','descarte'].flatMap(z=>j[z].flatMap(c=>[c,...c.equip])));
+const todas=e=>e.jogadores.flatMap(j=>['mao','baralho','campo','apoio','descarte','feiticos'].flatMap(z=>j[z].flatMap(c=>[c,...c.equip])));
 test('treino tem dez cartas únicas, cinco por lado e três campeões fracos na mão da IA',()=>{
  const t=new Treino(cartas),e=t.partida.estado;
  assert.equal(e.tamanhoBaralho,10);assert.equal(todas(e).length,10);assert.equal(new Set(todas(e).map(c=>c.uid)).size,10);

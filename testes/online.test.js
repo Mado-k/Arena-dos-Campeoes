@@ -122,7 +122,7 @@ test('partidas online completas mantêm cartas, limites e bloqueiam ações apó
         p.jogarComputador();
       }
       for (const [indice, j] of p.estado.jogadores.entries()) {
-        const todas = [...j.mao, ...j.baralho, ...j.campo, ...j.apoio, ...j.descarte];
+        const todas = [...j.mao, ...j.baralho, ...j.campo, ...j.apoio, ...j.descarte,...(j.feiticos||[])];
         const ids = todas.flatMap(c => [c.uid, ...c.equip.map(e => e.uid)]);
         assert.equal(ids.length, quantidades[indice]); assert.equal(new Set(ids).size, quantidades[indice]);
         assert(j.campo.length <= 1 && j.apoio.length <= 2);

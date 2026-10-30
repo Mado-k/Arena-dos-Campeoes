@@ -36,19 +36,18 @@ test('qualquer derrota em combate encerra Pandora, inclusive a criatura do invoc
  e.jogadores[0].campo[0].defesa=1;assert(M.atacar(e).ok);assert.equal(e.pandora,false);
  const defesa=e.jogadores[1].campo[0].defesa;assert(M.encerrarTurno(e).ok);assert.equal(e.jogadores[1].campo[0].defesa,defesa);
 });
-test('Pandora admite três usos, não acumula ativa e o contador sobrevive à restauração',()=>{
+test('Pandora admite três usos, permanece em campo ativa e só depois fica no descarte permanente',()=>{
  const {p,e,caixa}=preparar(),j=e.jogadores[0];
  for(let uso=1;uso<=3;uso++){
   e.acoes=2;assert(M.executarHabilidade(e,caixa.uid).ok);assert.equal(e.pandoraUsos,uso);
-  assert.equal(caixa.usos.n002,uso);
-  assert(M.descartePermanente(caixa)===(uso===3));
-  if(uso<3){
-   j.descarte.splice(j.descarte.indexOf(caixa),1);j.mao.push(caixa);
-   assert(M.executarHabilidade(e,caixa.uid).erro);assert.equal(e.acoes,1);
-   e.pandora=false; // representa uma derrota entre as reutilizações
-  }
+  assert.equal(caixa.usos.n002,uso);assert(j.feiticos.includes(caixa));assert(!j.descarte.includes(caixa));
+  assert(M.executarHabilidade(e,caixa.uid).erro);assert.equal(e.acoes,1);
+  // Uma besta é eliminada para terminar o efeito sem encerrar a partida por pontos.
+  j.campo[0].base={...j.campo[0].base,classe:'besta'};assert(M.eliminarCarta(e,j.campo[0].uid).ok);
+  assert.equal(e.pandora,false);assert.equal(j.feiticos.length,0);assert(j.descarte.includes(caixa));
+  if(uso<3){j.descarte.splice(j.descarte.indexOf(caixa),1);j.mao.push(caixa);const c=j.baralho.pop();c.base={...c.base,classe:'besta'};j.campo.push(c);}
  }
- const r=Partida.restaurar(p.salvar());assert(r.estado.pandora);assert.equal(r.estado.pandoraUsos,3);
+ const r=Partida.restaurar(p.salvar());assert.equal(r.estado.pandora,false);assert.equal(r.estado.pandoraUsos,3);
  assert(M.descartePermanente(r.estado.jogadores[0].descarte.find(c=>c.uid===caixa.uid)));
 });
 

@@ -106,10 +106,11 @@ test('009 dobra veneno e dano de fogo das próprias cartas, sem ampliar o oponen
 });
 test('009 dobra paralisia e dano de feitiço; recargas e uso único não dobram', () => {
   const {e,obter}=mesa();obter('n009',0,'apoio');const s=obter('n017',0,'mao'),b=obter('n012',1,'campo');
-  const antes=b.defesa;assert(M.executarHabilidade(e,s.uid).ok);assert.equal(b.st.paralisia,2);assert.equal(b.defesa,antes-6);
-  M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(b.st.paralisia,1);
+  const antes=b.defesa;assert(M.executarHabilidade(e,s.uid).ok);assert.equal(b.st.paralisia,6);assert.equal(b.defesa,antes-6);
+  M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(b.st.paralisia,4);
+  M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(b.st.paralisia,2);
   M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(b.st.paralisia,0);
-  const a=obter('n020',0,'campo');assert(M.executarHabilidade(e,a.uid).ok);assert.equal(a.rec,3);assert.equal(b.st.confusao,2);
+  const a=obter('n020',0,'campo');assert(M.executarHabilidade(e,a.uid).ok);assert.equal(a.rec,3);assert.equal(b.st.confusao,4);
 });
 test('009 dobra defesa concedida ao equipar e remoção retira o bônus realmente aplicado', () => {
   const {e,obter}=mesa();obter('n009',0,'apoio');const a=obter('n013',0,'campo'),item=obter('n026',0,'mao');
@@ -119,7 +120,7 @@ test('009 dobra defesa concedida ao equipar e remoção retira o bônus realment
 });
 test('009 dobra o bônus e a duração do Dino e a recuperação do D007', () => {
   const {e,obter}=mesa();obter('n009',0,'apoio');const a=obter('n013',0,'campo'),dino=obter('n022',0,'mao');
-  assert(M.colocarApoio(e,dino.uid).ok);assert.equal(dino.st.dino,6);assert.equal(M.ataqueTotal(a,null,e),7);assert.equal(dino.st.danoDino,8);
+  assert(M.colocarApoio(e,dino.uid).ok);assert.equal(dino.st.dino,12);assert.equal(M.ataqueTotal(a,null,e),7);assert.equal(dino.st.danoDino,8);
   e.jogadores[0].rep=cartas.find(c=>c.codigo==='D007');a.defesa=5;
   M.encerrarTurno(e);M.encerrarTurno(e);assert.equal(a.defesa,7);
 });
@@ -164,12 +165,12 @@ test('008 captura Normais já em campo e devolve anexos dos outros universos ao 
   const {e,obter}=mesa(),[a,b]=e.jogadores;
   const c=obter('n013',1,'campo'),arma=obter('n006',1,'mao'),item=obter('n026',1,'mao'),aux=obter('n022',1,'apoio');
   c.equip=[arma,item];b.mao=b.mao.filter(x=>x!==arma&&x!==item);aux.vinculo=c.uid;
-  const f=obter('n008',0,'mao'),secreto=b.mao[0],defeitos=b.derrotados;
+  const f=obter('n008',0,'mao'),secreto=obter('n035',1,'mao'),defeitos=b.derrotados;
   if(!a.campo.length)obter('n023',0,'campo');
   assert(M.colocarApoio(e,f.uid).ok);assert(a.mao.includes(c));assert.equal(b.campo.length,0);assert.equal(b.apoio.length,0);
   for(const anexo of [arma,item,aux]) assert(b.mao.includes(anexo));
   assert(b.mao.includes(secreto));assert.equal(b.derrotados,defeitos);assert.equal(c.defesa,c.base.defesa);assert.equal(c.equip.length,0);
-  const todas=e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]));
+  const todas=e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]));
   assert.equal(todas.length,40);assert.equal(new Set(todas.map(c=>c.uid)).size,40);
 });
 test('008 captura futuras criaturas e equipamentos Normais sem gastar ação adicional', () => {
@@ -211,7 +212,7 @@ test('009 duplica quantidade de cartas de 001, 005 e 006, sem duplicar instânci
     let r=codigo==='n001'?M.colocarApoio(e,fonte.uid):M.executarHabilidade(e,fonte.uid);
     for(let i=0;r.pergunta&&i<8;i++)r=M.executarHabilidade(e,fonte.uid,r.pergunta.opcoes[0].valor);
     assert(r.ok,codigo);for(const x of alvos)assert((codigo==='n006'?b.descarte:a.mao).includes(x),codigo);
-    const todas=[...(e.reservaCentral||[]),...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]))];
+    const todas=[...(e.reservaCentral||[]),...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]))];
     assert.equal(todas.length,40);assert.equal(new Set(todas.map(c=>c.uid)).size,40);
   }
 });
@@ -228,47 +229,48 @@ for (const modo of ['local','multiplayer','coop']) test(`Irineu mantém confusã
   const alvo=modo==='coop'?2:1;
   function mover(codigo,dono,zona){let c;for(const j of e.jogadores)for(const z of ['mao','baralho']){const k=j[z].findIndex(x=>x.base.codigo===codigo);if(k>=0)c=j[z].splice(k,1)[0];}assert(c,codigo);e.jogadores[dono][zona].push(c);return c;}
   const irineu=mover('n020',0,'campo'),criatura=mover('n015',alvo,'campo');
-  mover('n009',0,'apoio');const antes=criatura.defesa,dano=M.ataqueTotal(criatura,criatura.base,e);
+  mover('n009',0,'apoio');criatura.defesa=criatura.defesaMax=100;const antes=criatura.defesa,dano=M.ataqueTotal(criatura,criatura.base,e);
   assert(p.agir('a',{tipo:'habilidade',uid:irineu.uid,alvo,revisao:p.revisao}).ok);
   assert(p.visao('b').log.some(l=>/confundiu/.test(l)));assert.equal(p.estado.acoes,1);
-  for(let turno=1;turno<=2;turno++){
+  for(let turno=1;turno<=4;turno++){
     assert(p.agir('a',{tipo:'encerrar',revisao:p.revisao}).ok);
     const c=p.estado.jogadores[alvo].campo[0];assert.equal(c.defesa,antes-dano*turno);
-    assert.equal(c.st.confusao,3-turno,'efeito visível durante o turno atingido');
+    assert.equal(c.st.confusao,5-turno,'efeito visível durante o turno atingido');
     assert(p.visao('a').log.some(l=>/atacou a si mesma:.*DEF restante:/.test(l)));
     const restaurada=Partida.restaurar(p.salvar());assert.deepEqual(restaurada.visao('a'),p.visao('a'));
     do {assert(M.encerrarTurno(p.estado).ok);}while(p.estado.turno!==0);
-    assert.equal(Number(p.estado.jogadores[alvo].campo[0].st.confusao)||0,2-turno);
+    assert.equal(Number(p.estado.jogadores[alvo].campo[0].st.confusao)||0,4-turno);
   }
   assert(p.agir('a',{tipo:'encerrar',revisao:p.revisao}).ok);
-  assert.equal(p.estado.jogadores[alvo].campo[0].defesa,antes-dano*2,'não repete depois de expirar');
+  assert.equal(p.estado.jogadores[alvo].campo[0].defesa,antes-dano*4,'não repete depois de expirar');
 });
-test('Irineu sem Fuleco causa um autoataque, conserva recarga e pontua derrota por confusão',()=>{
+test('Irineu sem Fuleco pode pontuar no primeiro autoataque, conserva recarga e pontua derrota por confusão',()=>{
   const {e,obter}=mesa(),a=obter('n020',0,'campo'),b=obter('n035',1,'campo');b.defesa=4;e.jogadores[1].derrotados=2;
-  assert(M.executarHabilidade(e,a.uid).ok);assert.equal(a.rec,3);assert.equal(b.st.confusao,1);
+  assert(M.executarHabilidade(e,a.uid).ok);assert.equal(a.rec,3);assert.equal(b.st.confusao,2);
   assert(M.encerrarTurno(e).ok);assert.equal(e.vencedor,0);assert.equal(e.jogadores[1].derrotados,3);
   assert(e.eventosPublicos.some(x=>/atacou a si mesma: 4 de dano.*DEF restante: 0/.test(x.texto)));
 });
 test('Thor paralisa Game, bloqueia contra-ataque e publica a duração sem gastar ações recusadas',()=>{
   const {e,obter}=mesa(),a=obter('n020',0,'campo'),b=obter('n012',1,'campo'),thor=obter('n017',0,'mao');
-  const r=M.executarHabilidade(e,thor.uid);assert(r.ok);assert.match(r.registroHabilidade,/paralisada por 1/);
+  const r=M.executarHabilidade(e,thor.uid);assert(r.ok);assert.match(r.registroHabilidade,/paralisada por 3/);
   assert.equal(e.acoes,1);const defesa=a.defesa;const ataque=M.atacar(e);assert(ataque.ok);assert.equal(a.defesa,defesa);assert.match(ataque.registroCombate,/Contra-ataque: 0 de dano.*paralisada/);
-  assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,1);const antes=e.acoes;assert(M.atacar(e).erro);assert.equal(e.acoes,antes);
-  assert(M.comprarAcao(e).ok);assert.equal(e.acoes,antes-1);assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,0);
+  assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,3);const antes=e.acoes;assert(M.atacar(e).erro);assert.equal(e.acoes,antes);
+  assert(M.comprarAcao(e).ok);assert.equal(e.acoes,antes-1);assert.equal(b.st.paralisia,2);assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,1);
+  assert(M.encerrarTurno(e).ok);assert(M.comprarAcao(e).ok);assert.equal(b.st.paralisia,0);assert(M.atacar(e).ok);
 });
 test('Thor informa por que não paralisa outro universo e preserva a duração maior já aplicada',()=>{
   const {e,obter}=mesa(),thor=obter('n017',0,'mao'),b=obter('n015',1,'campo');
   const r=M.executarHabilidade(e,thor.uid);assert(r.ok);assert.equal(b.st.paralisia,undefined);assert.match(r.registroHabilidade,/não.*Game/);
   // Simula nova obtenção do feitiço antes de acabar uma paralisia mais longa.
-  e.jogadores[0].descarte=e.jogadores[0].descarte.filter(c=>c!==thor);e.jogadores[0].mao.push(thor);b.base.universo='game';b.st.paralisia=2;
-  assert(M.executarHabilidade(e,thor.uid).ok);assert.equal(b.st.paralisia,2);
+  e.jogadores[0].descarte=e.jogadores[0].descarte.filter(c=>c!==thor);e.jogadores[0].mao.push(thor);b.base.universo='game';b.st.paralisia=9;
+  assert(M.executarHabilidade(e,thor.uid).ok);assert.equal(b.st.paralisia,9);
 });
 test('Thor também bloqueia a habilidade ativa da criatura e permite as demais ações',()=>{
   const {e,obter}=mesa(),thor=obter('n017',0,'mao'),b=obter('n020',1,'campo');obter('n015',0,'campo');b.base.universo='game';
   assert(M.executarHabilidade(e,thor.uid).ok);assert(M.encerrarTurno(e).ok);
   assert.equal(M.estadoHabilidade(e,b.uid).disponivel,false);assert.match(M.estadoHabilidade(e,b.uid).motivo,/paralisada/);
   const antes=e.acoes;assert.match(M.executarHabilidade(e,b.uid).erro,/paralisada/);assert.equal(e.acoes,antes);
-  assert(M.encerrarTurno(e).ok);assert(M.encerrarTurno(e).ok);assert.equal(M.estadoHabilidade(e,b.uid).disponivel,true);
+  assert(M.encerrarTurno(e).ok);assert(M.encerrarTurno(e).ok);assert.equal(b.st.paralisia,1);assert(M.comprarAcao(e).ok);assert.equal(M.estadoHabilidade(e,b.uid).disponivel,true);
 });
 test('Irineu sem alvo não gasta ação nem entra em recarga',()=>{
   const {e,obter}=mesa(),a=obter('n020',0,'campo');e.jogadores[1].campo=[];

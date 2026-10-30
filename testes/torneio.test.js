@@ -3,7 +3,7 @@ const Partida=require('../partida'),M=require('../public/motor'),IA=require('../
 const cartas=Array.from({length:48},(_,i)=>({codigo:'arena'+i,nome:'Campeão '+i,classe:'campeão',ataque:10,defesa:1}));
 const pessoas=n=>Array.from({length:n},(_,i)=>({id:'p'+i,nome:'Pessoa '+i}));
 const criar=n=>new Partida(pessoas(n),cartas,'local',20);
-const todas=e=>[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]))];
+const todas=e=>[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]))];
 function campo(p,i,ataque=100){const j=p.estado.jogadores[i],c=j.campo[0]||j.mao.shift()||j.baralho.pop();j.campo=[c];c.defesa=c.defesaMax=1;c.ataqueBase=ataque;return c;}
 function derrubar(p,a,b){campo(p,a);campo(p,b,0);p.estado.turno=a;p.estado.acoes=2;p.estado.jogadores[b].derrotados=2;return p.agir('p'+a,{tipo:'atacar',alvo:b,revisao:p.revisao});}
 for(const n of [3,4])test(`mata-mata com ${n} pessoas: adversário fixo e folga quando necessário`,()=>{

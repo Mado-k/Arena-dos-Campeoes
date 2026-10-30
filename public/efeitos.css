@@ -79,3 +79,30 @@
 
 /* Sprites fora da câmera não podem alargar a página nem redimensionar o celular. */
 .efeitos-camada { position:fixed; inset:0; z-index:490; contain:layout paint; overflow:clip; pointer-events:none; }
+
+/* Quatro quadros nativos de 16×16 px por estado, sem suavização de bordas. */
+.sprite-estado-extra { display:inline-block; flex:none; width:16px; height:16px; background-image:url('assets/efeitos/estados-extra.svg'); background-size:400% 1200%; image-rendering:pixelated; animation:quadros-estado 1.4s steps(1,end) infinite; }
+@keyframes quadros-estado { 0%,100%{background-position:0 var(--linha-estado)}25%{background-position:33.333% var(--linha-estado)}50%{background-position:66.666% var(--linha-estado)}75%{background-position:100% var(--linha-estado)} }
+.sprite-paralisia { --linha-estado:0%; }.sprite-confusao { --linha-estado:9.090909%; }.sprite-zumbi { --linha-estado:18.181818%; }.sprite-peixe { --linha-estado:27.272727%; }.sprite-bolha { --linha-estado:36.363636%; }.sprite-canto { --linha-estado:45.454545%; }.sprite-copia { --linha-estado:54.545454%; }.sprite-escudo { --linha-estado:63.636364%; }.sprite-amplifica { --linha-estado:72.727273%; }.sprite-recarga { --linha-estado:81.818182%; }.sprite-dino-estado { --linha-estado:90.909091%; }.sprite-recusa { --linha-estado:100%; }
+.detalhe-online .sprite-estado-extra { width:26px; height:26px; }
+.carta-online .estados-pixel:has(.estado-pixel:nth-child(3)) .sprite-estado-extra { width:13px; height:13px; }
+.carta-online.paralisada { border-color:#f3d582; box-shadow:0 0 0 1px #ad843c; }
+.carta-online.paralisada .c-arte { background-color:#343126; }
+@media(prefers-reduced-motion:reduce) { .sprite-estado-extra { animation:none; background-position:0 var(--linha-estado); } }
+
+.vfx-glifo.sprite-estado-extra,.vfx-glifo.sprite-estado { width:100%; height:100%; }
+.carta-feitico-lancado { position:fixed; width:136px; height:212px; z-index:489; transform:translate(-50%,-50%); pointer-events:none; border:2px solid #e7c378; border-radius:10px; box-sizing:border-box; background:#22232e; color:#f5ead0; box-shadow:0 5px 18px #0008; }
+.feitico-frente { display:flex; flex-direction:column; gap:5px; height:100%; padding:9px; box-sizing:border-box; }
+.feitico-frente .c-arte { display:flex; justify-content:center; height:58px; flex:none; }
+.feitico-frente .c-arte svg,.feitico-frente .c-arte img { width:100%; height:100%; object-fit:contain; shape-rendering:crispEdges; }
+.feitico-frente strong { font:800 13px/1.2 var(--fonte); }
+.feitico-frente p { margin:0; font:11px/1.3 var(--fonte); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5; overflow:hidden; }
+.feitico-classe { font-size:10px; color:#e4c57e; text-transform:capitalize; }
+.feitico-costas { position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; }
+.feitico-frente[hidden],.feitico-costas[hidden] { display:none!important; }
+
+/* Colisão sobre o descarte: pose do Dino atingido e estrelas em pixel art. */
+.vfx-invocado[data-codigo="n022"][data-fase="cacto"] .sprite-dino { animation:none; background-position:-1024px -2px; }
+.vfx-cacto.cacto-impacto::after { content:""; position:absolute; left:-10px; top:-14px; width:5px; height:5px; background:#ffe49b; box-shadow:13px -9px #ffe49b,35px -3px #fff4ca,48px 11px #ffe49b; animation:cacto-estrelas .25s ease-out both; }
+@keyframes cacto-estrelas { from { opacity:1; transform:scale(.7); } to { opacity:0; transform:translateY(-10px) scale(1.4); } }
+@media(prefers-reduced-motion:reduce) { .vfx-cacto.cacto-impacto::after { animation:none; } }

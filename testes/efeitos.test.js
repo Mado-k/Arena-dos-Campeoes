@@ -20,12 +20,12 @@ for(const modo of ['local','multiplayer','coop'])test('Dino publica origem, alvo
 });
 test('Dino bloqueado não gera animação de dano; Dino sem alvo não sai da carta',()=>{
  for(const codigo of ['n037',null]){
-  const {e,mover}=preparar();mover('n020',0,'campo');if(codigo)mover(codigo,1,'campo');const dino=mover('n022',0,'mao');M.colocarApoio(e,dino.uid);M.encerrarTurno(e);
+  const {e,mover}=preparar();mover('n020',0,'campo');if(codigo)mover(codigo,1,'campo');const dino=mover('n022',0,'mao');M.colocarApoio(e,dino.uid);M.encerrarTurno(e);M.encerrarTurno(e);M.encerrarTurno(e);
   assert.equal(e.efeitosVisuais.filter(e=>e.tipo==='dino').length,0);assert.equal(e.efeitosVisuais.filter(e=>e.tipo==='bloqueio').length,codigo?1:0);
  }
 });
 test('Dino amplificado publica oito de dano sem duplicar a aplicação',()=>{
- const {e,mover}=preparar();mover('n020',0,'campo');const alvo=mover('n013',1,'campo');alvo.defesa=100;const f=mover('n009',0,'mao'),d=mover('n022',0,'mao');M.colocarApoio(e,f.uid);M.colocarApoio(e,d.uid);M.encerrarTurno(e);
+ const {e,mover}=preparar();mover('n020',0,'campo');const alvo=mover('n013',1,'campo');alvo.defesa=100;const f=mover('n009',0,'mao'),d=mover('n022',0,'mao');M.colocarApoio(e,f.uid);M.colocarApoio(e,d.uid);M.encerrarTurno(e);M.encerrarTurno(e);M.encerrarTurno(e);
  assert.equal(alvo.defesa,92);assert.equal(e.efeitosVisuais.filter(e=>e.tipo==='dino').length,1);assert.equal(e.efeitosVisuais.find(e=>e.tipo==='dino').dano,8);
 });
 test('busca de metálica não revela a carta obtida no canal visual',()=>{

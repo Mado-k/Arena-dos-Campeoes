@@ -28,9 +28,9 @@ t = mesa(); t.campo(t.A, 'n013'); let a = t.mao(t.A, 'n001'); t.deck(t.A, 'n011'
 ok(r.ok && t.A.descarte.includes(a) && t.A.mao.length === 0 && t.e.acoes === 1, 'n001 sem metálica vai ao descarte ao lançar');
 t = mesa(); t.campo(t.A, 'n013'); a = t.mao(t.A, 'n001'); const metalica = t.deck(t.A, 'n006'); r = M.colocarApoio(t.e, a.uid);
 ok(r.ok && t.A.mao.includes(metalica) && t.A.apoio.includes(a) && t.e.acoes === 1, 'n001 busca metálica automaticamente sem outra ação');
-// n002 Pandora: dano imediato e sem repetição nos turnos seguintes
+// n002 Pandora: permanece em efeito, com dano no início do turno de cada dono
 t = mesa(); let s = t.mao(t.A, 'n002'); let ca = t.campo(t.A, 'n013'); let cb = t.campo(t.B, 'n015');
-r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.e.pandoraUsos===1 && t.A.descarte.includes(s), 'n002');
+r = M.executarHabilidade(t.e, s.uid); ok(r.ok && t.e.pandoraUsos===1 && t.A.feiticos.includes(s), 'n002');
 M.encerrarTurno(t.e); eq(cb.defesa, 14 - 10, 'Pandora não repete dano no turno do B'); M.encerrarTurno(t.e); eq(ca.defesa, 3, 'Pandora também atinge a criatura do próprio jogador');
 // n005
 t = mesa(); s = t.mao(t.A, 'n005'); let z = { uid: 999, base: por('n028'), equip: [], st: {}, usos: {}, rec: 0, ataqueBase: 0, ataqueAjuste: 0, defesa: 0, defesaMax: 0 };
@@ -51,8 +51,8 @@ t = mesa(); ca = t.campo(t.A, 'n016'); cb = t.campo(t.B, 'n011'); r = M.executar
 M.encerrarTurno(t.e); eq(cb.defesa, 16, 'veneno tira 2');
 // n017 thor
 t = mesa(); s = t.mao(t.A, 'n017'); cb = t.campo(t.B, 'n012'); r = M.executarHabilidade(t.e, s.uid);
-ok(r.ok && cb.st.paralisia === 1 && cb.defesa === 19 - 3, 'n017 game paralisa');
-M.encerrarTurno(t.e); t.e.acoes = 2; t.campo(t.A, 'n013'); r = M.atacar(t.e); ok(r.erro, 'paralisada não ataca'); M.encerrarTurno(t.e); ok(cb.st.paralisia === 0, 'paralisia acaba');
+ok(r.ok && cb.st.paralisia === 3 && cb.defesa === 19 - 3, 'n017 game paralisa');
+M.encerrarTurno(t.e); t.e.acoes = 2; t.campo(t.A, 'n013'); r = M.atacar(t.e); ok(r.erro, 'paralisada não ataca'); M.encerrarTurno(t.e); ok(cb.st.paralisia === 1, 'sobra uma oportunidade de paralisia'); M.encerrarTurno(t.e);M.encerrarTurno(t.e);ok(cb.st.paralisia===0,'paralisia expira com oportunidades passadas');
 // n019 kitsune
 t = mesa(); ca = t.campo(t.A, 'n019'); ca.defesa = 3; r = M.executarHabilidade(t.e, ca.uid); ok(r.ok && t.A.mao.includes(ca) && ca.defesa === 18 && !t.A.campo.length, 'n019');
 t.e.acoes = 2; M.invocar(t.e, ca.uid); r = M.executarHabilidade(t.e, ca.uid); ok(r.erro, 'n019 só uma vez');
@@ -63,7 +63,7 @@ t.e.acoes = 2; M.encerrarTurno(t.e); r = M.executarHabilidade(t.e, ca.uid); ok(r
 // n022 dino
 t = mesa(); a = t.mao(t.A, 'n022'); ca = t.campo(t.A, 'n013'); cb = t.campo(t.B, 'n010'); M.colocarApoio(t.e, a.uid);
 eq(M.ataqueTotal(ca, cb.base, t.e), 7, 'dino não altera o ataque básico'); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); M.encerrarTurno(t.e); ok(t.A.apoio.length === 1, 'dino ainda');
-M.encerrarTurno(t.e); M.encerrarTurno(t.e); ok(t.A.apoio.length === 0 && t.A.descarte.includes(a), 'dino morre no cacto');
+for(let i=0;i<8;i++)M.encerrarTurno(t.e); ok(t.A.apoio.length === 0 && t.A.descarte.includes(a), 'dino morre no cacto');
 // n023 fenrir
 t = mesa(); ca = t.campo(t.A, 'n023'); ca.defesa = 1; cb = t.campo(t.B, 'n013'); t.e.turno = 1; M.atacar(t.e);
 eq(t.A.bonusCampeao, 100, 'fenrir herança'); t.e.turno = 0; t.e.acoes = 2; const camp = t.mao(t.A, 'n011'); M.invocar(t.e, camp.uid); eq(camp.defesa, 118, 'fenrir +100');

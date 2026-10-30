@@ -684,3 +684,75 @@ Validação 2.970: 311 testes, 51 verificações de habilidades e 600 partidas
 aleatórias. Chromium confirmou as 20 etapas do tutorial em desktop/celular,
 12 cenas com ações reais por formato de tela, os 46 modelos e as proteções de
 câmera manual, pausa, saída, reconexão e segundo plano.
+
+
+### Estados e cartas persistentes (3.970 — Gigante)
+
+Alterações solicitadas por Luciano. A autorização posterior inclui commit e push
+deste conjunto junto aos ajustes do Dino na versão 3.990.
+
+Thor Circuito mantém a condição de atingir universo Game e passa a paralisar por
+três oportunidades de ação do dono: duas no primeiro turno e a primeira do
+seguinte. Suspende ataques, contra-ataques, habilidades da criatura e dos apoios
+vinculados; não impede comprar, equipar, lançar cartas da mão ou eliminar a própria
+criatura. Ações recusadas não consomem tempo. Encerrar um turno faz as oportunidades
+não utilizadas passarem. Fuleco amplia para seis oportunidades; o efeito fica na
+criatura, sem paralisar globalmente o invocador. `st.paralisia` agora conta ações,
+com migração de salvamentos antigos em `Partida.restaurar`.
+
+Irineu provoca autoataque em dois turnos próprios do alvo (quatro com Fuleco),
+preservando recarga de três. Benito recusa qualquer auxiliar/equipamento vinculado,
+sem imunidade geral: novos anexos são recusados sem custo; se a passiva passar a
+valer por cópia, os anexos existentes vão ao descarte.
+
+Pandora permanece na zona pública `j.feiticos`, à esquerda do tabuleiro e no centro
+vertical, enquanto o efeito estiver ativo. O dano continua no início do turno do
+dono de cada criatura, até uma delas morrer. Os projéteis visuais partem da carta
+persistente. Ao terminar, ela é descartada depois da criatura e dos anexos;
+continua limitada a três usos, com descarte permanente depois do terceiro.
+Não integra a reciclagem enquanto ativa. As visões, o salvamento/restauração e as
+verificações de conservação incluem a nova zona, sem duplicar instâncias.
+
+Eventos públicos de lançamento revelam apenas o feitiço efetivamente usado. Ele
+sai da mão para o centro, revela sua face e libera o efeito; a câmera acompanha
+e restaura a visualização anterior, respeitando navegação manual. O descarte ou
+o movimento para a zona persistente parte do centro. As outras cartas da mão
+adversária continuam ocultas. Os dois descartes exibem sua carta do topo.
+
+O atlas original `estados-extra.svg` contém doze estados com quatro quadros de
+16×16 px: paralisia, confusão, zumbi, peixe, bolha, canto/anulação, cópia, escudo,
+amplificação, recarga, Dino e recusa. O gerador é `scripts/gerar-estados.js`.
+Os modelos aprovados de Toxic Kappa e Toxic Ran não foram alterados.
+
+A métrica de desenvolvimento definida nesta etapa classifica incrementos de até
+0.009 como pequenos, de 0.01 a 0.09 como médios, de 0.1 a 0.9 como grandes e de
+pelo menos 1 como gigantes. Este rascunho passa de 2.970 para 3.970 e é gigante.
+O changelog só exibe a versão, o nível e as novidades; não contém a fórmula.
+Os níveis também foram aplicados ao histórico usando os incrementos entre versões.
+
+Validação 3.970: 331 testes, 52 verificações de habilidades e 600 partidas
+aleatórias. Chromium conferiu os lançamentos/estados em desktop e celular,
+Pandora no co-op/2v2/mata-mata, pausa/saída/reconexão/segundo plano, movimento
+reduzido e as vinte etapas da Partida TUTORIAL nos dois formatos de tela.
+
+
+### Dino e encerramento de turno (3.990 — Média)
+
+O Dino executa três ataques, no fim do 2º, 4º e 6º turnos do dono. Turnos de outros
+participantes não avançam o prazo. Fuleco amplia para 8 de dano e seis execuções
+em doze turnos próprios, mantendo o intervalo de dois. Anulação, proteção ou
+falta de alvo consomem a execução; a morte da criatura vinculada o descarta antes.
+No último ataque, o Dino corre até o cacto sobre o descarte do próprio dono,
+colide e desaparece antes do voo da carta para a pilha. O mesmo encerramento
+visual ocorre ao esgotar o prazo sem alvo. A câmera acompanha e respeita navegação
+manual. O controlador migra uma única vez os prazos dos salvamentos antigos.
+
+O botão Encerrar turno fica abaixo da pilha de compra da própria pessoa em todos
+os modos e nas duas visões. O aviso de ações esgotadas mantém seu atalho, e as
+setas da Partida TUTORIAL usam a posição nova.
+
+Validação 3.990: 333 testes, 52 verificações de habilidades e 600 partidas
+aleatórias. Chromium confirmou a posição da compra/encerramento, o cacto sobre
+o descarte do dono, a colisão antes do voo da carta, os ataques nos turnos 2/4/6
+e o fim sem alvo no desktop e celular, incluindo multiplayer, Local 2v2 e co-op.
+As vinte etapas da Partida TUTORIAL passaram nas duas telas.

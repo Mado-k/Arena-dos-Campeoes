@@ -5,9 +5,9 @@ const Partida = require('../partida');
 const catalogo = Array.from({length:40},(_,i)=>({codigo:'impasse'+i,nome:'Besta '+i,classe:'besta',ataque:1,defesa:2}));
 function descartarTudo(e) {
   for(const j of e.jogadores) {
-    const cartas = [...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]);
+    const cartas = [...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]);
     for(const c of cartas) c.equip=[];
-    j.mao=[];j.baralho=[];j.campo=[];j.apoio=[];j.descarte=cartas;
+    j.mao=[];j.baralho=[];j.campo=[];j.apoio=[];j.feiticos=[];j.descarte=cartas;
   }
 }
 function mesa(total=40,redistribuicoes=4) {
@@ -15,7 +15,7 @@ function mesa(total=40,redistribuicoes=4) {
   descartarTudo(e);e.redistribuicoes=redistribuicoes;return e;
 }
 function conferirCartas(e) {
-  const cartas=[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte].flatMap(c=>[c,...c.equip]))];
+  const cartas=[...e.reservaCentral,...e.jogadores.flatMap(j=>[...j.mao,...j.baralho,...j.campo,...j.apoio,...j.descarte,...(j.feiticos||[])].flatMap(c=>[c,...c.equip]))];
   assert.equal(cartas.length,e.tamanhoBaralho);assert.equal(new Set(cartas.map(c=>c.uid)).size,e.tamanhoBaralho);
 }
 for(const total of [20,30,40]) for(const ciclos of [4,5]) test(`${total} cartas descartadas após ${ciclos} redistribuições: empate antes de embaralhar novamente`,()=>{
@@ -81,7 +81,8 @@ test('co-op conserva a reciclagem individual e não adota esse critério de empa
 test('usar a última carta da mão encerra por impasse assim que ela chega ao descarte',()=>{
   const p=new Partida([{id:'a',nome:'A'},{id:'b',nome:'B'}],catalogo),e=p.estado;
   e.turno=0;descartarTudo(e);e.redistribuicoes=4;
-  const c=e.jogadores[0].descarte.pop();c.base={...c.base,codigo:'n002',classe:'feitiço',ataque:0,defesa:0};e.jogadores[0].mao.push(c);
+  const c=e.jogadores[0].descarte.pop();c.base={...c.base,codigo:'n030',classe:'feitiço',ataque:5,defesa:0};e.jogadores[0].mao.push(c);
+  const alvo=e.jogadores[1].descarte.pop();alvo.defesa=1;e.jogadores[1].campo.push(alvo);
   assert(p.agir('a',{tipo:'habilidade',uid:c.uid,revisao:0}).ok);
   assert.equal(p.estado.vencedor,-1);assert.equal(p.estado.redistribuicoes,4);assert.equal(p.estado.acoes,1);conferirCartas(p.estado);
   for(const id of p.ids)assert.equal(p.visao(id).motivoEmpate,p.estado.motivoEmpate);

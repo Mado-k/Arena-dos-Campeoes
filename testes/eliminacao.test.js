@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const M=require('../public/motor'),Partida=require('../partida'),ctx={window:{}};
 vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../public/cartas-offline.js'),'utf8'),ctx);
 const cartas=JSON.parse(JSON.stringify(ctx.window.CARTAS_OFFLINE));
-const todas=e=>e.jogadores.flatMap(j=>['mao','baralho','campo','apoio','descarte'].flatMap(z=>j[z].flatMap(c=>[c,...c.equip]))).concat(e.reservaCentral);
+const todas=e=>e.jogadores.flatMap(j=>['mao','baralho','campo','apoio','descarte','feiticos'].flatMap(z=>j[z].flatMap(c=>[c,...c.equip]))).concat(e.reservaCentral);
 function mesa(modo='multiplayer',quantidade=2){
  const pool=quantidade===3?cartas.concat([0,1].map(i=>({codigo:'extra'+i,nome:'Item extra '+i,classe:'item',ataque:0,defesa:0}))):cartas;
  const p=new Partida(Array.from({length:quantidade},(_,i)=>({id:'p'+i,nome:'Pessoa '+i})),pool,modo,40);p.estado.turno=0;

@@ -48,7 +48,7 @@
         if(p.tipo.startsWith('visao-'))return document.querySelector('.alternar-tabuleiro');
         if(p.tipo==='comprar')return document.querySelector('.lado-ativo .pilha-comprar');
         if(p.tipo==='descarte')return document.querySelector('.lado-ativo .pilha-ver-descarte');
-        if(p.tipo==='encerrar')return document.querySelector('.aviso-acoes[open] .acao-encerrar')||document.querySelector('.barra .acao-encerrar');
+        if(p.tipo==='encerrar')return document.querySelector('.aviso-acoes[open] .acao-encerrar')||document.querySelector('.lado-ativo .pilha-compra .acao-encerrar');
         const j=treino.partida.estado.jogadores[0],c=[...j.mao,...j.campo].find(c=>c.base.codigo===p.codigo);
         if(!c)return null;
         const carta=document.querySelector(`.lado-ativo .carta-online[data-carta="${c.uid}"]`);

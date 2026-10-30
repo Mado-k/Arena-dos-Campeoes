@@ -137,7 +137,25 @@ class Partida {
     const p=Object.create(Partida.prototype);
     Object.assign(p,structuredClone(dados));
     p.dificuldade=p.dificuldade||'normal';
-    if(p.estado.pandoraVersao!==2){p.estado.pandoraUsos=p.estado.pandoraUsada?1:0;p.estado.pandora=false;delete p.estado.danoPandora;}
+    if(![2,3].includes(p.estado.pandoraVersao)){p.estado.pandoraUsos=p.estado.pandoraUsada?1:0;p.estado.pandora=false;delete p.estado.danoPandora;}
+    for(const j of p.estado.jogadores)j.feiticos??=[];
+    if(p.estado.pandora&&!p.estado.jogadores.some(j=>j.feiticos.some(c=>c.base.codigo==='n002'))){
+      for(const j of p.estado.jogadores)for(const zona of ['descarte','mao','baralho']){
+        const i=j[zona].findIndex(c=>c.base.codigo==='n002'&&(c.usos.n002||0)>0);
+        if(i>=0){j.feiticos.push(j[zona].splice(i,1)[0]);break;}
+      }
+    }
+    p.estado.pandoraVersao=3;
+    if(p.estado.dinoVersao!==2){
+      for(const j of p.estado.jogadores)for(const zona of ['mao','baralho','campo','apoio','descarte','feiticos'])for(const c of j[zona]||[])if(c.st.dino>0)c.st.dino*=2;
+      p.estado.dinoVersao=2;
+    }
+    if(p.estado.paralisiaVersao!==2){
+      for(const j of p.estado.jogadores)for(const zona of ['mao','baralho','campo','apoio','descarte','feiticos'])for(const c of j[zona]||[]){
+        for(const carta of [c,...c.equip])if(carta.st.paralisia>0)carta.st.paralisia*=j.acoesPorTurno||Motor.REGRAS.acoesPorTurno;
+      }
+      p.estado.paralisiaVersao=2;
+    }
     return p;
   }
 
@@ -159,7 +177,7 @@ class Partida {
         nome: j.nome, bonusCampeao: j.bonusCampeao || 0, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,
         maoTotal: j.mao.length, baralhoTotal: j.baralho.length,
         mao: i === voce ? j.mao.map(carta) : [],
-        campo: j.campo.map(carta), apoio: j.apoio.map(carta), descarte: j.descarte.map(carta)
+        campo: j.campo.map(carta), apoio: j.apoio.map(carta), descarte: j.descarte.map(carta), feiticos:(j.feiticos||[]).map(carta)
       }))
     };
   }

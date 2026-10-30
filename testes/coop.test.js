@@ -4,7 +4,7 @@ const Partida = require('../partida');
 const Motor = require('../public/motor');
 const cartas = Array.from({ length: 48 }, (_, i) => ({ codigo: 'teste' + i, nome: 'Carta ' + i, classe: 'campeão', ataque: 3, defesa: 20 }));
 const criar = (quantidade, total = 40) => new Partida(Array.from({ length: quantidade }, (_, i) => ({ id: 'p' + i, nome: 'Pessoa ' + i })), cartas, 'coop', total);
-const todas = j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte].flatMap(c => [c, ...c.equip]);
+const todas = j => [...j.baralho, ...j.mao, ...j.campo, ...j.apoio, ...j.descarte,...(j.feiticos||[])].flatMap(c => [c, ...c.equip]);
 function emCampo(p, i, { ataque = 3, defesa = 20, codigo } = {}) {
   const j = p.estado.jogadores[i], c = j.mao.shift();
   c.ataqueBase = ataque; c.defesa = c.defesaMax = defesa;

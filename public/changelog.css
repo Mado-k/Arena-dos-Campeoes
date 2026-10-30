@@ -28,3 +28,9 @@
 @media (prefers-reduced-motion: reduce) { .versao-icone { transition: none; } }
 
 .versao-atual { margin-top:18px; color:var(--ouro-claro); font-weight:700; }
+
+.versao-nivel { grid-column:1; width:max-content; padding:3px 9px; font:800 .7rem/1.4 var(--fonte); border:1px solid #8c94a4; border-radius:6px; color:#d4dae7; background:#2b303d; }
+.nivel-gigante { color:#f5d7ff; background:#412951; border-color:#b994cf; }
+.nivel-grande { color:#ffe7b1; background:#473820; border-color:#b99b5c; }
+.nivel-media { color:#c8e8fa; background:#263d4c; border-color:#7da7bf; }
+.nivel-pequena { color:#d0e6d1; background:#283c30; border-color:#82a38a; }
