@@ -369,9 +369,10 @@ a { color: inherit; }
     color: var(--suave);
     font-size: 0.85rem;
 }
-.rodape p { margin: 0; }
+.rodape p { margin: 0; flex:1 1 180px; }
 .rodape a { color: var(--suave); }
 .rodape a:hover { color: var(--ouro-claro); }
+.rodape .versao-rodape { margin-left:auto; align-self:center; color:var(--ouro-claro); white-space:nowrap; font-weight:600; }
 
 /* ============ Detalhe da carta ============ */
 dialog {

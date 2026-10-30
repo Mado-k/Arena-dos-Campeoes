@@ -331,9 +331,7 @@ Em cada atualização publicada, adicione uma entrada no início do histórico, 
 códigos de commit e com descrições voltadas aos jogadores. Inclua no título um
 comentário curto sobre o tema, visível mesmo quando a versão estiver recolhida,
 como “Versão 1.0: Modos de jogo e revisão das cartas”. A versão 1.2 introduz esses
-resumos. Avance a versão pública
-em **0.1** para uma atualização pequena, **0.5** para média ou **1.0** para grande,
-sempre a partir da última versão publicada (por exemplo, 1.1 → 1.6 para uma média).
+resumos. Todas as versões do projeto estão em fase BETA.
 A numeração pública do histórico é independente da versão técnica do pacote npm.
 
 ## Tutorial
@@ -358,10 +356,10 @@ Movimento reduzido desativa os voos; limpar a mesa cancela animações pendentes
 
 ## Ajustes da mesa e IA (versão 2.1)
 
-Esta revisão usa o incremento de 0.2 solicitado por Luciano. O lado adversário
-espelha mão, pilhas, apoio e batalha, com a descrição acima da imagem nas cartas.
+O lado adversário espelha mão, pilhas, apoio e batalha, com a descrição acima da
+imagem nas cartas.
 Compra, versos e cartas da mão compartilham dimensões por tamanho de tela.
-Desde a versão 2.25 (+0.05), as cartas das pilhas de compra e descarte usam 85%
+Desde a versão 2.25, as cartas das pilhas de compra e descarte usam 85%
 da largura e altura das cartas da mão, em ambos os lados. A mão mantém seu tamanho.
 Auxiliares exigem um campeão ou besta em batalha, validado pelo motor e pela interface.
 
@@ -411,10 +409,8 @@ apagar cartas, sessões ou o banco para aplicar a correção do tratamento desse
 
 ## Versões do jogo
 
-A partir da versão 2.405, o changelog usa incrementos de 0.005 por recurso
-identificado na atualização. A versão 2.405 reúne onze recursos (+0.055 sobre a
-2.35), incluindo as correções de salas e distribuição que estavam em rascunho.
-O changelog descreve o comportamento para os jogadores, sem códigos de commit.
+Todas as versões são identificadas como BETA. O histórico apresenta as mudanças
+e a data registrada para cada lançamento, com descrições voltadas aos jogadores.
 
 ### Campos ativos na arena
 
@@ -462,7 +458,7 @@ pilhas e espaços do campo acompanham o aumento, e os assentos reservam mais esp
 para evitar sobreposição. O foco no duelo preserva as dimensões anteriores.
 O botão que alterna as visualizações tem tamanho e destaque maiores, incluindo
 largura completa no celular. O changelog mostra a versão atual e as descrições
-das mudanças, sem contagem de recursos ou avisos do valor de incremento.
+das mudanças.
 
 ### Leitura da mesa e Grávida dos Robôs (2.495)
 
@@ -621,7 +617,7 @@ A preferência por movimento reduzido mantém setas estáticas. A partida contin
 com dez cartas, 18 etapas e o mesmo roteiro de regras.
 
 
-### Habilidades em pixel art (2.720 — grande atualização)
+### Habilidades em pixel art (2.720 — BETA)
 
 O Dino do Google é invocado por uma abertura na própria carta, corre, salta sobre
 seu alvo e volta à carta. O dano permanece o definido no motor (incluindo Fuleco,
@@ -686,7 +682,7 @@ aleatórias. Chromium confirmou as 20 etapas do tutorial em desktop/celular,
 câmera manual, pausa, saída, reconexão e segundo plano.
 
 
-### Estados e cartas persistentes (3.970 — Gigante)
+### Estados e cartas persistentes (3.970 — BETA)
 
 Alterações solicitadas por Luciano. A autorização posterior inclui commit e push
 deste conjunto junto aos ajustes do Dino na versão 3.990.
@@ -724,19 +720,13 @@ O atlas original `estados-extra.svg` contém doze estados com quatro quadros de
 amplificação, recarga, Dino e recusa. O gerador é `scripts/gerar-estados.js`.
 Os modelos aprovados de Toxic Kappa e Toxic Ran não foram alterados.
 
-A métrica de desenvolvimento definida nesta etapa classifica incrementos de até
-0.009 como pequenos, de 0.01 a 0.09 como médios, de 0.1 a 0.9 como grandes e de
-pelo menos 1 como gigantes. Este rascunho passa de 2.970 para 3.970 e é gigante.
-O changelog só exibe a versão, o nível e as novidades; não contém a fórmula.
-Os níveis também foram aplicados ao histórico usando os incrementos entre versões.
-
 Validação 3.970: 331 testes, 52 verificações de habilidades e 600 partidas
 aleatórias. Chromium conferiu os lançamentos/estados em desktop e celular,
 Pandora no co-op/2v2/mata-mata, pausa/saída/reconexão/segundo plano, movimento
 reduzido e as vinte etapas da Partida TUTORIAL nos dois formatos de tela.
 
 
-### Dino e encerramento de turno (3.990 — Média)
+### Dino e encerramento de turno (3.990 — BETA)
 
 O Dino executa três ataques, no fim do 2º, 4º e 6º turnos do dono. Turnos de outros
 participantes não avançam o prazo. Fuleco amplia para 8 de dano e seis execuções
@@ -814,14 +804,21 @@ pilhas, dois toques, escolhas, confirmações, respostas atrasadas, encerramento
 dentro do modal, rolagem e limpeza dos avisos. A página real do tutorial também
 foi conferida nos dois tamanhos de tela.
 
-### Câmera mais rápida (4.020)
+### Câmera sincronizada às ações (BETA 4.020)
 
-O acompanhamento tem limite de 900 pixels por segundo em cada eixo, com resposta
-rápida e aceleração amortecida. O retorno à vista anterior dura 500 ms.
-O orçamento de até cinco
-segundos por ação e o intervalo da IA continuam atendidos, assim como as
-proteções de navegação manual, pausa e movimento reduzido.
+A câmera usa os prazos da própria animação para enquadrar a origem, o impacto e
+o retorno, antecipando o alvo antes de o efeito acontecer. A distância define
+a velocidade necessária em cada trecho. Feitiços são enquadrados antes de sua
+revelação, e o Dino chega ao descarte com o cacto visível antes da colisão.
+O retorno à vista anterior mantém 500 ms. Navegação manual, pausa e movimento
+reduzido conservam suas proteções, sem acrescentar espera às ações.
 
-Validação 4.020: 57 testes pertinentes aprovados. Chromium confirmou o aumento
-de velocidade em desktop e celular, o retorno à posição original e as proteções
-de navegação manual, pausa e movimento reduzido.
+O changelog identifica todas as versões como BETA e apresenta as datas dos
+primeiros registros no histórico Git. Os rodapés das páginas mostram BETA 4.020
+à direita. A revisão permanece incluída na BETA 4.020.
+
+Validação: 352 testes, 52 verificações de habilidades e 600 partidas aleatórias.
+Chromium conferiu impacto, revelação de feitiços e colisão do Dino em desktop e
+celular, incluindo a área ocupada pelo guia do tutorial. Retorno, pausa,
+navegação manual e movimento reduzido foram preservados. Também foram conferidos
+os 34 registros BETA com datas e a versão nos sete rodapés.

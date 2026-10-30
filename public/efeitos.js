@@ -52,8 +52,7 @@
         return cenas.map((c,i)=>({...c,duracao:minimo+extra*pesos[i]/soma}));
     }
     function criar(mesa,{capturarVista=()=>null,restaurarVista=()=>{}}={}){
-        let geracao=0,camera=false,rodando=false,ultimoQuadro=0;
-        const velocidade={x:0,y:0,pagina:0};
+        let geracao=0,camera=false,rodando=false;
         const nos=new Set(),tarefas=new Set(),revelados=new Set(),estagios=new Map();
         let origensFinais=new Map();
         const camada=document.createElement('div');camada.className='efeitos-camada';document.body.append(camada);
@@ -77,21 +76,26 @@
         function posicionar(n,p){n.style.left=p.x+'px';n.style.top=p.y+'px';}
         function mundo(n,j){const p=ponto(n),r=j.getBoundingClientRect();return{x:p.x-r.left+j.scrollLeft,y:p.y-r.top+j.scrollTop};}
         function tela(p,j){const r=j.getBoundingClientRect();return{x:r.left+p.x-j.scrollLeft,y:r.top+p.y-j.scrollTop};}
-        function deslizar(erro,eixo,dt){
-            // Amortece também a velocidade: mudanças de alvo não dão arrancadas.
-            const desejada=Math.max(-.9,Math.min(.9,erro/260));
-            velocidade[eixo]+=(desejada-velocidade[eixo])*(1-Math.exp(-dt/130));
-            return velocidade[eixo]*dt;
-        }
         const desvio=(p,centro,margem)=>Math.sign(p-centro)*Math.max(0,Math.abs(p-centro)-margem);
-        function seguir(p,j,agora){
-            if(!camera)return;const dt=ultimoQuadro?Math.min(40,agora-ultimoQuadro):16;ultimoQuadro=agora;const r=j.getBoundingClientRect(),antesY=j.scrollTop;
-            // Uma faixa livre evita perseguir cada pixel e a altura dos saltos.
-            if(j.scrollWidth>j.clientWidth)j.scrollLeft+=deslizar(desvio(p.x-r.left,j.clientWidth/2,Math.min(48,j.clientWidth*.12)),'x',dt);
-            if(j.scrollHeight>j.clientHeight)j.scrollTop+=deslizar(desvio(p.y-r.top,j.clientHeight/2,Math.min(40,j.clientHeight*.12)),'y',dt);
-            // Desconta o movimento interno antes de mover a página inteira.
-            const y=p.y-(j.scrollTop-antesY);
-            window.scrollTo({left:scrollX,top:Math.max(0,scrollY+deslizar(desvio(y,innerHeight*.48,innerHeight*.12),'pagina',dt)),behavior:'instant'});
+        function prepararCamera(j,pontos,suavizar=true){
+            const r=j.getBoundingClientRect(),inicial={x:scrollX,y:scrollY,mx:j.scrollLeft,my:j.scrollTop};
+            const topoLivre=Math.min(innerHeight*.6,Math.max(0,parseFloat(getComputedStyle(document.body).getPropertyValue('--altura-guia'))||0)),alturaLivre=innerHeight-topoLivre;
+            const limitar=(n,max)=>Math.max(0,Math.min(n,Math.max(0,max)));
+            function enquadrar(p){
+                const mx=limitar(inicial.mx+desvio(p.x-inicial.mx,j.clientWidth/2,Math.min(48,j.clientWidth*.12)),j.scrollWidth-j.clientWidth);
+                const my=limitar(inicial.my+desvio(p.y-inicial.my,j.clientHeight/2,Math.min(40,j.clientHeight*.12)),j.scrollHeight-j.clientHeight);
+                const y=limitar(inicial.y+desvio(r.top+p.y-my,topoLivre+alturaLivre*.48,alturaLivre*.12),document.documentElement.scrollHeight-innerHeight);
+                return{x:inicial.x,y,mx,my};
+            }
+            const marcos=[{t:0,vista:inicial},...pontos.map(([t,p])=>({t,vista:enquadrar(p)}))];
+            // Cada trecho termina no prazo da própria cena, independentemente da distância.
+            return t=>{
+                if(!camera)return;
+                let i=1;while(i<marcos.length-1&&t>marcos[i].t)i++;
+                const a=marcos[i-1],b=marcos[i],progresso=Math.max(0,Math.min(1,(t-a.t)/(b.t-a.t))),v=suavizar?suave(progresso):progresso;
+                j.scrollTo({left:a.vista.mx+(b.vista.mx-a.vista.mx)*v,top:a.vista.my+(b.vista.my-a.vista.my)*v,behavior:'instant'});
+                window.scrollTo({left:inicial.x,top:a.vista.y+(b.vista.y-a.vista.y)*v,behavior:'instant'});
+            };
         }
         function simbolo(tipo){
             const n=document.createElement('span');n.className='vfx-glifo';
@@ -123,8 +127,9 @@
                 const rival=mundo(zona(op,'campo'),janela),b={x:(campo.x+rival.x)/2,y:(campo.y+rival.y)/2};
                 const elementos=cartaDeFeitico(e),estagio={...elementos,ponto:a,janela,dono:e.dono};estagios.set(String(e.origem),estagio);return{e,a,b,estagio};
             });
-            await quadro(800,(t,agora)=>{for(const {e,a,b,estagio}of lances){
-                estagio.ponto=trajeto(a,b,suave(t),24);const p=tela(estagio.ponto,janela);seguir(p,janela,agora);atualizarEstagios();
+            const moverCamera=lances.length?prepararCamera(janela,[.12,.25,.40,.55,.70,.85,1].map(t=>[t,trajeto(lances[0].a,lances[0].b,suave(t),24)]),false):()=>{};
+            await quadro(800,t=>{moverCamera(t);for(const {e,a,b,estagio}of lances){
+                estagio.ponto=trajeto(a,b,suave(t),24);atualizarEstagios();
                 const revelar=e.dono===antes.voce||t>=.55;estagio.frente.hidden=!revelar;estagio.costas.hidden=revelar;
                 estagio.no.style.rotate=(Math.sin(Math.PI*t)*4)+'deg';estagio.no.dataset.fase=t<1?'lancamento':'centro';
             }},token);
@@ -175,9 +180,18 @@
                 conjuntos.push({e,ator,pessoa,borda,recorte,a,b,perto,atacar,retorno,fimDino,deslocar,efeitos,extras,origem,tipo,finalDino,cactoEm,colisao,direcaoCacto});
             }
             const principal=conjuntos.find(c=>c.ator)||conjuntos[0];
+            let moverCamera=()=>{};
+            if(principal&&comCamera){
+                const c=principal,f=c.efeitos.find(f=>f.ev.alvoDono!==c.e.dono)||c.efeitos[0],alvo=mundo(f.alvo,janela);
+                const volta=c.finalDino?c.colisao:c.retorno||!c.ator?alvo:c.a;
+                const pontos=c.fimDino?[[.12,c.a],[.70,c.colisao],[1,c.colisao]]:
+                    [[.12,c.a],...(c.atacar?[[.34,c.perto]]:[]),[.48,alvo],[.67,alvo],[.84,volta],[1,volta]];
+                moverCamera=prepararCamera(janela,pontos);
+            }
             const anuncio=node('vfx-anuncio','');anuncio.removeAttribute('aria-hidden');anuncio.setAttribute('role','status');
             anuncio.textContent=principal?S.perfil(principal.e.codigo)?.nome||'Efeito da habilidade':'Efeito da habilidade';
-            await quadro(duracao,(t,agora)=>{
+            await quadro(duracao,t=>{
+                moverCamera(t);
                 for(const c of conjuntos){
                     const {e,ator,pessoa,a,b,perto,efeitos}=c;let atual=a,fase='surgindo';
                     if(t<.16){pessoa?.style.setProperty('--saida',(100*(1-suave(t/.16)))+'%');}
@@ -199,17 +213,10 @@
                         pessoa.classList.toggle('correndo',fase==='correndo'||fase==='voltando');pessoa.classList.toggle('executando',['executando','impacto'].includes(fase));
                         pessoa.style.setProperty('--direcao',c.finalDino&&t>=(c.fimDino?.16:.67)?c.direcaoCacto:t>.67&&c.deslocar!==false?a.x<b.x?-1:1:b.x<a.x?-1:1);
                         pessoa.style.setProperty('--progresso',t);ator.style.opacity=c.finalDino&&t>.94?String(Math.max(0,1-(t-.94)/.06)):'1';
-                        let p=tela(atual,janela);
-                        if(c===principal&&comCamera){
-                            const f=efeitos.find(f=>f.ev.alvoDono!==e.dono)||efeitos[0];
-                            const foco=!c.atacar&&!c.finalDino&&t>=.38&&t<.67?trajeto(tela(perto,janela),ponto(f.alvo),suave(Math.min(1,(t-.38)/.17))):p;
-                            seguir(foco,janela,agora);
-                        }
-                        p=tela(atual,janela);posicionar(ator,p);
+                        posicionar(ator,tela(atual,janela));
                     }
                     if(pessoa&&e.copiada&&t>=.38&&t<.67&&pessoa.dataset.copiada!==e.copiada){pessoa.innerHTML=S.desenhar(e.copiada);pessoa.dataset.copiada=e.copiada;}
                     else if(pessoa&&e.copiada&&t>=.67&&pessoa.dataset.copiada){pessoa.innerHTML=S.desenhar(e.codigo);delete pessoa.dataset.copiada;}
-                    if(!ator&&c===principal&&comCamera){const alvo=ponto(efeitos[0].alvo);const foco=e.tipo==='pandora'?(t<.38?tela(a,janela):t<.55?trajeto(tela(a,janela),alvo,suave((t-.38)/.17)):alvo):alvo;seguir(foco,janela,agora);}
                     for(const f of efeitos){
                         const p=ponto(f.alvo),desde=c.atacar?tela(perto,janela):e.zonaOrigem?ponto(zona(e.dono,e.zonaOrigem)):tela(perto,janela);
                         f.projetil.hidden=t<.38||t>.55||c.fimDino||c.atacar;
@@ -223,7 +230,7 @@
             },token);
             for(const c of conjuntos){remover(c.ator);for(const f of c.efeitos){remover(f.marca);remover(f.numero);remover(f.projetil);f.particulas.forEach(remover);}c.extras.forEach(remover);}remover(anuncio);
         }
-        function limpar(apagarOrigens=true){geracao++;camera=false;rodando=false;ultimoQuadro=0;velocidade.x=velocidade.y=velocidade.pagina=0;estagios.clear();if(apagarOrigens)origensFinais.clear();for(const t of [...tarefas])t.cancelar();for(const n of [...nos])remover(n);for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');}
+        function limpar(apagarOrigens=true){geracao++;camera=false;rodando=false;estagios.clear();if(apagarOrigens)origensFinais.clear();for(const t of [...tarefas])t.cancelar();for(const n of [...nos])remover(n);for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');}
         return{planejar,ocupado:()=>rodando,interromperCamera(){camera=false;},limpar,consumirOrigens(){const origem=origensFinais;origensFinais=new Map();return origem;},
             async executar(antes,depois){
                 const eventos=planejar(antes,depois);if(!eventos.length||document.hidden||reduzido())return;

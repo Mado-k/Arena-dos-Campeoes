@@ -126,7 +126,7 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [x] Versão 2.2: Dino executa dano passivo ao encerrar cada turno próprio e é
   descartado depois da terceira execução; não acrescenta ataque ao campeão.
 
-- [x] Versão 2.1 (+0.2): campo adversário completamente espelhado, descrição acima
+- [x] Versão 2.1: campo adversário completamente espelhado, descrição acima
   da imagem, pilhas do tamanho das cartas da mão, animações mais suaves e IA por
   passos com pausa. Auxiliares exigem campeão/besta em campo.
 
@@ -137,7 +137,7 @@ Após o próximo deploy, conferir as novidades desta revisão:
   links Como jogar atualizados e inicial sem o guia completo.
 
 - [x] Changelog público com versões recolhidas, animação de abertura/fechamento e
-  acesso pelos menus. Incrementos de 0.1, 0.5 ou 1.0 conforme o tamanho da atualização.
+  acesso pelos menus.
 
 - [x] Janela de vitória/derrota/empate no Local, multiplayer e co-op, com Ver tabuleiro,
   Voltar ao lobby e Jogar novamente. O resultado pode ser reaberto; sair após o fim não fecha
@@ -193,7 +193,6 @@ Após o próximo deploy, conferir as novidades desta revisão:
 - [x] Eliminados online podem assistir ou sair sem interromper a disputa dos classificados; mãos adversárias continuam privadas.
 - [x] Máquinas escolhem representante disponível ou nenhum em todos os formatos.
 - [x] Seletor 2v2 no lobby multiplayer e na configuração Local; quatro participantes obrigatórios, com primeira e terceira pessoas aliadas.
-- [x] Nova métrica de versão: 0.005 por recurso; o changelog identifica os onze recursos desta atualização (2.405).
 
 - [x] Botão Encerrar turno maior e destacado durante a vez, com brilho suave ao acabar as ações e respeito a movimento reduzido.
 
@@ -223,7 +222,7 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 - [x] Regras de turno, ações, auxiliares e equipamentos preservadas; cartas de oponentes e do campo continuam apenas selecionáveis pelo atalho.
 - [x] Cartas da mesa completa 25% maiores, descrições contidas e painel com texto completo; assentos ajustados para evitar sobreposição.
 - [x] Alternância entre foco e tabuleiro completo mais destacada e acessível no celular.
-- [x] Changelog mostra versão atual e mudanças, removendo contadores e avisos de incremento.
+- [x] Changelog mostra versão atual e mudanças, com descrições voltadas aos jogadores.
 
 ## Leitura da mesa e Grávida dos Robôs — 2.495
 
@@ -322,7 +321,7 @@ continuam reservadas para etapa futura.
 - [x] Orientação acompanha rolagem e tamanho da tela; movimento reduzido respeitado.
 
 
-## Efeitos em pixel art — 2.720 (grande atualização)
+## Efeitos em pixel art — 2.720 (BETA)
 
 - [x] Comprar carta/Ver descarte compactos, preservando a área de toque.
 - [x] Dino com abertura por recorte, corrida, salto, impacto, volta e entrada na carta.
@@ -358,7 +357,7 @@ continuam reservadas para etapa futura.
 - [x] Luciano aprovou os sprites e pediu uma câmera mais suave.
 
 
-## Estados e feitiços — 3.970 (Gigante, rascunho)
+## Estados e feitiços — 3.970 (BETA)
 
 **Autorização atualizada:** Luciano autorizou commit e push desta entrega junto à revisão 3.990.
 
@@ -375,7 +374,7 @@ continuam reservadas para etapa futura.
 - [x] Luciano autorizou commit e push ao concluir a revisão do Dino e do botão de encerrar turno.
 
 
-## Dino e controles — 3.990 (Média)
+## Dino e controles — 3.990 (BETA)
 
 - [x] Três ataques automáticos no 2º, 4º e 6º turnos do dono, sem avançar em turnos alheios.
 - [x] Fuleco mantém o intervalo e amplia dano/execuções para 8 de dano e seis ataques.
@@ -412,9 +411,11 @@ continuam reservadas para etapa futura.
 - [x] Dossiês continuam fora do GitHub e da pasta pública.
 - [x] Validação: 352 testes, 52 verificações de habilidades, 600 partidas aleatórias e conferência no Chromium dos quatro modos em desktop/celular, incluindo o tutorial real.
 
-## Câmera mais rápida — 4.020
+## Câmera e identificação das versões — BETA 4.020
 
-- [x] Acompanhamento de até 900 pixels por segundo por eixo, com resposta mais rápida e aceleração suave.
-- [x] Retorno à vista anterior de 500 ms.
-- [x] Mantidos o orçamento de cinco segundos por ação, o intervalo da IA e as proteções de navegação manual.
-- [x] 57 testes pertinentes aprovados e câmera conferida no Chromium em desktop/celular.
+- [x] Câmera sincronizada à duração da ação, com alvo enquadrado antes do impacto.
+- [x] Lançamentos de feitiços e chegada do Dino ao cacto acompanhados no tempo da animação.
+- [x] Histórico completo identificado como BETA, com datas recuperadas dos registros Git.
+- [x] Versão atual no rodapé das páginas, à direita.
+- [x] Revisão incorporada à BETA 4.020.
+- [x] 352 testes aprovados, 52 verificações de habilidades e 600 partidas aleatórias; câmera, datas, BETA e rodapés conferidos no Chromium em desktop/celular.
