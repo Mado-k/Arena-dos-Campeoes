@@ -1,20 +1,31 @@
 (function(){
     'use strict';
     const $=id=>document.getElementById(id),eventos=new Map();
-    let treino=null,timer,geracao=0,alvoPasso=null;
+    let treino=null,timer,timerAviso,geracao=0,alvoPasso=null;
     const setas=criarSetasTutorial({guia:document.querySelector('.guia-iniciante'),ajuda:$('mostrar-passo')});
-    const emitir=()=>{const v=treino.visao();for(const fn of eventos.get('partida:estado')||[])fn(v);atualizarGuia();};
+    function limparAviso(){clearTimeout(timerAviso);if($('treino-aviso').matches(':popover-open'))$('treino-aviso').hidePopover();}
+    function avisarEtapa(){
+        const e=treino?.partida.estado,p=treino?.etapa;if(!p||e.vencedor!==null)return;
+        const inicio=document.querySelector('.aviso-sua-vez[open]');
+        const aviso=$('treino-aviso'),titulo=document.createElement('strong'),texto=document.createElement('p');
+        titulo.textContent=e.turno===1?'Observe a máquina':`Siga a etapa ${p.numero} de ${p.total}`;
+        texto.textContent=e.turno===1?'Aguarde a máquina terminar. Depois, siga a próxima dica do guia.':inicio?'Confirme em OK para começar esta explicação.':p.texto;
+        aviso.replaceChildren(titulo,texto);
+        if(!aviso.matches(':popover-open'))aviso.showPopover();
+        clearTimeout(timerAviso);timerAviso=setTimeout(limparAviso,7000);destacar();
+    }
+    const emitir=()=>{limparAviso();const v=treino.visao();for(const fn of eventos.get('partida:estado')||[])fn(v);atualizarGuia();};
     const transporte={on(n,fn){if(!eventos.has(n))eventos.set(n,[]);eventos.get(n).push(fn);},timeout(){return this;},emit(n,d,cb){
         if(n==='partida:sincronizar'){emitir();return;}
         if(n==='partida:revanche'){iniciar();cb?.(null,{ok:true});return;}
         if(n!=='partida:acao'||!treino)return;
-        const res=treino.agir(d);if(res.ok){emitir();programarIA();}cb?.(null,res);
+        const res=treino.agir(d);if(res.ok){emitir();programarIA();}else if(res.erro)avisarEtapa();cb?.(null,res);
     }};
-    const mesa=criarMesaOnline(transporte,{aoSair:()=>location.assign('index.html#modos'),aoConfirmarInicio:()=>atualizarGuia(),confirmarInicioTurno:e=>e.numTurno===1,exibirResultadoPadrao:false,aoAbrirDescarte:dono=>{if(treino?.consultarDescarte(dono))atualizarGuia();}});
+    const mesa=criarMesaOnline(transporte,{aoSair:()=>location.assign('index.html#modos'),aoConfirmarInicio:()=>{limparAviso();atualizarGuia();},confirmarInicioTurno:e=>e.numTurno===1,exibirResultadoPadrao:false,aoAbrirDescarte:dono=>{if(treino?.consultarDescarte(dono)){limparAviso();atualizarGuia();}}});
     // Ritmo curto apenas nesta página, sem alterar partidas normais.
     RITMO_ARENA.avisoTurno=900;
     function iniciar(){
-        clearTimeout(timer);geracao++;setas.limpar();mesa.limpar();
+        clearTimeout(timer);limparAviso();geracao++;setas.limpar();mesa.limpar();
         try{treino=new TreinoIniciante(window.CARTAS_OFFLINE);$('iniciar-treino').hidden=true;emitir();}
         catch(e){$('treino-erro').hidden=false;$('treino-erro').textContent=e.message;}
     }
@@ -49,6 +60,35 @@
         const e=treino?.partida.estado,modal=document.querySelector('dialog[open]');
         setas.atualizar(alvoPasso,{chave:`${geracao}:${treino?.etapa?.numero||0}:${e?.numTurno||0}:${modal?.getAttribute('aria-label')||''}`,aguardando:Boolean(treino&&e.vencedor===null&&e.turno===0&&!modal)});
     }
+    // A seleção e a consulta do descarte não passam por agir(): protegê-las também.
+    const controlesDeJogo='.carta-online,.equip,.acoes-painel button,.hab-box button,.acao-compra,.pilha-comprar,.pilha-descarte button,.acao-encerrar,dialog button';
+    function interacaoPermitida(botao){
+        const e=treino.partida.estado,p=treino.etapa,modal=document.querySelector('dialog[open]');
+        if(e.turno!==0)return false;
+        if(modal){
+            if(botao===destino())return true;
+            return modal.getAttribute('aria-label')==='Confirmar eliminação'&&botao.closest('dialog')===modal&&botao.textContent==='Cancelar';
+        }
+        if(botao===destino())return true;
+        if(p.tipo==='comprar'&&botao.closest('.lado-ativo')&&botao.matches('.acao-compra,.pilha-comprar'))return true;
+        if(p.tipo==='descarte'&&botao.closest('.lado-ativo .pilha-descarte'))return true;
+        if(botao.matches('.carta-online')){
+            const zona=['atacar','eliminar'].includes(p.tipo)?'campo':'mao';
+            const c=e.jogadores[0][zona].find(c=>String(c.uid)===botao.dataset.carta);
+            return Boolean(p.codigo&&c?.base.codigo===p.codigo);
+        }
+        return false;
+    }
+    function protegerEtapa(evento){
+        if(!treino?.etapa||treino.partida.estado.vencedor!==null)return;
+        const botao=evento.target.closest('button');
+        if(!botao?.matches(controlesDeJogo)||(evento.type==='pointerdown'&&!botao.disabled))return;
+        if(!interacaoPermitida(botao)){
+            evento.preventDefault();evento.stopImmediatePropagation();avisarEtapa();
+        }else limparAviso();
+    }
+    document.addEventListener('click',protegerEtapa,true);
+    document.addEventListener('pointerdown',protegerEtapa,true);
     function atualizarGuia(){
         const e=treino.partida.estado,p=treino.etapa,ganhou=e.vencedor===0,inicio=document.querySelector('.aviso-sua-vez[open]');
         $('guia-progresso').textContent=ganhou?'Partida TUTORIAL concluída':`Partida TUTORIAL · etapa ${p?.numero||treino.totalEtapas} de ${treino.totalEtapas}`;
@@ -60,7 +100,7 @@
     }
     $('iniciar-treino').onclick=iniciar;
     $('reiniciar-treino').onclick=iniciar;
-    $('mostrar-passo').onclick=()=>{destacar();setas.ajudar();alvoPasso?.scrollIntoView({block:'center',inline:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});alvoPasso?.focus({preventScroll:true});};
+    $('mostrar-passo').onclick=()=>{limparAviso();destacar();setas.ajudar();alvoPasso?.scrollIntoView({block:'center',inline:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});alvoPasso?.focus({preventScroll:true});};
     new MutationObserver(()=>destacar()).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','aria-pressed']});
     destacar();
 })();
