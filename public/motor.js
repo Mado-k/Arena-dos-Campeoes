@@ -1165,12 +1165,13 @@
         n028: {
             tipo: 'ativa', local: ['equip'], botao: 'Zumbificar',
             texto: 'Zumbifica a carta do oponente, fazendo a defesa dela ser reduzida pela metade.',
-            detalhe: 'Uma criatura só pode ser zumbificada uma vez.',
+            detalhe: 'Cartas do universo zumbi não podem ser zumbificadas. As demais criaturas só podem ser zumbificadas uma vez.',
             exec(c) {
                 const r = alvoCriatura(c); if (r.erro) return r;
                 const t = r.t;
-                const b = bloqueio(c, t); if (b) return erro(b);
+                if (norm(t.base.universo).trim() === 'zumbi') return erro(`${t.base.nome} já pertence ao universo zumbi e não pode ser zumbificada.`);
                 if (t.st.zumbi) return erro(`${t.base.nome} já está zumbificada.`);
+                const b = bloqueio(c, t); if (b) return erro(b);
                 const antes = t.defesa;
                 const restante = Math.max(0, 1 - .5 * c.potencia), minimo = restante ? 1 : 0;
                 t.defesaMax = Math.max(minimo, Math.floor(t.defesaMax * restante));

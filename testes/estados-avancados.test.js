@@ -8,6 +8,26 @@ function mesa(modo='multiplayer'){
  function ate(dono){let n=0;do{assert(M.encerrarTurno(e).ok);assert(n++<12);}while(e.turno!==dono&&e.vencedor===null);}
  return{p,e,rival,mover,todas,ate};
 }
+for(const modo of ['local','multiplayer','coop']){
+ for(const codigo of ['n032','n033'])for(const fuleco of [false,true])test(`zumbificação recusa ${codigo} do universo zumbi sem alterar a partida: ${modo}, Fuleco ${fuleco}`,()=>{
+  const {p,e,rival,mover}=mesa(modo);mover('n013',0,'campo');const alvo=mover(codigo,rival,'campo'),gorro=mover('n028',0,'mao');
+  if(fuleco)mover('n009',0,'apoio');assert(M.equipar(e,gorro.uid).ok);e.acoes=2;
+  alvo.base={...alvo.base,universo:' ZÚMBI '};const antes=p.salvar();
+  const r=p.agir('a',{tipo:'habilidade',uid:gorro.uid,revisao:p.revisao});
+  assert.match(r.erro,/universo zumbi/);assert.deepEqual(p.salvar(),antes);
+ });
+ test('zumbificação válida reduz a defesa uma vez; retomada também impede reaplicação: '+modo,()=>{
+  const {p,e,rival,mover}=mesa(modo);mover('n013',0,'campo');const alvo=mover('n015',rival,'campo'),gorro=mover('n028',0,'mao');assert(M.equipar(e,gorro.uid).ok);e.acoes=2;
+  const atual=alvo.defesa,maxima=alvo.defesaMax;
+  assert(p.agir('a',{tipo:'habilidade',uid:gorro.uid,revisao:0}).ok);
+  const transformada=p.estado.jogadores[rival].campo[0];
+  assert.equal(transformada.defesa,Math.max(1,Math.floor(atual/2)));assert.equal(transformada.defesaMax,Math.max(1,Math.floor(maxima/2)));assert(transformada.st.zumbi);
+  for(const partida of [p,Partida.restaurar(p.salvar())]){
+   const antes=partida.salvar(),r=partida.agir('a',{tipo:'habilidade',uid:gorro.uid,revisao:partida.revisao});
+   assert.match(r.erro,/já está zumbificada/);assert.deepEqual(partida.salvar(),antes);
+  }
+ });
+}
 for(const modo of ['local','multiplayer','coop'])test('Thor bloqueia criatura e apoios por três oportunidades, sem bloquear o invocador: '+modo,()=>{
  const {e,mover,rival,ate}=mesa(modo),a=mover('n013',0,'campo'),b=mover('n035',rival,'campo'),f=mover('n009',rival,'mao'),d=mover('n022',rival,'mao');a.defesa=a.defesaMax=b.defesa=b.defesaMax=100;
  e.turno=rival;assert(M.colocarApoio(e,f.uid).ok);assert(M.colocarApoio(e,d.uid).ok);e.turno=0;e.acoes=2;

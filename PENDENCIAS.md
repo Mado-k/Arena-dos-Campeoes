@@ -401,3 +401,13 @@ continuam reservadas para etapa futura.
 - [x] Grávida dos Robôs adiada conforme orientação de Luciano.
 - [x] Banco local atualizado com 46 caminhos; reexecução sem alterações e artes existentes preservadas.
 - [x] Suíte completa, recuperação do banco e servidor real verificados; catálogo/câmera conferidos no Chromium em desktop e celular.
+
+## Zumbificação e avisos — 4.010
+
+- [x] Criaturas do universo zumbi e criaturas já zumbificadas recusam a transformação sem gastar ação nem alterar defesa/estado.
+- [x] Bloqueio verificado no Local, multiplayer e co-op, com Fuleco e após salvar/restaurar.
+- [x] Avisos de ações inválidas abaixo do botão, pilha ou carta de origem, mantendo a apresentação.
+- [x] Escolhas, confirmações e respostas atrasadas preservam a origem do aviso.
+- [x] Tutorial conserva seu aviso de etapa e o posiciona abaixo do controle usado.
+- [x] Dossiês continuam fora do GitHub e da pasta pública.
+- [x] Validação: 352 testes, 52 verificações de habilidades, 600 partidas aleatórias e conferência no Chromium dos quatro modos em desktop/celular, incluindo o tutorial real.

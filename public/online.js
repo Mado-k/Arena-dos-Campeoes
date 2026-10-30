@@ -8,6 +8,7 @@
         if (classe) n.className = classe;
         return n;
     };
+    let sequenciaAvisos=0;
     window.criarMesaOnline = function (socket, { aoMostrar = () => {}, aoSair = () => {}, aoAbrirDescarte = () => {}, aoConfirmarInicio = () => {}, aoAlternarVisualizacao = () => {}, visaoLinearInicial, confirmarInicioTurno = () => true, exibirResultadoPadrao = true, compartilhada = false } = {}) {
         const mesa = el('section', undefined, 'jogo mesa-online');
         mesa.hidden = true;
@@ -56,9 +57,51 @@
         for(const evento of ['wheel','touchmove','pointerdown','keydown'])window.addEventListener(evento,()=>{interacoesRolagem++;efeitos?.interromperCamera();cancelarPasseio();if(evento!=='pointerdown')cancelarDescricao();},{passive:true});
         window.addEventListener('pointerdown',evento=>{if(!evento.target.closest?.('[data-carta]'))cancelarToques();},{passive:true});
         for(const dialogo of [escolha,descarte,resultado,espectador])dialogo.addEventListener('cancel',evento=>{evento.preventDefault();fecharDialogo(dialogo);});
-        const aviso = el('p', '', 'instrucao');
-        aviso.setAttribute('role', 'status');
-        const turnos = criarAvisosTurno(() => agir('encerrar'),{aoConfirmar:()=>{render();aoConfirmarInicio();},preservarVista:acao=>{const vista=capturarVista();acao();restaurarVista(vista);}});
+        const aviso = el('p', '', 'instrucao erro aviso-acao');
+        aviso.id='aviso-acao-'+(++sequenciaAvisos);aviso.hidden=true;
+        aviso.setAttribute('role', 'alert');
+        document.body.append(aviso);
+        let origemErro=null,quadroAviso=null,elementoAvisado=null;
+        function limparErro(){
+            if(elementoAvisado){const ids=(elementoAvisado.getAttribute('aria-describedby')||'').split(' ').filter(id=>id&&id!==aviso.id);if(ids.length)elementoAvisado.setAttribute('aria-describedby',ids.join(' '));else elementoAvisado.removeAttribute('aria-describedby');}
+            const suporte=aviso.closest('.origem-aviso-acao');
+            if(suporte){document.body.append(aviso);if(elementoAvisado&&suporte.contains(elementoAvisado))suporte.replaceWith(elementoAvisado);else suporte.remove();}
+            elementoAvisado=null;origemErro=null;aviso.textContent='';aviso.hidden=true;
+            cancelAnimationFrame(quadroAviso);quadroAviso=null;
+        }
+        function origemDaAcao(tipo,uid,elemento){
+            return{tipo,uid:String(uid??''),carta:String(uid??(tipo==='atacar'?estado.jogadores[estado.voce].campo[0]?.uid:'')??''),
+                botao:Boolean(elemento?.dataset.acao||elemento?.classList.contains('acao-encerrar')),pilha:Boolean(elemento?.classList.contains('pilha-comprar')),
+                dialogo:elemento?.closest('dialog')?.getAttribute('aria-label')};
+        }
+        function localizarOrigem(){
+            if(!origemErro)return null;
+            if(origemErro.dialogo){const dialogo=[...document.querySelectorAll('dialog[open]')].find(n=>n.getAttribute('aria-label')===origemErro.dialogo),b=dialogo?.querySelector('.acao-encerrar');if(b)return b;}
+            if(origemErro.botao){const b=[...mesa.querySelectorAll('[data-acao]')].find(n=>n.dataset.acao===origemErro.tipo&&n.dataset.acaoUid===origemErro.uid&&n.classList.contains('pilha-comprar')===origemErro.pilha);if(b)return b;}
+            return [...mesa.querySelectorAll('[data-carta]')].find(n=>n.dataset.carta===origemErro.carta)||mesa.querySelector('.acao-encerrar');
+        }
+        function posicionarAviso(){
+            quadroAviso=null;const origem=localizarOrigem();
+            if(!aviso.textContent||mesa.hidden||pausada||!origem){aviso.hidden=true;return;}
+            elementoAvisado=origem;const ids=new Set((origem.getAttribute('aria-describedby')||'').split(' ').filter(Boolean));ids.add(aviso.id);origem.setAttribute('aria-describedby',[...ids].join(' '));
+            // No painel há espaço para o texto participar do fluxo, sem cobrir controles.
+            if(origem.closest('.detalhe-online,dialog')){
+                aviso.hidden=false;
+                if(!origem.parentElement.classList.contains('origem-aviso-acao')){const suporte=el('div',undefined,'origem-aviso-acao');suporte.style.width=origem.getBoundingClientRect().width+'px';origem.replaceWith(suporte);suporte.append(origem,aviso);}
+                else origem.after(aviso);
+                return;
+            }
+            if(aviso.parentElement!==document.body)document.body.append(aviso);
+            const r=origem.getBoundingClientRect();let visivel=r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;
+            for(let p=origem.parentElement;visivel&&p&&p!==mesa.parentElement;p=p.parentElement){const estilo=getComputedStyle(p),b=p.getBoundingClientRect();if(/auto|scroll|hidden|clip/.test(estilo.overflowX)&&!(r.right>b.left&&r.left<b.right))visivel=false;if(/auto|scroll|hidden|clip/.test(estilo.overflowY)&&!(r.bottom>b.top&&r.top<b.bottom))visivel=false;}
+            aviso.hidden=!visivel;if(!visivel)return;
+            aviso.style.width=Math.min(Math.max(r.width,220),360,innerWidth-24)+'px';
+            aviso.style.left=Math.max(12,Math.min(r.left,innerWidth-aviso.getBoundingClientRect().width-12))+'px';
+            aviso.style.top=(r.bottom+8)+'px';
+        }
+        function agendarAviso(){if(aviso.textContent&&quadroAviso===null)quadroAviso=requestAnimationFrame(posicionarAviso);}
+        window.addEventListener('scroll',agendarAviso,true);window.addEventListener('resize',agendarAviso,{passive:true});
+        const turnos = criarAvisosTurno(evento => agir('encerrar',undefined,undefined,origemDaAcao('encerrar',undefined,evento.currentTarget)),{aoConfirmar:()=>{render();aoConfirmarInicio();},preservarVista:acao=>{const vista=capturarVista();acao();restaurarVista(vista);}});
 
         function capturarVista(){
             if(mesa.hidden)return null;
@@ -126,8 +169,14 @@
             b.addEventListener('click', acao);
             return b;
         }
-        function agir(tipo, uid, valor) {
+        function botaoAcao(texto,tipo,uid,habilitado,classe,confirmar){
+            const b=botao(texto,evento=>{const origem=origemDaAcao(tipo,uid,evento.currentTarget);if(confirmar)confirmar(origem);else agir(tipo,uid,undefined,origem);},habilitado,classe);
+            b.dataset.acao=tipo;b.dataset.acaoUid=String(uid??'');return b;
+        }
+        function agir(tipo, uid, valor, origem) {
             if (!ativo()) return;
+            const origemPedido=origem||origemDaAcao(tipo,uid);
+            limparErro();
             const vista=capturarVista();
             const pedidoSessao = sessao;
             cancelarToques();
@@ -137,7 +186,8 @@
             socket.timeout(10000).emit('partida:acao', { tipo, uid, escolha: valor, revisao: estado.revisao, ...((estado.cooperativo || estado.todosContraTodos) ? { alvo: alvoSelecionado } : {}) }, (err, res) => {
                 if (!estado || pedidoSessao !== sessao) return;
                 ocupado = false;
-                aviso.textContent = err ? 'Não foi possível confirmar a ação. Sincronizando a mesa…' : res.erro || '';
+                aviso.textContent = err ? 'Não foi possível confirmar a ação. Sincronizando a mesa…' : res?.erro || '';
+                origemErro=aviso.textContent?origemPedido:null;
                 if (err) socket.emit('partida:sincronizar');
                 render();
                 if (res && res.pergunta) {
@@ -145,7 +195,7 @@
                     escolha.setAttribute('aria-label','Escolha da habilidade');
                     escolha.replaceChildren(el('h2', res.pergunta.titulo));
                     const opcoes = el('div', undefined, 'escolha-opcoes');
-                    for (const o of res.pergunta.opcoes) opcoes.append(botao(o.rotulo, () => agir(tipo, uid, o.valor)));
+                    for (const o of res.pergunta.opcoes) opcoes.append(botao(o.rotulo, () => agir(tipo, uid, o.valor,origemPedido)));
                     escolha.append(opcoes, botao('Cancelar', () => fecharDialogo(escolha)));
                     escolha.showModal();
                     restaurarVista(vistaEscolha);
@@ -153,6 +203,7 @@
             });
         }
         function selecionar(uid) {
+            limparErro();
             const vista=capturarVista();
             selecionada = uid;
             if(descarte.open)descarte.close();
@@ -266,50 +317,51 @@
             const pode = ativo() && sua && estado.acoes > 0;
             if (sua && d.tipo === 'ativa' && zona !== 'descarte') {
                 const h = c.habilidade || {};
-                habilidade.append(botao('⚡ ' + (d.botao || 'Executar habilidade'), () => agir('habilidade', c.uid), pode && h.disponivel, 'btn habilidade-btn'));
+                habilidade.append(botaoAcao('⚡ ' + (d.botao || 'Executar habilidade'), 'habilidade', c.uid, pode && h.disponivel, 'btn habilidade-btn'));
                 if (h.motivo) habilidade.append(el('p', h.motivo, 'nota'));
             } else if (d.tipo === 'passiva') habilidade.append(el('p', c.habilidade?.anulada ? c.habilidade.motivo : d.semEfeito ? 'Já está refletida nos atributos da carta.' : 'Funciona sozinha: o jogo aplica quando for preciso.', 'nota'));
             painel.append(habilidade);
             const acoes = el('div', undefined, 'acoes-painel');
             if (sua && zona === 'mao') {
                 const cl = Motor.classeDe(c);
-                if (Motor.ehCriatura(c)) acoes.append(botao('Colocar em batalha', () => agir('invocar', c.uid), pode, 'btn primario'));
+                if (Motor.ehCriatura(c)) acoes.append(botaoAcao('Colocar em batalha', 'invocar', c.uid, pode, 'btn primario'));
                 if (cl === 'auxiliar') {
                     const temCriatura=estado.jogadores[estado.voce].campo.length>0;
-                    acoes.append(botao('Colocar em apoio', () => agir('apoio', c.uid), pode&&temCriatura, 'btn primario'));
+                    acoes.append(botaoAcao('Colocar em apoio', 'apoio', c.uid, pode&&temCriatura, 'btn primario'));
                     if(!temCriatura)acoes.append(el('p','Coloque um campeão ou besta em batalha antes de usar auxiliares.','nota'));
                 }
-                if (['arma', 'item'].includes(cl) && !Motor.consumivel(c)) acoes.append(botao('Equipar', () => agir('equipar', c.uid), pode, 'btn primario'));
+                if (['arma', 'item'].includes(cl) && !Motor.consumivel(c)) acoes.append(botaoAcao('Equipar', 'equipar', c.uid, pode, 'btn primario'));
             }
             if (sua && zona === 'campo') {
                 const alvo = estado.jogadores[alvoSelecionado ?? Motor.indiceOponente(estado, estado.voce)]?.campo[0];
                 const dano = alvo ? Motor.ataqueTotal(c, alvo.base, estado) : null;
                 const nomeAlvo = (estado.cooperativo || estado.todosContraTodos) && alvo ? ` · ${estado.jogadores[alvoSelecionado].nome}` : '';
-                acoes.append(botao('Atacar criatura inimiga' + nomeAlvo + (alvo ? ` · ${dano} de dano` : ''), () => agir('atacar'), pode && Boolean(alvo) && !(c.st.paralisia > 0), 'btn primario'));
+                acoes.append(botaoAcao('Atacar criatura inimiga' + nomeAlvo + (alvo ? ` · ${dano} de dano` : ''), 'atacar', undefined, pode && Boolean(alvo) && !(c.st.paralisia > 0), 'btn primario'));
                 if(c.st.paralisia > 0)painel.append(el('p','Sua criatura está paralisada: não pode atacar, contra-atacar nem usar habilidades. Você ainda pode comprar ou jogar outras cartas permitidas.','nota'));
-                acoes.append(botao('Eliminar carta',()=>confirmarEliminacao(c),pode,'btn eliminar-carta'));
+                acoes.append(botaoAcao('Eliminar carta','eliminar',c.uid,pode,'btn eliminar-carta',origem=>confirmarEliminacao(c,origem)));
                 if (!alvo) painel.append(el('p', 'O alvo selecionado não tem criatura em batalha para atacar.', 'nota'));
             }
             if (acoes.childNodes.length) painel.append(acoes);
             if (!ativo() && estado.vencedor === null) painel.append(el('p', 'Aguarde seu turno para jogar. Você pode continuar consultando as cartas.', 'nota'));
             return painel;
         }
-        function jogarDaMao(uid){
+        function jogarDaMao(uid,origem){
             const encontrada=localizar(uid);
             if(!encontrada||encontrada.dono!==estado.voce||encontrada.zona!=='mao'||!ativo()||estado.acoes<=0)return;
             const c=encontrada.c,classe=Motor.classeDe(c);
-            if(Motor.ehCriatura(c))agir('invocar',uid);
-            else if(classe==='auxiliar')agir('apoio',uid);
-            else if(Motor.consumivel(c)||classe==='feitico')agir('habilidade',uid);
-            else if(['arma','item'].includes(classe))agir('equipar',uid);
+            if(Motor.ehCriatura(c))agir('invocar',uid,undefined,origem);
+            else if(classe==='auxiliar')agir('apoio',uid,undefined,origem);
+            else if(Motor.consumivel(c)||classe==='feitico')agir('habilidade',uid,undefined,origem);
+            else if(['arma','item'].includes(classe))agir('equipar',uid,undefined,origem);
         }
         function executarPorToques(uid){
             const encontrada=localizar(uid);
             if(!encontrada||encontrada.dono!==estado.voce||!ativo()||estado.acoes<=0)return false;
-            if(encontrada.zona==='mao'){jogarDaMao(uid);return true;}
+            const origem=origemDaAcao('',uid);
+            if(encontrada.zona==='mao'){jogarDaMao(uid,origem);return true;}
             const h=Motor.descricao(encontrada.c.base);
             if(h.tipo==='ativa'&&h.local.includes(encontrada.zona)){
-                agir('habilidade',uid);return true;
+                agir('habilidade',uid,undefined,origem);return true;
             }
             return false;
         }
@@ -389,12 +441,12 @@
             restaurarVista(vista);
             aoAbrirDescarte(i);
         }
-        function confirmarEliminacao(c){
+        function confirmarEliminacao(c,origem){
             if(!ativo()||estado.acoes<=0)return;
             const vista=capturarVista(),campeao=Motor.ehCampeao(c);
             escolha.setAttribute('aria-label','Confirmar eliminação');
             const texto=`Eliminar ${c.base.nome} custa uma ação. A criatura, seus equipamentos e auxiliares vinculados irão para o descarte. ${campeao?'Você receberá uma derrota na sua própria contagem de campeões.':'Por ser uma besta, não altera a contagem de campeões.'}${campeao&&estado.jogadores[estado.voce].derrotados>=2?' Esta será sua terceira derrota de campeão.':''}`;
-            escolha.replaceChildren(el('h2','Eliminar sua carta?'),el('p',texto),botao('Confirmar eliminação',()=>agir('eliminar',c.uid),true,'btn eliminar-carta'),botao('Cancelar',()=>fecharDialogo(escolha)));
+            escolha.replaceChildren(el('h2','Eliminar sua carta?'),el('p',texto),botao('Confirmar eliminação',()=>agir('eliminar',c.uid,undefined,origem),true,'btn eliminar-carta'),botao('Cancelar',()=>fecharDialogo(escolha)));
             escolha.showModal();restaurarVista(vista);
         }
         function verso() {
@@ -408,13 +460,13 @@
             const podeComprar=j.baralhoTotal>0||(estado.cooperativo?recuperaveis(j)>0:(!estado.torneio||grupo.length===2)&&!grupo.some(d=>d.baralhoTotal)&&grupo.reduce((n,d)=>n+recuperaveis(d),estado.reservaCentralTotal||0)>=grupo.filter(d=>!d.eliminado).length);
             const area=el('div',undefined,'mao-com-pilhas');
             const compra=el('section',undefined,'pilha-compra');compra.dataset.zona='baralho';
-            if(sua)compra.append(botao('Comprar carta',()=>agir('comprar'),ativo()&&estado.acoes>0&&podeComprar,'btn primario acao-compra'));
+            if(sua)compra.append(botaoAcao('Comprar carta','comprar',undefined,ativo()&&estado.acoes>0&&podeComprar,'btn primario acao-compra'));
             else compra.append(el('h4','Compra'));
-            const topo=sua?botao('',()=>agir('comprar'),ativo()&&estado.acoes>0&&podeComprar,'pilha-cartas pilha-interativa pilha-comprar'):el('div',undefined,'pilha-cartas');
+            const topo=sua?botaoAcao('','comprar',undefined,ativo()&&estado.acoes>0&&podeComprar,'pilha-cartas pilha-interativa pilha-comprar'):el('div',undefined,'pilha-cartas');
             if(sua){topo.setAttribute('aria-label',`Comprar carta do seu baralho (${j.baralhoTotal} cartas)`);topo.title='Comprar uma carta · gasta 1 ação';}
             if(j.baralhoTotal)topo.append(verso());else topo.append(el('span','Vazio','pilha-vazia'));
             compra.append(topo,el('span',j.baralhoTotal+' carta(s)','pilha-contagem'));
-            if(sua&&estado.vencedor===null)compra.append(botao('Encerrar turno',()=>agir('encerrar'),ativo(),'btn acao-encerrar'+(ativo()?' primario':'')+(ativo()&&estado.acoes===0?' acoes-esgotadas':'')));
+            if(sua&&estado.vencedor===null)compra.append(botaoAcao('Encerrar turno','encerrar',undefined,ativo(),'btn acao-encerrar'+(ativo()?' primario':'')+(ativo()&&estado.acoes===0?' acoes-esgotadas':'')));
             let mao;
             if(sua)mao=zona('Sua mão',j.mao);
             else {
@@ -575,9 +627,8 @@
             const controles = el('div', undefined, 'barra-botoes');
             if (terminou) { if(exibirResultadoPadrao)controles.append(botao('Ver resultado', mostrarResultado), botao('Voltar ao lobby', aoSair, true, 'btn primario')); }
             const instrucaoFim = exibirResultadoPadrao ? 'Partida encerrada. Você pode consultar o tabuleiro ou voltar ao lobby para jogar novamente.' : 'Consulte o tabuleiro e use as opções do guia para continuar.';
-            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : aviso.textContent || (terminou ? instrucaoFim : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
-            aviso.className = 'instrucao' + (aviso.textContent ? ' erro' : '');
-            const dica = el('p', instrucao, aviso.className);
+            const instrucao = pausada && !terminou ? 'Partida pausada. Aguardando a reconexão de todos os jogadores.' : (!origemErro&&aviso.textContent) || (terminou ? instrucaoFim : ativo() ? estado.acoes === 0 ? 'Suas ações acabaram. Encerre o turno para passar a vez.' : 'Selecione uma carta para ver sua habilidade e as ações disponíveis.' : eliminado(estado.voce) ? 'Você está assistindo aos invocadores que continuam na partida.' : 'Aguarde o adversário. Sua mão continua visível somente para você.');
+            const dica = el('p', instrucao, 'instrucao' + (!origemErro&&aviso.textContent ? ' erro' : ''));
             dica.setAttribute('role', 'status');
             barra.append(info, controles, dica);
             const confronto=confrontoAtual();
@@ -642,8 +693,10 @@
             turnos.atualizar({ acoes: estado.acoes, suaVez: estado.turno === estado.voce && !pausada && !estado.jogadores[estado.voce].eliminado && !estado.torneio?.aguardando.includes(estado.voce), numTurno: estado.numTurno, vencedor: estado.vencedor, ocupado, nome:estado.jogadores[estado.voce].nome, confirmarInicio:confirmarInicioTurno(estado) });
             if (terminou && exibirResultadoPadrao && !resultadoMostrado && !resultadoPendente) mostrarResultado();
             if(Date.now()>=rolagemTurnoAte)restaurarVista(vista);
+            agendarAviso();
         }
         function aplicarEstado(proximo) {
+            if(estado&&(estado.revisao!==proximo.revisao||estado.voce!==proximo.voce||estado.numTurno!==proximo.numTurno))limparErro();
             let vista=capturarVista();
             const antes = movimentos.capturar(estado);
             for(const [uid,origem]of efeitos?.consumirOrigens?.()||[]){
@@ -720,9 +773,9 @@
             if(fila.length>6)fila=[{estado:proximo,saltar:true}];
             void processarFila();
         });
-        document.addEventListener('visibilitychange',()=>{if(document.hidden){efeitos?.limpar();movimentos.limpar();}});
+        document.addEventListener('visibilitychange',()=>{if(document.hidden){limparErro();efeitos?.limpar();movimentos.limpar();}});
         window.addEventListener('resize',()=>efeitos?.limpar(),{passive:true});
-        socket.on('partida:pausa', dados=>{interromperEfeitos(true);cancelarToques();if(pausada!==Boolean(dados.pausada))cancelarPasseio();pausada=Boolean(dados.pausada);render();});
-        return { capturarVista, restaurarVista, pausar(){interromperEfeitos(true);cancelarToques();cancelarPasseio();pausada=true;render();}, limpar() { interromperEfeitos();cancelarToques(); cancelarPasseio(); revisaoVista++; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); espectador.close(); espectadorAvisado=false; resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; if(visaoLinearInicial!==undefined)visaoLinear=visaoLinearInicial;turnos.limpar(); aviso.textContent = ''; } };
+        socket.on('partida:pausa', dados=>{limparErro();interromperEfeitos(true);cancelarToques();if(pausada!==Boolean(dados.pausada))cancelarPasseio();pausada=Boolean(dados.pausada);render();});
+        return { capturarVista, restaurarVista, pausar(){limparErro();interromperEfeitos(true);cancelarToques();cancelarPasseio();pausada=true;render();}, limpar() { limparErro();interromperEfeitos();cancelarToques(); cancelarPasseio(); revisaoVista++; movimentos.limpar(); clearTimeout(timerResultado); resultadoPendente=false; sessao++; alvoSelecionado = null; estado = null; ocupado = false; pausada=false; selecionada = null; mesa.hidden = true; escolha.close(); descarte.close(); resultado.close(); espectador.close(); espectadorAvisado=false; resultadoMostrado = false; respondeuRevanche = false; jogarNovamente.disabled = false; votosResultado.textContent = ''; if(visaoLinearInicial!==undefined)visaoLinear=visaoLinearInicial;turnos.limpar(); aviso.textContent = ''; } };
     };
 })();

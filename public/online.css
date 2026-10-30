@@ -1,4 +1,8 @@
 /* A mesa compartilha cartas, painéis e organização com offline.css. */
+.aviso-acao { position:fixed; z-index:650; box-sizing:border-box; margin:0; pointer-events:none; overflow-wrap:anywhere; text-align:left; background:var(--painel); }
+.aviso-acao[hidden] { display:none; }
+.origem-aviso-acao { display:flex; flex-direction:column; gap:8px; min-width:0; max-width:100%; }
+.origem-aviso-acao .aviso-acao { position:static; width:100%!important; margin:0; background:transparent; }
 .lobby.em-partida { max-width: none; margin: 0 auto; padding: 0 0 24px; }
 .mesa-online[hidden] { display: none !important; }
 .mesa-online .lado, .mesa-online .lateral, .mesa-online .painel { min-width: 0; }

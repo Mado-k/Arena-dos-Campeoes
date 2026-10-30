@@ -1,17 +1,26 @@
 (function(){
     'use strict';
     const $=id=>document.getElementById(id),eventos=new Map();
-    let treino=null,timer,timerAviso,geracao=0,alvoPasso=null;
+    let treino=null,timer,timerAviso,geracao=0,alvoPasso=null,origemAviso=null;
     const setas=criarSetasTutorial({guia:document.querySelector('.guia-iniciante'),ajuda:$('mostrar-passo')});
-    function limparAviso(){clearTimeout(timerAviso);if($('treino-aviso').matches(':popover-open'))$('treino-aviso').hidePopover();}
-    function avisarEtapa(){
+    function limparAviso(){clearTimeout(timerAviso);origemAviso=null;if($('treino-aviso').matches(':popover-open'))$('treino-aviso').hidePopover();}
+    function posicionarAvisoEtapa(){
+        const aviso=$('treino-aviso');if(!aviso.matches(':popover-open'))return;
+        if(!origemAviso?.isConnected){limparAviso();return;}
+        const r=origemAviso.getBoundingClientRect();
+        aviso.style.top=(r.bottom+8)+'px';aviso.style.left=Math.max(12,Math.min(r.left,innerWidth-aviso.getBoundingClientRect().width-12))+'px';
+    }
+    window.addEventListener('scroll',posicionarAvisoEtapa,true);window.addEventListener('resize',posicionarAvisoEtapa,{passive:true});
+    function avisarEtapa(origem){
         const e=treino?.partida.estado,p=treino?.etapa;if(!p||e.vencedor!==null)return;
         const inicio=document.querySelector('.aviso-sua-vez[open]');
         const aviso=$('treino-aviso'),titulo=document.createElement('strong'),texto=document.createElement('p');
         titulo.textContent=e.turno===1?'Observe a máquina':`Siga a etapa ${p.numero} de ${p.total}`;
         texto.textContent=e.turno===1?'Aguarde a máquina terminar. Depois, siga a próxima dica do guia.':inicio?'Confirme em OK para começar esta explicação.':p.texto;
         aviso.replaceChildren(titulo,texto);
+        origemAviso=origem;aviso.style.inset='auto';aviso.style.transform='none';aviso.style.margin='0';
         if(!aviso.matches(':popover-open'))aviso.showPopover();
+        posicionarAvisoEtapa();
         clearTimeout(timerAviso);timerAviso=setTimeout(limparAviso,7000);destacar();
     }
     const emitir=()=>{limparAviso();const v=treino.visao();for(const fn of eventos.get('partida:estado')||[])fn(v);atualizarGuia();};
@@ -19,7 +28,7 @@
         if(n==='partida:sincronizar'){emitir();return;}
         if(n==='partida:revanche'){iniciar();cb?.(null,{ok:true});return;}
         if(n!=='partida:acao'||!treino)return;
-        const res=treino.agir(d);if(res.ok){emitir();programarIA();}else if(res.erro)avisarEtapa();cb?.(null,res);
+        const res=treino.agir(d);if(res.ok){emitir();programarIA();}else if(res.erro){limparAviso();destacar();}cb?.(null,res);
     }};
     const mesa=criarMesaOnline(transporte,{aoSair:()=>location.assign('index.html#modos'),visaoLinearInicial:false,aoAlternarVisualizacao:completa=>{if(treino?.confirmarVisualizacao(completa)){limparAviso();atualizarGuia();}},aoConfirmarInicio:()=>{limparAviso();atualizarGuia();},confirmarInicioTurno:e=>e.numTurno===1,exibirResultadoPadrao:false,aoAbrirDescarte:dono=>{if(treino?.consultarDescarte(dono)){limparAviso();atualizarGuia();}}});
     // Ritmo curto apenas nesta página, sem alterar partidas normais.
@@ -87,7 +96,7 @@
         const botao=evento.target.closest('button');
         if(!botao?.matches(controlesDeJogo)||(evento.type==='pointerdown'&&!botao.disabled))return;
         if(!interacaoPermitida(botao)){
-            evento.preventDefault();evento.stopImmediatePropagation();avisarEtapa();
+            evento.preventDefault();evento.stopImmediatePropagation();avisarEtapa(botao);
         }else limparAviso();
     }
     document.addEventListener('click',protegerEtapa,true);

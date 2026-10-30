@@ -792,3 +792,24 @@ existentes; repetir a atualização não modifica nenhuma linha. Chromium confer
 câmera, retorno, navegação manual, pausa e movimento reduzido, além das 46 imagens
 do catálogo e dos detalhes em desktop/celular, com API e cópia offline. O servidor
 real também entregou as 46 ilustrações após preparar o banco.
+
+### Zumbificação e avisos de ações inválidas (4.010)
+
+Gorro Verde recusa criaturas do universo zumbi e criaturas já transformadas, antes
+de modificar a defesa. A recusa não gasta ações, não altera a defesa máxima e não
+publica efeitos; o bloqueio de reaplicação permanece após salvar e retomar a partida.
+Fuleco não permite transformar uma criatura naturalmente zumbi.
+
+Na mesa compartilhada dos modos Local, multiplayer, co-op e tutorial, os avisos
+de erro ficam abaixo do controle ou da carta que originou a tentativa, com as
+cores e a tipografia existentes. No painel o aviso reserva espaço; na arena ele
+acompanha a rolagem sem ser cortado pelas fileiras. Respostas atrasadas mantêm a
+origem correta, e escolhas/confirmações conservam o controle que abriu o diálogo.
+Uma nova seleção, ação, turno, pausa ou saída limpa o aviso. A proteção de etapas
+do tutorial mantém sua própria apresentação, posicionada abaixo do controle usado.
+
+Validação 4.010: 352 testes, 52 verificações de habilidades e 600 partidas
+aleatórias. Chromium conferiu os quatro modos em desktop e celular: botões,
+pilhas, dois toques, escolhas, confirmações, respostas atrasadas, encerramento
+dentro do modal, rolagem e limpeza dos avisos. A página real do tutorial também
+foi conferida nos dois tamanhos de tela.
