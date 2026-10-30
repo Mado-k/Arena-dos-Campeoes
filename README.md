@@ -825,3 +825,15 @@ proteções existentes.
 Validação 4.015: 57 testes de efeitos e regras avançadas aprovados. Chromium
 confirmou o acompanhamento mais lento em desktop e celular, o retorno exato à
 vista anterior e as proteções de navegação manual, pausa e movimento reduzido.
+
+### Câmera mais rápida (4.020)
+
+Conforme a correção do pedido, o acompanhamento passa de 450 para 900 pixels
+por segundo em cada eixo, com resposta mais rápida e aceleração amortecida.
+O retorno à vista anterior passa de 750 para 500 ms. O orçamento de até cinco
+segundos por ação e o intervalo da IA continuam atendidos, assim como as
+proteções de navegação manual, pausa e movimento reduzido.
+
+Validação 4.020: 57 testes pertinentes aprovados. Chromium confirmou o aumento
+de velocidade em desktop e celular, o retorno à posição original e as proteções
+de navegação manual, pausa e movimento reduzido.

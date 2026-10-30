@@ -7,7 +7,7 @@
         return novos.filter(e=>e.tipo!=='habilidade'||!novos.some(x=>x!==e&&x.codigo===e.codigo&&x.origem===e.origem&&['dano-feitico','captura','reforco'].includes(x.tipo)));
     }
     const suave=t=>t*t*(3-2*t);
-    const retornoCamera=750;
+    const retornoCamera=500;
     function trajeto(a,b,t,altura=0){const p=Math.max(0,Math.min(1,t));return{x:a.x+(b.x-a.x)*p,y:a.y+(b.y-a.y)*p-4*altura*p*(1-p)};}
     function estilo(e){
         if(/fogo/.test(e.tipo))return 'fogo';if(e.tipo==='veneno')return 'veneno';if(e.tipo==='confusao')return 'confusao';
@@ -79,8 +79,8 @@
         function tela(p,j){const r=j.getBoundingClientRect();return{x:r.left+p.x-j.scrollLeft,y:r.top+p.y-j.scrollTop};}
         function deslizar(erro,eixo,dt){
             // Amortece também a velocidade: mudanças de alvo não dão arrancadas.
-            const desejada=Math.max(-.45,Math.min(.45,erro/500));
-            velocidade[eixo]+=(desejada-velocidade[eixo])*(1-Math.exp(-dt/240));
+            const desejada=Math.max(-.9,Math.min(.9,erro/260));
+            velocidade[eixo]+=(desejada-velocidade[eixo])*(1-Math.exp(-dt/130));
             return velocidade[eixo]*dt;
         }
         const desvio=(p,centro,margem)=>Math.sign(p-centro)*Math.max(0,Math.abs(p-centro)-margem);
