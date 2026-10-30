@@ -412,16 +412,9 @@ continuam reservadas para etapa futura.
 - [x] Dossiês continuam fora do GitHub e da pasta pública.
 - [x] Validação: 352 testes, 52 verificações de habilidades, 600 partidas aleatórias e conferência no Chromium dos quatro modos em desktop/celular, incluindo o tutorial real.
 
-## Câmera mais lenta — 4.015
-
-- [x] Acompanhamento 40% mais lento no limite, com resposta e aceleração graduais.
-- [x] Retorno à vista anterior ampliado de 650 para 750 ms.
-- [x] Mantidos o orçamento de cinco segundos por ação e o intervalo da IA.
-- [x] 57 testes pertinentes aprovados e câmera conferida no Chromium em desktop/celular, com retorno, navegação manual, pausa e movimento reduzido.
-
 ## Câmera mais rápida — 4.020
 
-- [x] Pedido corrigido: acompanhamento de até 900 pixels por segundo por eixo, com resposta mais rápida e aceleração suave.
-- [x] Retorno à vista anterior reduzido de 750 para 500 ms.
+- [x] Acompanhamento de até 900 pixels por segundo por eixo, com resposta mais rápida e aceleração suave.
+- [x] Retorno à vista anterior de 500 ms.
 - [x] Mantidos o orçamento de cinco segundos por ação, o intervalo da IA e as proteções de navegação manual.
 - [x] 57 testes pertinentes aprovados e câmera conferida no Chromium em desktop/celular.
