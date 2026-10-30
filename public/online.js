@@ -175,9 +175,9 @@
                 return caixa;
             }
             const img = document.createElement('img');
-            const origem = typeof API === 'string' && API ? API + '/' : new URL('.',location.href).href;
-            try { img.src = location.protocol === 'file:' && base.imagem.startsWith('/') ? '..' + base.imagem : new URL(base.imagem, origem).href; }
+            try { img.src = fonteImagemCarta(base.imagem); }
             catch { inicial(); return caixa; }
+            if(base.imagem.startsWith('/assets/cartas/'))img.classList.add('pixelart-carta');
             img.alt = ''; img.loading = 'lazy';
             img.addEventListener('error', () => { img.remove(); inicial(); }, { once: true });
             caixa.append(img);

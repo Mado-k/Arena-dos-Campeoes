@@ -7,6 +7,7 @@
         return novos.filter(e=>e.tipo!=='habilidade'||!novos.some(x=>x!==e&&x.codigo===e.codigo&&x.origem===e.origem&&['dano-feitico','captura','reforco'].includes(x.tipo)));
     }
     const suave=t=>t*t*(3-2*t);
+    const retornoCamera=650;
     function trajeto(a,b,t,altura=0){const p=Math.max(0,Math.min(1,t));return{x:a.x+(b.x-a.x)*p,y:a.y+(b.y-a.y)*p-4*altura*p*(1-p)};}
     function estilo(e){
         if(/fogo/.test(e.tipo))return 'fogo';if(e.tipo==='veneno')return 'veneno';if(e.tipo==='confusao')return 'confusao';
@@ -46,11 +47,13 @@
         while(cenas.length>3){const ultima=cenas.pop();cenas.at(-1).eventos.push(...ultima.eventos);}
         const pesos=cenas.map(c=>c.eventos.some(e=>e.tipo==='dino')?4:c.eventos.some(e=>e.tipo==='ataque')?1.8:c.eventos.some(e=>['habilidade','dano-feitico','pandora-aplicada','captura'].includes(e.tipo))?2.4:c.eventos.some(e=>['entrada','presenca','equipar','representante'].includes(e.tipo))?2:1.2);
         const alvo=Math.min(orcamento,Math.max(1400,pesos.reduce((a,b)=>a+b,0)*1000));
-        const reservado=cenas.length*1000,extra=Math.max(0,alvo-reservado),soma=pesos.reduce((a,b)=>a+b,0);
-        return cenas.map((c,i)=>({...c,duracao:1000+extra*pesos[i]/soma}));
+        const minimo=Math.min(1000,orcamento/Math.max(1,cenas.length));
+        const reservado=cenas.length*minimo,extra=Math.max(0,alvo-reservado),soma=pesos.reduce((a,b)=>a+b,0);
+        return cenas.map((c,i)=>({...c,duracao:minimo+extra*pesos[i]/soma}));
     }
     function criar(mesa,{capturarVista=()=>null,restaurarVista=()=>{}}={}){
         let geracao=0,camera=false,rodando=false,ultimoQuadro=0;
+        const velocidade={x:0,y:0,pagina:0};
         const nos=new Set(),tarefas=new Set(),revelados=new Set(),estagios=new Map();
         let origensFinais=new Map();
         const camada=document.createElement('div');camada.className='efeitos-camada';document.body.append(camada);
@@ -74,11 +77,21 @@
         function posicionar(n,p){n.style.left=p.x+'px';n.style.top=p.y+'px';}
         function mundo(n,j){const p=ponto(n),r=j.getBoundingClientRect();return{x:p.x-r.left+j.scrollLeft,y:p.y-r.top+j.scrollTop};}
         function tela(p,j){const r=j.getBoundingClientRect();return{x:r.left+p.x-j.scrollLeft,y:r.top+p.y-j.scrollTop};}
+        function deslizar(erro,eixo,dt){
+            // Amortece também a velocidade: mudanças de alvo não dão arrancadas.
+            const desejada=Math.max(-.75,Math.min(.75,erro/330));
+            velocidade[eixo]+=(desejada-velocidade[eixo])*(1-Math.exp(-dt/160));
+            return velocidade[eixo]*dt;
+        }
+        const desvio=(p,centro,margem)=>Math.sign(p-centro)*Math.max(0,Math.abs(p-centro)-margem);
         function seguir(p,j,agora){
-            if(!camera)return;const dt=ultimoQuadro?Math.min(40,agora-ultimoQuadro):16;ultimoQuadro=agora;const alfa=1-Math.exp(-dt/145),r=j.getBoundingClientRect();
-            if(j.scrollWidth>j.clientWidth)j.scrollLeft+=(p.x-r.left-j.clientWidth/2)*alfa;
-            if(j.scrollHeight>j.clientHeight)j.scrollTop+=(p.y-r.top-j.clientHeight/2)*alfa;
-            window.scrollTo({left:scrollX,top:Math.max(0,scrollY+(p.y-innerHeight*.48)*alfa),behavior:'instant'});
+            if(!camera)return;const dt=ultimoQuadro?Math.min(40,agora-ultimoQuadro):16;ultimoQuadro=agora;const r=j.getBoundingClientRect(),antesY=j.scrollTop;
+            // Uma faixa livre evita perseguir cada pixel e a altura dos saltos.
+            if(j.scrollWidth>j.clientWidth)j.scrollLeft+=deslizar(desvio(p.x-r.left,j.clientWidth/2,Math.min(48,j.clientWidth*.12)),'x',dt);
+            if(j.scrollHeight>j.clientHeight)j.scrollTop+=deslizar(desvio(p.y-r.top,j.clientHeight/2,Math.min(40,j.clientHeight*.12)),'y',dt);
+            // Desconta o movimento interno antes de mover a página inteira.
+            const y=p.y-(j.scrollTop-antesY);
+            window.scrollTo({left:scrollX,top:Math.max(0,scrollY+deslizar(desvio(y,innerHeight*.48,innerHeight*.12),'pagina',dt)),behavior:'instant'});
         }
         function simbolo(tipo){
             const n=document.createElement('span');n.className='vfx-glifo';
@@ -92,7 +105,7 @@
             const n=node('carta-feitico-lancado');n.dataset.feiticoLancado=String(e.origem);n.dataset.codigo=e.codigo;
             const frente=document.createElement('div');frente.className='feitico-frente';
             const arte=document.createElement('div');arte.className='c-arte';
-            if(e.imagem){const img=document.createElement('img');img.alt='';try{img.src=new URL(e.imagem,(typeof API==='string'&&API?API+'/':location.href)).href;arte.append(img);}catch{arte.innerHTML=S.desenhar(e.codigo);}}
+            if(e.imagem){const img=document.createElement('img');img.alt='';if(e.imagem.startsWith('/assets/cartas/'))img.classList.add('pixelart-carta');try{img.src=typeof fonteImagemCarta==='function'?fonteImagemCarta(e.imagem):new URL(e.imagem,(typeof API==='string'&&API?API+'/':location.href)).href;arte.append(img);}catch{arte.innerHTML=S.desenhar(e.codigo);}}
             else arte.innerHTML=e.codigo==='n022'?'':S.desenhar(e.codigo);
             const classe=document.createElement('small');classe.textContent=e.classe||'Feitiço';classe.className='feitico-classe';
             const nome=document.createElement('strong');nome.textContent=e.nome||S.perfil(e.codigo)?.nome||'Feitiço';
@@ -210,7 +223,7 @@
             },token);
             for(const c of conjuntos){remover(c.ator);for(const f of c.efeitos){remover(f.marca);remover(f.numero);remover(f.projetil);f.particulas.forEach(remover);}c.extras.forEach(remover);}remover(anuncio);
         }
-        function limpar(apagarOrigens=true){geracao++;camera=false;rodando=false;ultimoQuadro=0;estagios.clear();if(apagarOrigens)origensFinais.clear();for(const t of [...tarefas])t.cancelar();for(const n of [...nos])remover(n);for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');}
+        function limpar(apagarOrigens=true){geracao++;camera=false;rodando=false;ultimoQuadro=0;velocidade.x=velocidade.y=velocidade.pagina=0;estagios.clear();if(apagarOrigens)origensFinais.clear();for(const t of [...tarefas])t.cancelar();for(const n of [...nos])remover(n);for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');}
         return{planejar,ocupado:()=>rodando,interromperCamera(){camera=false;},limpar,consumirOrigens(){const origem=origensFinais;origensFinais=new Map();return origem;},
             async executar(antes,depois){
                 const eventos=planejar(antes,depois);if(!eventos.length||document.hidden||reduzido())return;
@@ -221,7 +234,7 @@
                     for(const c of roteiro(eventos,lancamentos?2400:3200)){if(token!==geracao)break;await cena(c.eventos,c.duracao,true);}
                     if(token===geracao&&camera&&vista){
                         const x=scrollX,y=scrollY,j=mesa.querySelector('.arena-janela'),mx=j?.scrollLeft||0,my=j?.scrollTop||0;
-                        await quadro(280,t=>{if(!camera)return;const v=suave(t);window.scrollTo({left:x+(vista.x-x)*v,top:y+(vista.y-y)*v,behavior:'instant'});if(j&&vista.mesa)j.scrollTo({left:mx+(vista.mesa.x-mx)*v,top:my+(vista.mesa.y-my)*v,behavior:'instant'});atualizarEstagios();},token);
+                        await quadro(retornoCamera,t=>{if(!camera)return;const v=t*t*t*(t*(t*6-15)+10);window.scrollTo({left:x+(vista.x-x)*v,top:y+(vista.y-y)*v,behavior:'instant'});if(j&&vista.mesa)j.scrollTo({left:mx+(vista.mesa.x-mx)*v,top:my+(vista.mesa.y-my)*v,behavior:'instant'});atualizarEstagios();},token);
                     }
                 }finally{if(token===geracao){
                     const voltar=camera;
@@ -231,5 +244,5 @@
             }
         };
     }
-    return{planejar,trajeto,estilo,textoEvento,roteiro,criar};
+    return{planejar,trajeto,estilo,textoEvento,roteiro,retornoCamera,criar};
 });

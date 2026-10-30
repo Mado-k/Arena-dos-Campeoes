@@ -25,7 +25,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Todos os campeões e bestas em batalha sofrem 10 de dano no início do turno do dono, inclusive os do invocador, até uma criatura morrer. Até três usos; depois permanece no descarte.",
-  "imagem": null
+  "imagem": "/assets/cartas/n002.svg"
  },
  {
   "numero": 3,
@@ -38,7 +38,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 6,
   "defesa": 18,
   "habilidade": "Causa 2 de dano a mais em cartas da origem humanidade.",
-  "imagem": null
+  "imagem": "/assets/cartas/n003.svg"
  },
  {
   "numero": 4,
@@ -51,7 +51,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 2,
   "defesa": 0,
   "habilidade": "Transforma os auxiliares do adversário em peixes e os impede de usar habilidades.",
-  "imagem": null
+  "imagem": "/assets/cartas/n004.svg"
  },
  {
   "numero": 5,
@@ -64,7 +64,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Escolha uma carta zumbi da sua pilha de descarte e coloque-a na sua mão.",
-  "imagem": null
+  "imagem": "/assets/cartas/n005.svg"
  },
  {
   "numero": 6,
@@ -77,7 +77,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 1,
   "defesa": 0,
   "habilidade": "Joga para longe um item ou uma arma do oponente.",
-  "imagem": null
+  "imagem": "/assets/cartas/n006.svg"
  },
  {
   "numero": 7,
@@ -90,7 +90,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 0,
   "habilidade": "Causa dano apenas em cartas dos tipos fantasma e sombrio.",
-  "imagem": null
+  "imagem": "/assets/cartas/n007.svg"
  },
  {
   "numero": 8,
@@ -103,7 +103,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Manda para a sua mão os auxiliares do universo normal que estão em apoio.",
-  "imagem": null
+  "imagem": "/assets/cartas/n008.svg"
  },
  {
   "numero": 9,
@@ -116,7 +116,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Ao levantar a torcida, o Fuleco faz os efeitos do seu time dobrarem.",
-  "imagem": null
+  "imagem": "/assets/cartas/n009.svg"
  },
  {
   "numero": 10,
@@ -129,7 +129,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 2,
   "defesa": 14,
   "habilidade": "Não sofre dano direto de campeões.",
-  "imagem": null
+  "imagem": "/assets/cartas/n010.svg"
  },
  {
   "numero": 11,
@@ -142,7 +142,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 18,
   "habilidade": "Causa o dobro de dano em cartas do tipo metálico.",
-  "imagem": null
+  "imagem": "/assets/cartas/n011.svg"
  },
  {
   "numero": 12,
@@ -155,7 +155,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 8,
   "defesa": 19,
   "habilidade": "Com o seu canto, bloqueia e anula as habilidades das cartas do universo game do adversário.",
-  "imagem": null
+  "imagem": "/assets/cartas/n012.svg"
  },
  {
   "numero": 13,
@@ -168,7 +168,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 7,
   "defesa": 13,
   "habilidade": "O ataque dobra a cada três turnos.",
-  "imagem": null
+  "imagem": "/assets/cartas/n013.svg"
  },
  {
   "numero": 14,
@@ -181,7 +181,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 6,
   "defesa": 6,
   "habilidade": "Causa o dobro de dano em cartas dos tipos sombrio, fantasma e divino.",
-  "imagem": null
+  "imagem": "/assets/cartas/n014.svg"
  },
  {
   "numero": 15,
@@ -194,7 +194,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 5,
   "defesa": 14,
   "habilidade": "Não sofre dano de cartas da classe besta.",
-  "imagem": null
+  "imagem": "/assets/cartas/n015.svg"
  },
  {
   "numero": 16,
@@ -207,7 +207,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 1,
   "defesa": 14,
   "habilidade": "Envenena o oponente: ele recebe 2 de dano por turno.",
-  "imagem": null
+  "imagem": "/assets/cartas/n016.svg"
  },
  {
   "numero": 17,
@@ -220,7 +220,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 3,
   "defesa": 0,
   "habilidade": "Causa 3 de dano e paralisa por 1 turno os seres do universo game.",
-  "imagem": null
+  "imagem": "/assets/cartas/n017.svg"
  },
  {
   "numero": 18,
@@ -233,7 +233,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 3,
   "defesa": 14,
   "habilidade": "Causa o dobro de dano em criaturas do tipo metálico.",
-  "imagem": null
+  "imagem": "/assets/cartas/n018.svg"
  },
  {
   "numero": 19,
@@ -246,7 +246,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 18,
   "habilidade": "Consegue voltar para a sua mão uma única vez, para recuperar seus atributos.",
-  "imagem": null
+  "imagem": "/assets/cartas/n019.svg"
  },
  {
   "numero": 20,
@@ -259,7 +259,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 17,
   "habilidade": "Deixa o oponente confuso e faz com que ele ataque a si mesmo por 1 turno. Recarga de 3 turnos para usar de novo.",
-  "imagem": null
+  "imagem": "/assets/cartas/n020.svg"
  },
  {
   "numero": 21,
@@ -272,7 +272,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 6,
   "defesa": 0,
   "habilidade": "Sopra bolhas no oponente, distraindo os auxiliares dele e impedindo que usem habilidades.",
-  "imagem": null
+  "imagem": "/assets/cartas/n021.svg"
  },
  {
   "numero": 22,
@@ -285,7 +285,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "No fim de cada um dos três turnos do dono, causa 4 de dano à criatura inimiga em batalha. Após o terceiro, bate em um cacto e vai para o descarte.",
-  "imagem": null
+  "imagem": "/assets/cartas/n022.svg"
  },
  {
   "numero": 23,
@@ -298,7 +298,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 2,
   "defesa": 14,
   "habilidade": "Ao ser derrotada, a próxima carta de campeão que você colocar em batalha recebe +100 de defesa.",
-  "imagem": null
+  "imagem": "/assets/cartas/n023.svg"
  },
  {
   "numero": 24,
@@ -311,7 +311,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Joga todas as cartas da pilha de descarte de volta ao baralho e embaralha as cartas.",
-  "imagem": null
+  "imagem": "/assets/cartas/n024.svg"
  },
  {
   "numero": 25,
@@ -324,7 +324,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Anula o dano e o efeito de cartas do tipo divino contra você.",
-  "imagem": null
+  "imagem": "/assets/cartas/n025.svg"
  },
  {
   "numero": 26,
@@ -337,7 +337,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 11,
   "habilidade": "Defesa +11. Anula habilidades de cartas do tipo fantasma.",
-  "imagem": null
+  "imagem": "/assets/cartas/n026.svg"
  },
  {
   "numero": 27,
@@ -350,7 +350,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Aplica efeito de fogo em qualquer um que tocar a criatura: o oponente recebe 7 de dano por turno.",
-  "imagem": null
+  "imagem": "/assets/cartas/n027.svg"
  },
  {
   "numero": 28,
@@ -363,7 +363,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Zumbifica a carta do oponente, fazendo a defesa dela ser reduzida pela metade.",
-  "imagem": null
+  "imagem": "/assets/cartas/n028.svg"
  },
  {
   "numero": 29,
@@ -376,7 +376,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 9,
   "habilidade": "Se o oponente for do tipo sombrio, a defesa desta carta é multiplicada por 10.",
-  "imagem": null
+  "imagem": "/assets/cartas/n029.svg"
  },
  {
   "numero": 30,
@@ -389,7 +389,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 5,
   "defesa": 0,
   "habilidade": "Causa 5 de dano. Criaturas do universo normal sofrem o dobro de dano.",
-  "imagem": null
+  "imagem": "/assets/cartas/n030.svg"
  },
  {
   "numero": 31,
@@ -402,7 +402,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 0,
   "habilidade": "Compre três cartas do baralho e coloque esta carta na pilha de descarte.",
-  "imagem": null
+  "imagem": "/assets/cartas/n031.svg"
  },
  {
   "numero": 32,
@@ -415,7 +415,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 19,
   "defesa": 40,
   "habilidade": "Como foi a primeira infectada, tem muito mais defesa que o normal.",
-  "imagem": null
+  "imagem": "/assets/cartas/n032.svg"
  },
  {
   "numero": 33,
@@ -428,7 +428,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 3,
   "defesa": 19,
   "habilidade": "Dobra o ataque base se estiver com um item equipado.",
-  "imagem": null
+  "imagem": "/assets/cartas/n033.svg"
  },
  {
   "numero": 34,
@@ -441,7 +441,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 9,
   "defesa": 16,
   "habilidade": "Consegue copiar a habilidade do campeão ou da besta do oponente.",
-  "imagem": null
+  "imagem": "/assets/cartas/n034.svg"
  },
  {
   "numero": 35,
@@ -454,7 +454,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 13,
   "habilidade": "Procure uma carta de campeão no baralho e coloque-a na sua mão.",
-  "imagem": null
+  "imagem": "/assets/cartas/n035.svg"
  },
  {
   "numero": 36,
@@ -467,7 +467,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 4,
   "defesa": 17,
   "habilidade": "Auxiliares, itens e armas do tipo água do adversário são mandados para a pilha de descarte.",
-  "imagem": null
+  "imagem": "/assets/cartas/n036.svg"
  },
  {
   "numero": 37,
@@ -480,7 +480,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 1,
   "defesa": 20,
   "habilidade": "Só pode ser ferido por cartas do tipo fantasma.",
-  "imagem": null
+  "imagem": "/assets/cartas/n037.svg"
  },
  {
   "numero": 38,
@@ -493,7 +493,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 8,
   "defesa": 18,
   "habilidade": "Não é possível equipar auxiliares, itens nem armas nesta carta.",
-  "imagem": null
+  "imagem": "/assets/cartas/n038.svg"
  },
  {
   "numero": 39,
@@ -506,7 +506,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 3,
   "defesa": 3,
   "habilidade": "Faz o oponente ter a mesma defesa que você.",
-  "imagem": null
+  "imagem": "/assets/cartas/n039.svg"
  },
  {
   "numero": 40,
@@ -519,7 +519,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 8,
   "defesa": 20,
   "habilidade": "Destrói a carta do oponente. Essa habilidade só pode ser usada uma vez.",
-  "imagem": null
+  "imagem": "/assets/cartas/n040.svg"
  },
  {
   "numero": 41,
@@ -532,7 +532,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D001.svg"
  },
  {
   "numero": 42,
@@ -545,7 +545,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D002.svg"
  },
  {
   "numero": 43,
@@ -558,7 +558,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D003.svg"
  },
  {
   "numero": 44,
@@ -571,7 +571,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D004.svg"
  },
  {
   "numero": 45,
@@ -584,7 +584,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D005.svg"
  },
  {
   "numero": 46,
@@ -597,7 +597,7 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 200,
   "habilidade": "Dá mais 10 de defesa para os seres do seu universo.",
-  "imagem": null
+  "imagem": "/assets/cartas/D006.svg"
  },
  {
   "numero": 47,
@@ -610,6 +610,6 @@ window.CARTAS_OFFLINE = [
   "ataque": 0,
   "defesa": 400,
   "habilidade": "Tem mais defesa que os outros representantes.",
-  "imagem": null
+  "imagem": "/assets/cartas/D007.svg"
  }
 ];

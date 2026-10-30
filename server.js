@@ -1,6 +1,6 @@
 const express = require('express');
 const banco = require('./banco');
-const { garantirTabela } = require('./db');
+const { preparadorBanco } = require('./db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -41,13 +41,10 @@ fs.mkdirSync(UPLOADS, { recursive: true });
 
 const pool = banco.criarPool();
 
-pool.getConnection()
-  .then(async (conn) => {
-    conn.release();
-    await garantirTabela(pool);
-    console.log('Conectado ao banco MySQL (tabela cartas pronta)');
-  })
-  .catch((err) => console.error('Erro ao conectar ao banco:', err.code || '', err.message));
+const prepararBanco = preparadorBanco(pool);
+prepararBanco()
+  .then(() => console.log('Conectado ao banco MySQL (tabela cartas pronta)'))
+  .catch((err) => console.error('Erro ao preparar o banco:', err.code || '', err.message));
 
 // ---------- upload de imagem ----------
 const upload = multer({
@@ -84,6 +81,7 @@ app.get('/opcoes', (req, res) => res.json(OPCOES));
 
 app.get('/cartas', async (req, res) => {
   try {
+    await prepararBanco();
     const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
     res.json(cartas.map(banco.normalizar));
   } catch (err) {
@@ -94,6 +92,7 @@ app.get('/cartas', async (req, res) => {
 
 app.get('/cartas/:numero', async (req, res) => {
   try {
+    await prepararBanco();
     const [rows] = await pool.query('SELECT * FROM cartas WHERE numero = ?', [req.params.numero]);
     if (rows.length === 0) return res.status(404).json({ erro: 'Carta não encontrada' });
     res.json(banco.normalizar(rows[0]));
@@ -135,6 +134,7 @@ app.post('/cartas', exigirSenha, upload.single('imagem'), async (req, res) => {
   const imagem = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
+    await prepararBanco();
     const [colAtaque, colDefesa] = await banco.colunasAtributos(pool);
     const [resultado] = await pool.query(
       `INSERT INTO cartas (nome, elemento, origem, universo, classe, ${colAtaque}, ${colDefesa}, habilidade, imagem)
@@ -171,6 +171,7 @@ app.use((err, req, res, next) => {
 
 // salas de multiplayer e co-op
 require('./salas')(io, async () => {
+  await prepararBanco();
   const [cartas] = await pool.query('SELECT * FROM cartas ORDER BY numero');
   return cartas.map(banco.normalizar);
 }, { armazenamento: require('./armazenamento-partidas')(pool) });

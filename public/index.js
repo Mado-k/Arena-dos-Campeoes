@@ -61,7 +61,8 @@ function criarArte(carta) {
 
     if (carta.imagem) {
         const img = document.createElement('img');
-        img.src = fonte === 'servidor' ? API + carta.imagem : '..' + carta.imagem;
+        img.src = fonteImagemCarta(carta.imagem, fonte === 'offline');
+        if (carta.imagem.startsWith('/assets/cartas/')) img.classList.add('pixelart-carta');
         img.alt = '';
         img.loading = 'lazy';
         img.decoding = 'async';

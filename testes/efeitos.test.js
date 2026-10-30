@@ -75,7 +75,7 @@ test('orçamento de cada ação é de um a cinco segundos, incluindo retorno da 
  for(let n=1;n<=24;n++){
   const eventos=Array.from({length:n},(_,i)=>({tipo:tipos[i%tipos.length],codigo:i%3?'n022':'n016',seq:i+1}));
   const cenas=VFX.roteiro(eventos);assert(cenas.length<=3);assert(cenas.every(c=>c.duracao>=1000));
-  const total=cenas.reduce((n,c)=>n+c.duracao,0)+280+1050;assert(total<=5000,total);assert(total>=1000);
+  const total=cenas.reduce((n,c)=>n+c.duracao,0)+VFX.retornoCamera+1050;assert(total<=5000,total);assert(total>=1000);
   assert.equal(cenas.flatMap(c=>c.eventos).length,eventos.length);
  }
 });
@@ -121,6 +121,6 @@ test('último turno do Dino sem alvo também mostra o cacto, sem dano inventado'
  const v=e.efeitosVisuais.find(e=>e.tipo==='dino-fim');assert(v);assert.equal(v.dano,undefined);assert(e.jogadores[0].descarte.includes(d));
 });
 test('intervalo da máquina acomoda uma habilidade comum e o voo das cartas',()=>{
- const ritmo=require('../public/ritmo');const cast=VFX.roteiro([{tipo:'habilidade',codigo:'n016'}]).reduce((n,c)=>n+c.duracao,0)+280+1050;
+ const ritmo=require('../public/ritmo');const cast=VFX.roteiro([{tipo:'habilidade',codigo:'n016'}]).reduce((n,c)=>n+c.duracao,0)+VFX.retornoCamera+1050;
  assert(ritmo.entreAcoesIA>=cast);assert(ritmo.entreAcoesIA+250<=5000);assert(ritmo.inicioIA>ritmo.avisoTurno);
 });

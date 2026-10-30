@@ -756,3 +756,39 @@ aleatórias. Chromium confirmou a posição da compra/encerramento, o cacto sobr
 o descarte do dono, a colisão antes do voo da carta, os ataques nos turnos 2/4/6
 e o fim sem alvo no desktop e celular, incluindo multiplayer, Local 2v2 e co-op.
 As vinte etapas da Partida TUTORIAL passaram nas duas telas.
+
+### Câmera mais suave (3.995)
+
+O acompanhamento amortece a velocidade e limita o deslocamento a 750 pixels por
+segundo em cada eixo. Uma faixa livre no enquadramento evita pequenas correções
+contínuas, e a rolagem da arena é descontada antes de ajustar a página. O retorno
+à posição anterior dura 650 ms, com aceleração e desaceleração graduais. O intervalo
+entre ações da IA passa a 4,2 segundos para acomodar o retorno; as ações visuais
+continuam dentro do orçamento de cinco segundos. Navegação manual, pausa e
+movimento reduzido mantêm suas proteções.
+
+Luciano aprovou os sprites. O personagem da Grávida dos Robôs fica adiado por sua
+orientação, sem bloquear o desenvolvimento.
+
+### Pixel arts no catálogo e no banco (4.000)
+
+Os 46 desenhos aprovados têm arquivos SVG independentes em `public/assets/cartas`,
+incluindo o Dino com seus pixels originais incorporados. O banco guarda o caminho
+em `cartas.imagem`, e catálogo, detalhes e mesa exibem esse mesmo arquivo. Imagens
+já cadastradas são preservadas; Grávida dos Robôs continua sem novo personagem.
+A cópia offline inclui os caminhos e resolve os arquivos locais sem precisar da API.
+
+O servidor atualiza as imagens vazias ao preparar a tabela, antes de liberar as
+consultas de cartas. A atualização usa uma transação e pode ser repetida; não
+altera atributos, habilidades nem sessões. Também pode ser aplicada separadamente
+ao banco configurado no `.env` com `npm run pixelarts:banco`, sem executar o seed.
+O seed atribui as imagens a cartas novas. Para reexportar os desenhos após uma
+alteração em `public/sprites.js`, use `npm run pixelarts:gerar`.
+
+Validação desta entrega: suíte completa aprovada, mais o teste de recuperação da
+preparação após falha temporária; 52 verificações de habilidades e 600 partidas
+aleatórias. O banco local recebeu 46 caminhos, preservando atributos e artes
+existentes; repetir a atualização não modifica nenhuma linha. Chromium conferiu
+câmera, retorno, navegação manual, pausa e movimento reduzido, além das 46 imagens
+do catálogo e dos detalhes em desktop/celular, com API e cópia offline. O servidor
+real também entregou as 46 ilustrações após preparar o banco.

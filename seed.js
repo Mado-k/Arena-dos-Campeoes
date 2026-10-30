@@ -3,6 +3,7 @@
 // Pode rodar mais de uma vez: cartas com o mesmo código são ignoradas.
 const banco = require('./banco');
 const { garantirTabela } = require('./db');
+const { imagens } = require('./pixelarts');
 
 // [codigo, nome, elemento, classe, universo, origem, dano, vida, habilidade]
 const cartas = [
@@ -116,9 +117,9 @@ const cartas = [
   for (const c of cartas) {
     const [r] = await pool.query(
       `INSERT IGNORE INTO cartas
-         (codigo, nome, elemento, classe, universo, origem, ${colAtaque}, ${colDefesa}, habilidade)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      c.map((v, i) => (i === 6 || i === 7) ? (v ?? 0) : i === 8 ? banco.normalizar({ codigo: c[0], habilidade: v }).habilidade : v)
+         (codigo, nome, elemento, classe, universo, origem, ${colAtaque}, ${colDefesa}, habilidade, imagem)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [...c.map((v, i) => (i === 6 || i === 7) ? (v ?? 0) : i === 8 ? banco.normalizar({ codigo: c[0], habilidade: v }).habilidade : v), imagens[c[0]] || null]
     );
     inseridas += r.affectedRows;
   }

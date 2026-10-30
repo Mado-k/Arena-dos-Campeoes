@@ -23,6 +23,15 @@ CREATE TABLE IF NOT EXISTS cartas (
 
 async function garantirTabela(pool) {
   await pool.query(SQL_TABELA);
+  await require('./pixelarts').atualizarPixelArts(pool);
 }
 
-module.exports = { configBanco, garantirTabela };
+function preparadorBanco(pool) {
+  let pronta;
+  return () => pronta ||= garantirTabela(pool).catch(erro => {
+    pronta = null;
+    throw erro;
+  });
+}
+
+module.exports = { configBanco, garantirTabela, preparadorBanco };

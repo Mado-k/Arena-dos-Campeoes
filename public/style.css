@@ -1,3 +1,6 @@
+/* Mantém os pixels nítidos no catálogo, nos detalhes e na mesa. */
+img.pixelart-carta { image-rendering: pixelated; object-fit: contain; }
+
 /* ============ Base ============ */
 :root {
     --bg: #121216;

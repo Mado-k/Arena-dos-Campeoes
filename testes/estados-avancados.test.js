@@ -55,7 +55,9 @@ test('lançamento público revela somente o feitiço executado, nunca o resultad
  const {p,e,mover}=mesa();const s=mover('n031',0,'mao');for(const c of e.jogadores[0].baralho)c.base={...c.base,nome:'SEGREDO DO BARALHO'};assert(p.agir('a',{tipo:'habilidade',uid:s.uid,revisao:0}).ok);const ev=p.visao('b').efeitosVisuais,l=ev.find(e=>e.tipo==='feitico-lancado');assert.equal(l.origem,s.uid);assert.equal(l.codigo,'n031');assert(!JSON.stringify(ev).includes('SEGREDO'));assert.equal(p.visao('b').jogadores[0].mao.length,0);
 });
 test('lançamento central cabe no orçamento de cinco segundos com efeito e descarte',()=>{
- const ev=[{tipo:'feitico-lancado',codigo:'n017'},{tipo:'dano-feitico',codigo:'n017'}],cenas=E.roteiro(ev,2400);assert.equal(cenas.length,1);assert(cenas.every(c=>c.eventos.every(e=>e.tipo!=='feitico-lancado')));assert(cenas.reduce((s,c)=>s+c.duracao,800+280+1050)<=5000);
+ const ev=[{tipo:'feitico-lancado',codigo:'n017'},{tipo:'dano-feitico',codigo:'n017'}],cenas=E.roteiro(ev,2400);assert.equal(cenas.length,1);assert(cenas.every(c=>c.eventos.every(e=>e.tipo!=='feitico-lancado')));assert(cenas.reduce((s,c)=>s+c.duracao,800+E.retornoCamera+1050)<=5000);
+ const encadeados=E.roteiro([...ev,{tipo:'ataque',codigo:'n013'},{tipo:'dino',codigo:'n022'}],2400);
+ assert.equal(encadeados.length,3);assert(encadeados.reduce((s,c)=>s+c.duracao,800+E.retornoCamera+1050)<=5000);
 });
 
 test('Pandora descartada ao fim fica acima da criatura e dos anexos do próprio dono',()=>{

@@ -354,8 +354,8 @@ continuam reservadas para etapa futura.
 - [x] Toxic Ran remove somente apoios/equipamentos de água; nome corrigido.
 - [x] Anulações de Lança do Pirarucu e Batsopra Bolha distinguem peixes e bolhas.
 - [x] Os valores exibidos distinguem dano, defesa igualada, bônus e reserva de Fenrir.
-- [ ] Aguardar Luciano enviar o design da Grávida dos Robôs para criar seu personagem.
-- [ ] Avaliação prática de Luciano: estilo dos sprites, ritmo e câmera nos seus aparelhos.
+- [ ] Grávida dos Robôs adiada por orientação de Luciano; não bloqueia os próximos ajustes.
+- [x] Luciano aprovou os sprites e pediu uma câmera mais suave.
 
 
 ## Estados e feitiços — 3.970 (Gigante, rascunho)
@@ -383,3 +383,21 @@ continuam reservadas para etapa futura.
 - [x] Colisão também ao terminar o prazo sem alvo ou com habilidade bloqueada, sem inventar dano.
 - [x] Encerrar turno abaixo da pilha de compra em todos os modos/visões; tutorial aponta para o novo botão.
 - [x] Salvamentos antigos migram o prazo do Dino uma única vez; salvamentos atuais preservam a preparação.
+
+## Câmera mais suave — 3.995
+
+- [x] Aceleração amortecida e velocidade limitada no acompanhamento das invocações.
+- [x] Faixa de enquadramento evita perseguir cada pequeno deslocamento ou salto.
+- [x] Rolagem interna descontada antes de mover a página, evitando correções duplicadas.
+- [x] Retorno de 650 ms com aceleração e desaceleração graduais; intervalo da IA de 4,2 s acomoda o retorno.
+- [ ] Luciano avaliar a suavidade da câmera nos seus aparelhos.
+
+## Pixel arts no catálogo — 4.000
+
+- [x] 46 arquivos de ilustração exportados dos sprites aprovados, incluindo o Dino.
+- [x] Atualização transacional de `cartas.imagem` somente quando vazio; artes existentes preservadas.
+- [x] Inicialização do servidor e seed preparados para persistir os caminhos no banco.
+- [x] Catálogo, detalhes e mesa usam as imagens cadastradas; cópia offline atualizada.
+- [x] Grávida dos Robôs adiada conforme orientação de Luciano.
+- [x] Banco local atualizado com 46 caminhos; reexecução sem alterações e artes existentes preservadas.
+- [x] Suíte completa, recuperação do banco e servidor real verificados; catálogo/câmera conferidos no Chromium em desktop e celular.

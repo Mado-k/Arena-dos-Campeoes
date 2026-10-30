@@ -22,6 +22,15 @@
 
     window.API = base;
 
+    // Assets versionados acompanham a cópia offline; uploads continuam no servidor.
+    window.fonteImagemCarta = function (imagem, offline = false) {
+        if (!imagem) return '';
+        if ((offline || protocol === 'file:') && imagem.startsWith('/assets/')) return '.' + imagem;
+        if (offline || protocol === 'file:') return imagem.startsWith('/uploads/') ? '..' + imagem : imagem;
+        const origem = base ? base + '/' : new URL('.', location.href).href;
+        return new URL(imagem, origem).href;
+    };
+
     // Cópia das listas do servidor: só serve para os selects nunca ficarem vazios
     // se o servidor estiver desligado. Quem valida de verdade é o server.js.
     window.OPCOES_PADRAO = {
