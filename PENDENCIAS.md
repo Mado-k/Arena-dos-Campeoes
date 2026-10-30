@@ -411,3 +411,10 @@ continuam reservadas para etapa futura.
 - [x] Tutorial conserva seu aviso de etapa e o posiciona abaixo do controle usado.
 - [x] Dossiês continuam fora do GitHub e da pasta pública.
 - [x] Validação: 352 testes, 52 verificações de habilidades, 600 partidas aleatórias e conferência no Chromium dos quatro modos em desktop/celular, incluindo o tutorial real.
+
+## Câmera mais lenta — 4.015
+
+- [x] Acompanhamento 40% mais lento no limite, com resposta e aceleração graduais.
+- [x] Retorno à vista anterior ampliado de 650 para 750 ms.
+- [x] Mantidos o orçamento de cinco segundos por ação e o intervalo da IA.
+- [x] 57 testes pertinentes aprovados e câmera conferida no Chromium em desktop/celular, com retorno, navegação manual, pausa e movimento reduzido.

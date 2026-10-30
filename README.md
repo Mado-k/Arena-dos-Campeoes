@@ -813,3 +813,15 @@ aleatórias. Chromium conferiu os quatro modos em desktop e celular: botões,
 pilhas, dois toques, escolhas, confirmações, respostas atrasadas, encerramento
 dentro do modal, rolagem e limpeza dos avisos. A página real do tutorial também
 foi conferida nos dois tamanhos de tela.
+
+### Câmera mais lenta (4.015)
+
+O limite do acompanhamento passa de 750 para 450 pixels por segundo em cada
+eixo, com resposta e aceleração mais lentas. O retorno à vista anterior passa de
+650 para 750 ms. O orçamento de até cinco segundos por ação e o intervalo da IA
+continuam atendidos. Navegação manual, pausa e movimento reduzido conservam as
+proteções existentes.
+
+Validação 4.015: 57 testes de efeitos e regras avançadas aprovados. Chromium
+confirmou o acompanhamento mais lento em desktop e celular, o retorno exato à
+vista anterior e as proteções de navegação manual, pausa e movimento reduzido.
