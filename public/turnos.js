@@ -56,6 +56,7 @@
                 mensagem.hidden = false;
                 timer = setTimeout(() => { mensagem.hidden = true; }, RITMO_ARENA.avisoTurno);
             },
+            ocultarParaEfeito(){janela.close();inicio.close();mensagem.hidden=true;clearTimeout(timer);},
             aguardandoConfirmacao(){return inicio.open;},
             limpar() {
                 janela.close();

@@ -619,3 +619,38 @@ Depois de 15 segundos sem avançar, uma segunda seta lembra desse botão; o lemb
 reinicia por etapa e é suspenso na vez da máquina e em confirmações modais.
 A preferência por movimento reduzido mantém setas estáticas. A partida continua
 com dez cartas, 18 etapas e o mesmo roteiro de regras.
+
+
+### Habilidades em pixel art (2.720 — grande atualização)
+
+O Dino do Google é invocado por uma abertura na própria carta, corre, salta sobre
+seu alvo e volta à carta. O dano permanece o definido no motor (incluindo Fuleco,
+proteções e limite de turnos). Kappa e Leviatã usam a mesma abertura com avatares
+próprios, seguida de veneno ou água. Fogo e veneno têm oito quadros de animação
+cada e aparecem abaixo do nome da criatura afetada. Outros efeitos identificam
+ataques, raios, confusão, cura, defesa, busca, captura e reciclagem.
+
+A câmera acompanha a invocação e restaura a visualização anterior ao terminar.
+Rolagem, toque ou teclado têm prioridade e interrompem esse acompanhamento. As
+atualizações chegam normalmente do servidor e são apresentadas em ordem, sem
+permitir outra ação durante o efeito. Os avisos, o descarte e a vitória aparecem
+após a animação. Filas muito atrasadas recuperam o estado recente, sem reproduzir
+um histórico longo. Reconexão, pausa, troca de pessoa no dispositivo e movimento
+reduzido não repetem ataques visuais nem alteram dano ou pontuação.
+
+Os botões de compra/descarte ficaram menores, mantendo a área de toque. O
+Tabuleiro completo (disposição linear) preserva a ampliação proporcional de 25%;
+a outra visão mantém suas medidas. Um toque seleciona e leva à descrição após
+0,8 s; dois toques em até 0,6 s jogam a carta da própria mão ou ativam uma habilidade
+ativa própria em campo. Passivas e cartas do adversário não executam ações por
+esse atalho. As classes aparecem na própria carta.
+
+A Partida TUTORIAL agora tem 20 etapas, incluindo a alternância de visão, aguarda
+os efeitos e termina com Jogar novamente, Voltar ao menu e Jogar no Local.
+Os [créditos e fontes dos sprites](public/assets/efeitos/README.md) acompanham os
+recursos. Os efeitos usam CSS, SVG e o navegador, sem nova biblioteca de execução.
+
+Validação desta versão: `npm test` passou com 301 testes, 51 verificações de
+habilidades e 600 partidas aleatórias. A conferência no Chromium percorreu as
+20 etapas do tutorial em desktop e celular, os efeitos no multiplayer/co-op/2v2,
+a câmera manual e automática, pausa, saída e sincronização em segundo plano.

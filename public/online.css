@@ -107,8 +107,8 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .carta-verso .verso-emblema::before,.carta-verso .verso-emblema::after { content:''; position:absolute; background:#71879188; inset:49% 15%; }
 .carta-verso .verso-emblema::after { inset:15% 49%; }
 .arena-janela { overflow:auto; max-width:100%; border:1px solid var(--borda); border-radius:16px; background:radial-gradient(ellipse at center,#203b35 0,#121f25 65%,#0e141e 100%); scrollbar-width:thin; }
-.arena-completa { position:relative; margin:0 auto; width:2400px; height:2212px; }
-.arena-completa .assento { position:absolute; width:400px; height:1016px; }
+.arena-completa { position:relative; margin:0 auto; width:2400px; height:2240px; }
+.arena-completa .assento { position:absolute; width:400px; height:1040px; }
 .arena-completa .assento-sul { left:1000px; top:1186px; }
 .arena-completa .assento-norte { left:1000px; top:10px; }
 .arena-completa .assento-oeste { left:0; top:886px; width:1000px; height:440px; }
@@ -182,7 +182,7 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .assento-oeste { --giro-arte:90deg; }
 .assento-leste { --giro-arte:-90deg; }
 .arena-janela:not(.arena-foco) :is(.assento-oeste,.assento-leste) .c-arte .inicial { transform:rotate(var(--giro-arte)); }
-/* Foco preserva a leitura e os controles sem exigir uma mesa larga no celular. */
+/* Disposição linear, chamada Tabuleiro completo na interface. */
 .arena-foco .arena-completa { width:auto; height:auto; padding:12px; display:flex; flex-direction:column; gap:12px; }
 .arena-foco .arena-completa .assento { position:relative; inset:auto; width:100%; max-width:600px; height:auto; margin:auto; transform:none; }
 .arena-foco .assento-norte { order:0; }
@@ -219,12 +219,12 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .arena-equipes .assento-norte { grid-row:1; }
 .arena-equipes .assento-sul { grid-row:2; }
 .arena-fileiras { display:flex; justify-content:safe center; align-items:start; gap:24px; width:max-content; min-width:100%; height:auto; padding:16px; box-sizing:border-box; }
-.arena-fileiras .confronto-mesa { display:grid; grid-template-columns:400px; grid-template-rows:auto 1016px 1016px; gap:20px; min-width:0; }
+.arena-fileiras .confronto-mesa { display:grid; grid-template-columns:400px; grid-template-rows:auto 1040px 1040px; gap:20px; min-width:0; }
 .arena-fileiras .confronto-titulo { grid-row:1; color:var(--ouro-claro); font-size:1rem; text-align:center; margin:0; }
 .arena-fileiras .assento { position:relative; inset:auto; transform:none; }
 .arena-fileiras .assento-norte { grid-row:2; }
 .arena-fileiras .assento-sul { grid-row:3; }
-.confronto-mesa:not(:has(.assento-norte)) { grid-template-rows:auto 1016px; }
+.confronto-mesa:not(:has(.assento-norte)) { grid-template-rows:auto 1040px; }
 .confronto-mesa:not(:has(.assento-norte)) .assento-sul { grid-row:2; }
 .arena-vazia { padding:24px; color:var(--suave); text-align:center; }
 .arena-foco .arena-fileiras { display:flex; min-width:0; align-items:stretch; }
@@ -271,3 +271,32 @@ html:has(.mesa-online:not([hidden])) { overflow-anchor:none; scroll-behavior:aut
 .pilha-interativa:focus-visible { outline:3px solid var(--ouro-claro); outline-offset:5px; }
 .eliminar-carta { border-color:#ed8c82; color:#ffb4aa; }
 .eliminar-carta:enabled:hover { background:#64312f; }
+
+/* Classe sempre legível, também no tabuleiro completo. */
+.carta-online .classe-carta { display:inline-flex; align-self:flex-start; width:max-content; max-width:100%; box-sizing:border-box; flex:none; padding:2px 5px; border:1px solid #d4a84f; border-radius:4px; background:#453319; color:#fff1bd; font:800 .6rem/1.15 var(--fonte); letter-spacing:.02em; white-space:nowrap; }
+.carta-online[data-classe="besta"] .classe-carta { background:#193b2b; border-color:#70c293; color:#d4ffe5; }
+.carta-online[data-classe="auxiliar"] .classe-carta { background:#20374e; border-color:#7fb7e1; color:#def2ff; }
+.carta-online[data-classe="feitico"] .classe-carta { background:#38234f; border-color:#c39be8; color:#f2e4ff; }
+.carta-online[data-classe="arma"] .classe-carta { background:#303642; border-color:#a5b5cc; color:#edf3ff; }
+.carta-online[data-classe="item"] .classe-carta { background:#472a30; border-color:#da9aa8; color:#ffe4eb; }
+.arena-completa .carta-online .classe-carta { font-size:.55rem; padding:2px 4px; }
+.detalhe-online { scroll-margin-top:calc(var(--altura-guia, 0px) + 16px); }
+
+/* Disposição linear: antes Foco no duelo, agora Tabuleiro completo. */
+/* Somente suas pilhas e controles recebem o aumento; a outra visão mantém as medidas. */
+.arena-foco .arena-completa .mao-com-pilhas .pilha-cartas,
+.arena-foco .arena-completa .mao-com-pilhas .pilha-cartas .carta-verso { width:96px; height:140px; }
+.arena-foco .arena-completa :is(.pilha-compra,.pilha-descarte) .btn { font-size:.78rem; line-height:1.2; min-height:36px; padding:7px 9px; width:auto; max-width:100%; }
+.arena-foco .arena-completa .pilha-compra .acao-compra { min-height:36px; padding:7px 10px; }
+.arena-foco .arena-completa :is(.pilha-compra,.pilha-descarte) { gap:8px; }
+.arena-foco .arena-completa :is(.pilha-contagem,.pilha-compra h4) { font-size:1.1rem; }
+.arena-foco .arena-completa .pilha-vazia { font-size:1.1rem; }
+.visao-atual { display:inline-flex; padding:6px 10px; border:1px solid var(--ouro); border-radius:8px; font-weight:800; color:var(--ouro-claro); }
+
+/* Tabuleiro completo (disposição linear): escala visual uniforme de +25%. */
+/* A escala fica nos grupos externos para não ampliar os versos das pilhas duas vezes. */
+.arena-foco .arena-completa .c-wrap,
+.arena-foco .arena-completa .slot-vazio,
+.arena-foco .arena-completa .cartas-de-costas > .carta-verso,
+.arena-foco .arena-completa .pilha-compra,
+.arena-foco .arena-completa .pilha-descarte { zoom:1.25; }

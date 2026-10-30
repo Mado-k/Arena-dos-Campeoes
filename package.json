@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "test": "node testes/teste-habilidades.js && node testes/teste-partidas-aleatorias.js && node --test testes/online.test.js testes/distribuicao.test.js testes/combate.test.js testes/coop.test.js testes/auxiliares.test.js testes/regras-confirmadas.test.js testes/empate.test.js testes/local-ia.test.js testes/retomada.test.js testes/pandora.test.js testes/dino.test.js testes/inicializacao-salas.test.js testes/torneio.test.js testes/equipe-local.test.js testes/ia-adaptativa.test.js testes/iniciantes.test.js testes/arenas.test.js testes/eliminacao.test.js"
+    "test": "node testes/teste-habilidades.js && node testes/teste-partidas-aleatorias.js && node --test testes/online.test.js testes/distribuicao.test.js testes/combate.test.js testes/coop.test.js testes/auxiliares.test.js testes/regras-confirmadas.test.js testes/empate.test.js testes/local-ia.test.js testes/retomada.test.js testes/pandora.test.js testes/dino.test.js testes/inicializacao-salas.test.js testes/torneio.test.js testes/equipe-local.test.js testes/ia-adaptativa.test.js testes/iniciantes.test.js testes/arenas.test.js testes/eliminacao.test.js testes/efeitos.test.js"
   },
   "repository": {
     "type": "git",

@@ -153,6 +153,7 @@ class Partida {
     const carta = c => ({ ...structuredClone(c), equip: c.equip.map(carta), habilidade: Motor.estadoHabilidade(e, c.uid) });
     return {
       voce, cooperativo: e.cooperativo, equipes2v2: Boolean(e.equipes2v2), arenas2v2:e.arenas2v2?structuredClone(e.arenas2v2):null, arenaInicial:e.arenaInicial??null, torneio: e.torneio ? structuredClone(e.torneio) : null, todosContraTodos: Boolean(e.todosContraTodos), dificuldade: this.dificuldade, tamanhoBaralho: e.tamanhoBaralho, revisao: this.revisao, turno: e.turno, numTurno: e.numTurno,
+      serieVisual: e.serieVisual || 0, efeitosVisuais: structuredClone(e.efeitosVisuais || []),
       acoes: e.acoes, acoesPorTurno: e.jogadores[e.turno].acoesPorTurno, equipes: e.equipes, ordemTurnos: e.ordemTurnos, alvo: Motor.indiceOponente(e), vencedor: e.vencedor, motivoEmpate: e.motivoEmpate || '', pandora: e.pandora, danoPandora: e.danoPandora || 10, pandoraUsos: e.pandoraUsos || 0, reservaCentralTotal: e.reservaCentral?.length || 0, log: this.log.slice(),
       jogadores: e.jogadores.map((j, i) => ({
         nome: j.nome, bonusCampeao: j.bonusCampeao || 0, rep: j.rep ? structuredClone(j.rep) : null, derrotados: j.derrotados, equipe: j.equipe, maquina: j.maquina, eliminado: j.eliminado, acoesPorTurno: j.acoesPorTurno,

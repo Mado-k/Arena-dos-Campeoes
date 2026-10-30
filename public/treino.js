@@ -4,6 +4,8 @@
     const M=typeof module!=='undefined'&&module.exports?require('./motor'):raiz.Motor;
     const Partida=typeof module!=='undefined'&&module.exports?require('./partida'):raiz.Partida;
     const passos=[
+        ['visao-completa',null,'Conheça o tabuleiro completo','Clique em Ver tabuleiro completo para abrir os campos em sequência. Explore essa visão e encontre a mão, o campo e as pilhas. Alternar a visão não gasta ações.'],
+        ['visao-foco',null,'Volte ao foco no duelo','Clique em Focar no duelo para voltar à disposição da arena por confrontos. Você pode alternar a visão durante a partida sem gastar ações. Depois, vamos jogar sua primeira carta.'],
         ['invocar','n032','Seu primeiro campeão','Toque em Marie Curie Zumbi na sua mão e depois em Colocar em batalha. Ela tem ataque e defesa altos para este treino.'],
         ['apoio','n009','Uma ajuda em campo','Toque em Fuleco e depois em Colocar em apoio. Auxiliares precisam de uma criatura em batalha; sua habilidade passiva funciona sozinha.'],
         ['encerrar',null,'Duas ações por turno','Suas duas ações acabaram. Clique em Encerrar turno no aviso para ver a máquina jogar.'],
@@ -45,6 +47,11 @@
             return p?{tipo:p[0],codigo:p[1],titulo:p[2],texto:p[3],numero:this.indice+1,total:passos.length}:null;
         }
         get totalEtapas(){return passos.length;}
+        confirmarVisualizacao(completa){
+            const e=this.partida.estado;
+            if(typeof completa!=='boolean'||e.vencedor!==null||e.turno!==0||this.etapa?.tipo!==(completa?'visao-completa':'visao-foco'))return false;
+            this.indice++;return true;
+        }
         consultarDescarte(dono){
             if(this.etapa?.tipo!=='descarte'||dono!==0||!this.partida.estado.jogadores[0].descarte.length)return false;
             this.indice++;return true;

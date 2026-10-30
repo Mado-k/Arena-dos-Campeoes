@@ -97,6 +97,16 @@
         estado.eventosPublicos=[...(estado.eventosPublicos||[]),{seq:estado.serieEvento,texto}].slice(-100);
     }
 
+    // Somente dados públicos e escalares: nunca incluir cartas de mãos ou baralhos.
+    function efeitoVisual(estado, dados) {
+        const evento = { seq: (estado.serieVisual || 0) + 1 };
+        for (const chave of ['tipo','codigo','elemento','origem','dono','alvo','alvoDono','dano','defesa','valor']) {
+            if (typeof dados[chave] === 'string' || Number.isFinite(dados[chave])) evento[chave] = dados[chave];
+        }
+        estado.serieVisual = evento.seq;
+        estado.efeitosVisuais = [...(estado.efeitosVisuais || []), evento].slice(-64);
+    }
+
     const atual = (estado) => estado.jogadores[estado.turno];
     function adversarios(estado, dono = estado.turno) {
         if (estado.torneio) {
@@ -378,6 +388,7 @@
         if (auxiliares.length) log(estado, `Os auxiliares de ${j.nome} também foram derrotados com ${nome}: ${auxiliares.map(c => c.base.nome).join(', ')}. Todos foram para o descarte.`);
         if (ef.fenrir) {
             j.bonusCampeao = (Number(j.bonusCampeao) || 0) + ef.fenrir;
+            efeitoVisual(estado,{tipo:'heranca',codigo:'n023',origem:inst.uid,dono,alvo:inst.uid,alvoDono:dono,valor:ef.fenrir});
             logAutomatico(estado, `${nome} deixou uma herança: o próximo campeão de ${j.nome} entra com +${ef.fenrir} de defesa.`);
         }
     }
@@ -408,6 +419,7 @@
                 c.defesa *= multiplicador;
                 c.defesaMax *= multiplicador;
                 c.st.x10 = true;
+                efeitoVisual(estado,{tipo:'reforco',codigo:c.base.codigo,origem:c.uid,dono:i,alvo:c.uid,alvoDono:i});
                 log(estado, `${c.base.nome} enfrentou ${op.base.nome} (${op.base.elemento}): sua defesa foi multiplicada por ${multiplicador}!`);
             }
         }
@@ -427,6 +439,7 @@
                 const j = estado.jogadores[rival];
                 function transferir(c, zona, portador) {
                     if (protecao(estado,rival,portador || c,inst.base,true)) return;
+                    efeitoVisual(estado,{tipo:'captura',codigo:'n008',origem:inst.uid,dono,alvo:c.uid,alvoDono:rival});
                     if (zona === 'equip') {
                         portador.equip.splice(portador.equip.indexOf(c),1);
                         const bonus = c.bonusDefesa ?? (Number(c.base.defesa) || 0);
@@ -521,6 +534,7 @@
             if (j.rep && norm(j.rep.codigo) === 'd007' && c.defesa < c.defesaMax) {
                 const recuperada = Math.min(c.defesaMax - c.defesa, fatorHabilidade(estado, estado.turno));
                 c.defesa += recuperada;
+                efeitoVisual(estado,{tipo:'cura',codigo:'D007',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,valor:recuperada,defesa:c.defesa});
                 log(estado, `${j.rep.nome} recuperou ${recuperada} ponto(s) de defesa de ${c.base.nome}: ${c.defesa}/${c.defesaMax}.`);
             }
             const ef = efeitosDe(estado, c);
@@ -528,6 +542,7 @@
                 c.st.turnos = (c.st.turnos || 0) + 1;
                 if (c.st.turnos % 3 === 0) {
                     c.ataqueBase *= 2 * ef.fator;
+                    efeitoVisual(estado,{tipo:'reforco',codigo:'n013',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno});
                     log(estado, `${c.base.nome} está há ${c.st.turnos} turnos em batalha: o ataque foi multiplicado para ${c.ataqueBase}!`);
                 }
             }
@@ -538,6 +553,7 @@
             if (c.st.queimadura) danos.push(['A queimadura', c.st.queimadura]);
             for (const [origem, valor] of danos) {
                 c.defesa -= valor;
+                efeitoVisual(estado,{tipo:origem==='O veneno'?'veneno':origem==='A queimadura'?'fogo':'pandora',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,dano:valor,defesa:Math.max(0,c.defesa)});
                 logAutomatico(estado, `${origem} causou ${valor} de dano a ${c.base.nome}. DEF restante: ${Math.max(0,c.defesa)}.`);
                 if (c.defesa <= 0) { morrer(estado, estado.turno, c); c = null; break; }
             }
@@ -546,6 +562,7 @@
         if (c && c.st.confusao) {
             const d = ataqueTotal(c, c.base, estado);
             c.defesa -= d;
+            efeitoVisual(estado,{tipo:'confusao',codigo:'n020',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,dano:d,defesa:Math.max(0,c.defesa)});
             logAutomatico(estado, `${c.base.nome} está confusa e atacou a si mesma: ${d} de dano. DEF restante: ${Math.max(0,c.defesa)}. Confusão por ${Number(c.st.confusao)} turno(s), incluindo este.`);
             if (c.defesa <= 0) morrer(estado, estado.turno, c);
         }
@@ -619,6 +636,7 @@
             })),
             turno: participantes.includes(config.comeca) ? config.comeca : primeiro??Math.floor(Math.random() * participantes.length),
             numTurno: 1,
+            serieVisual: 0, efeitosVisuais: [],
             acoes: REGRAS.acoesPorTurno,
             vencedor: null,
             pandora: false, pandoraUsos: 0, pandoraVersao: 2,
@@ -655,10 +673,14 @@
             if (j.campo[0] && ef.dino && inimigo) {
                 const ferida = ferivel(estado,idx,inimigo,aux.base);
                 const bloqueio = protecao(estado,idx,inimigo,aux.base,true) || (!ferida.ok && ferida.motivo);
-                if (bloqueio) logAutomatico(estado, `${aux.base.nome}: habilidade bloqueada. ${bloqueio}`);
+                if (bloqueio) {
+                    efeitoVisual(estado,{tipo:'bloqueio',codigo:aux.base.codigo,origem:aux.uid,dono:estado.turno,alvo:inimigo.uid,alvoDono:idx});
+                    logAutomatico(estado, `${aux.base.nome}: habilidade bloqueada. ${bloqueio}`);
+                }
                 else {
                     const dano = aux.st.danoDino ?? ef.dino;
                     inimigo.defesa -= dano;
+                    efeitoVisual(estado,{tipo:'dino',codigo:'n022',origem:aux.uid,dono:estado.turno,alvo:inimigo.uid,alvoDono:idx,dano,defesa:Math.max(0,inimigo.defesa)});
                     logAutomatico(estado, `${aux.base.nome} causou ${dano} de dano a ${inimigo.base.nome} no fim do turno de ${j.nome}. DEF restante: ${Math.max(0,inimigo.defesa)}.`);
                     if (inimigo.defesa <= 0) morrer(estado,idx,inimigo);
                 }
@@ -744,6 +766,7 @@
             inst.defesa += j.bonusCampeao;
             inst.defesaMax += j.bonusCampeao;
             logAutomatico(estado, `${inst.base.nome} recebeu +${j.bonusCampeao} de defesa (herança de Zord Fenrir).`);
+            efeitoVisual(estado,{tipo:'escudo',codigo:'n023',origem:inst.uid,dono:estado.turno,alvo:inst.uid,alvoDono:estado.turno,valor:j.bonusCampeao,defesa:inst.defesa});
             j.bonusCampeao = 0;
         }
         j.campo.push(inst);
@@ -776,6 +799,7 @@
             if (motivo) logAutomatico(estado, `${inst.base.nome}: habilidade ao lançar anulada. ${motivo}`);
             else {
                 const resultado = habilidade.aoLancar({ estado, j, inst, potencia: fatorHabilidade(estado, inst) });
+                efeitoVisual(estado,{tipo:'habilidade',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:j.campo[0]?.uid,alvoDono:estado.turno});
                 logAutomatico(estado, `${inst.base.nome}: ${resultado.texto}`);
             }
         }
@@ -813,6 +837,7 @@
         alvo.defesa += defesa;
         alvo.defesaMax += defesa;
         alvo.equip.push(inst);
+        efeitoVisual(estado,{tipo:'equipar',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:alvo.uid,alvoDono:estado.turno,valor:defesa,defesa:alvo.defesa});
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} equipou ${inst.base.nome} em ${alvo.base.nome}.`);
         verificarPresenca(estado);
@@ -825,6 +850,8 @@
             const ef = efeitosDe(estado, eq);
             if (ef.queimaContato && atacante.defesa > 0 && !atacante.st.queimadura) {
                 atacante.st.queimadura = ef.queimaContato;
+                const donoAlvo=estado.jogadores.findIndex(j=>j.campo.includes(atacante));
+                efeitoVisual(estado,{tipo:'fogo-aplicado',codigo:eq.base.codigo,origem:eq.uid,dono:estado.jogadores.findIndex(j=>j.campo.includes(alvo)),alvo:atacante.uid,alvoDono:donoAlvo});
                 log(estado, `${atacante.base.nome} se queimou ao tocar ${alvo.base.nome}: ${ef.queimaContato} de dano por turno.`);
             }
         }
@@ -845,6 +872,7 @@
 
         const d = ataqueTotal(a, t.base, estado);
         t.defesa -= d;
+        efeitoVisual(estado,{tipo:'ataque',codigo:a.base.codigo,elemento:a.base.elemento,origem:a.uid,dono:estado.turno,alvo:t.uid,alvoDono:indiceOponente(estado),dano:d,defesa:Math.max(0,t.defesa)});
         estado.acoes = Math.max(0, estado.acoes - 1);
         let texto = `${a.base.nome} atacou ${t.base.nome}: ${d} de dano.`;
         contato(estado, a, t);
@@ -863,6 +891,7 @@
             if (f2.ok && !(t.st.paralisia > 0)) {
                 const d2 = ataqueTotal(t, a.base, estado);
                 a.defesa -= d2;
+                efeitoVisual(estado,{tipo:'ataque',codigo:t.base.codigo,elemento:t.base.elemento,origem:t.uid,dono:indiceOponente(estado),alvo:a.uid,alvoDono:estado.turno,dano:d2,defesa:Math.max(0,a.defesa)});
                 texto += ` Contra-ataque: ${d2} de dano.`;
                 contato(estado, t, a);
             } else {
@@ -1282,8 +1311,13 @@
             if (!f.ok) return erro(f.motivo);
         }
 
+        const alvoAntes = o?.campo[0];
         const res = h.exec(c);
         if (res.erro || res.pergunta) return res;
+
+        const propria=['n005','n019','n024','n031','n035'].includes(inst.base.codigo);
+        const alvoVisual=propria?(j.campo[0]||inst):alvoAntes;
+        efeitoVisual(estado,{tipo:'habilidade',codigo:inst.base.codigo,elemento:inst.base.elemento,origem:inst.uid,dono:estado.turno,alvo:alvoVisual?.uid,alvoDono:propria?estado.turno:c.idxOp});
 
         estado.acoes = Math.max(0, estado.acoes - 1);
         let texto = `${j.nome} usou ${inst.base.nome}${res.texto ? `: ${res.texto}` : '.'}`;
@@ -1295,6 +1329,7 @@
             if (alvoDano) {
                 const d = dano;
                 alvoDano.defesa -= d;
+                efeitoVisual(estado,{tipo:'dano-feitico',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:alvoDano.uid,alvoDono:c.idxOp,dano:d,defesa:Math.max(0,alvoDano.defesa)});
                 texto += ` ${alvoDano.base.nome} perdeu ${d} de defesa.`;
             }
             log(estado, texto);

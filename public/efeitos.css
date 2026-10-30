@@ -1,0 +1,39 @@
+/* Sprites próprios de estado; quadros discretos, deslocamento contínuo. */
+.sprite-estado { display:inline-block; flex:none; width:20px; height:20px; background-image:url('assets/efeitos/estados-pixel.png'); background-size:400% 400%; image-rendering:pixelated; animation:quadros-fogo .9s steps(1,end) infinite; }
+.sprite-veneno { animation-name:quadros-veneno; }
+@keyframes quadros-fogo { 0%,100%{background-position:0 0}12.5%{background-position:33.333% 0}25%{background-position:66.666% 0}37.5%{background-position:100% 0}50%{background-position:0 33.333%}62.5%{background-position:33.333% 33.333%}75%{background-position:66.666% 33.333%}87.5%{background-position:100% 33.333%} }
+@keyframes quadros-veneno { 0%,100%{background-position:0 66.666%}12.5%{background-position:33.333% 66.666%}25%{background-position:66.666% 66.666%}37.5%{background-position:100% 66.666%}50%{background-position:0 100%}62.5%{background-position:33.333% 100%}75%{background-position:66.666% 100%}87.5%{background-position:100% 100%} }
+.estados-pixel { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:1px 4px; min-height:20px; margin:1px 0 2px; line-height:1; }
+.estado-pixel { display:inline-flex; align-items:center; gap:1px; font-size:.52rem; font-weight:800; color:#ffd07c; white-space:nowrap; }
+.estado-pixel.veneno { color:#b9ee7b; }
+.estado-pixel .sprite-estado { width:16px; height:16px; }
+.carta-online:has(.estados-pixel) .c-desc { -webkit-line-clamp:1!important; line-clamp:1!important; max-height:1.3em!important; }
+.detalhe-online .estados-pixel { justify-content:flex-start; margin:8px 0; }
+.detalhe-online .estado-pixel { font-size:.85rem; }
+.detalhe-online .sprite-estado { width:26px; height:26px; }
+.sprite-dino { width:44px; height:47px; background:url('assets/efeitos/dino-chromium.png') -848px -2px no-repeat; image-rendering:pixelated; transform:translateY(var(--saida,0%)) scaleX(var(--direcao,1)); }
+.c-arte .retrato-dino { flex:none; transform:scale(.85); margin:auto; }
+.vfx-invocado { position:fixed; z-index:490; width:88px; height:98px; transform:translate(-50%,-100%); pointer-events:none; }
+.vfx-recorte { width:88px; height:94px; overflow:hidden; }
+.vfx-recorte .sprite-dino { zoom:2; }
+.vfx-abertura { position:absolute; bottom:0; left:-4px; width:96px; height:6px; background:#f4cd75; box-shadow:0 4px #775224,0 -3px #171a29; }
+.sprite-dino.correndo { animation:dino-corrida .18s steps(1,end) infinite; }
+@keyframes dino-corrida { 0%,100%{background-position:-936px -2px}50%{background-position:-980px -2px} }
+.vfx-impacto,.vfx-projetil,.vfx-particula,.vfx-numero { position:fixed; z-index:491; pointer-events:none; transform:translate(-50%,-50%); color:#ffe8a3; }
+.vfx-impacto { width:66px; height:66px; }
+.vfx-projetil { width:36px; height:36px; }
+.vfx-impacto svg,.vfx-projetil svg { width:100%; height:100%; fill:currentColor; shape-rendering:crispEdges; }
+.vfx-particula { width:5px; height:5px; background:currentColor; }
+.vfx-numero { font:900 25px/1 monospace; text-shadow:2px 2px #111, -2px -2px #111; white-space:nowrap; }
+.vfx-fogo { color:#ffaf39; }.vfx-veneno,.vfx-cura { color:#a0eb70; }.vfx-agua { color:#71caff; }.vfx-raio,.vfx-sol { color:#fff18a; }.vfx-confusao,.vfx-pandora,.vfx-copia,.vfx-captura,.vfx-portal { color:#d5a0ff; }.vfx-escudo { color:#99dfff; }
+.vfx-anuncio { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:492; max-width:90vw; box-sizing:border-box; padding:9px 16px; border:1px solid #cfaa62; border-radius:8px; background:#171923ed; color:#fff0ca; font:700 .85rem/1.4 var(--fonte); text-align:center; pointer-events:none; }
+.arena-foco .assento.vfx-revelado { display:block!important; }
+.mesa-animando .barra-botoes button,.mesa-animando .acao-compra,.mesa-animando .alternar-tabuleiro { opacity:.6; cursor:wait; }
+@media(prefers-reduced-motion:reduce) { .sprite-estado,.sprite-dino.correndo { animation:none; } .sprite-veneno { background-position:0 66.666%; } }
+
+.sprite-criatura { width:44px; height:47px; display:grid; align-items:end; transform:translateY(var(--saida,0%)) scaleX(var(--direcao,1)); }
+.sprite-criatura svg { width:44px; height:44px; shape-rendering:crispEdges; }
+.vfx-recorte .sprite-criatura { zoom:2; }
+.sprite-criatura.correndo svg { animation:criatura-passo .32s steps(2,end) infinite; }
+@keyframes criatura-passo { 50% { transform:translateY(-2px) rotate(-3deg); } }
+@media(prefers-reduced-motion:reduce) { .sprite-criatura.correndo svg { animation:none; } }

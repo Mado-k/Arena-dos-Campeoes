@@ -9,6 +9,9 @@
 .guia-acoes .ajuda-tutorial { width:100%; border:2px solid #ffe8a1; box-shadow:0 0 0 4px #e8b04a22,0 5px 16px #0005; }
 .guia-acoes .ajuda-tutorial::before { content:'⌖'; font-size:1.4rem; margin-right:9px; vertical-align:middle; }
 .guia-acoes .ajuda-tutorial.precisa-ajuda { animation:ajuda-tutorial-pulsar 1.2s ease-in-out infinite; }
+.guia-acoes.treino-finalizado { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); max-width:none; width:100%; }
+.guia-iniciante:has(.treino-finalizado) { flex-wrap:wrap; }
+.guia-acoes.treino-finalizado .btn { text-align:center; display:flex; align-items:center; justify-content:center; padding:10px 8px; min-width:0; }
 #guia-avanco { display:block; width:100%; max-width:500px; height:9px; margin-top:14px; accent-color:#ffd375; border:0; border-radius:8px; overflow:hidden; background:#ffffff18; }
 #guia-avanco[hidden] { display:none; }
 #guia-avanco::-webkit-progress-bar { background:#ffffff18; }

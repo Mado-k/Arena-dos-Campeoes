@@ -317,3 +317,24 @@ continuam reservadas para etapa futura.
 - [x] Setas animadas para a ação atual, inclusive nos diálogos, sem interceptar cliques.
 - [x] Lembrete do botão de ajuda após 15 segundos sem avanço, reiniciado por etapa.
 - [x] Orientação acompanha rolagem e tamanho da tela; movimento reduzido respeitado.
+
+
+## Efeitos em pixel art — 2.720 (grande atualização)
+
+- [x] Comprar carta/Ver descarte compactos, preservando a área de toque.
+- [x] Dino com abertura por recorte, corrida, salto, impacto, volta e entrada na carta.
+- [x] Câmera acompanha invocações, devolve a visualização e respeita navegação manual.
+- [x] Sprites originais de fogo e veneno abaixo do nome; oito quadros por efeito.
+- [x] Efeitos de ataques, raio, confusão, cura, proteção, busca, captura e água.
+- [x] Invocação reutilizável com avatares originais para Kappa e Leviatã.
+- [x] Animações usam eventos públicos do motor; dano/pontuação continuam automáticos.
+- [x] Reconexão não repete histórico; pausa cancela efeitos; movimento reduzido respeitado.
+- [x] Tutorial de 20 etapas aguarda efeitos; menu final e atalhos de toque incluídos.
+- [x] Validação: 301 testes, 51 verificações de habilidades, 600 partidas aleatórias
+  e conferência no Chromium em desktop/celular, multiplayer, co-op e 2v2.
+- [ ] Luciano avaliar o ritmo, a câmera, a abertura e a escala dos personagens em seus aparelhos.
+- [ ] Confirmar a direção de arte definitiva dos avatares de Kappa e Leviatã e quais
+  outras cartas deverão invocar personagens completos. Enquanto não houver sprites
+  aprovados, os demais efeitos usam glifos originais de pixel art relacionados à habilidade.
+- [ ] Aprovar os sprites de fogo/veneno e fornecer futuras artes das cartas;
+  manter imagens de referência e dossiês privados fora do GitHub.
