@@ -33,7 +33,7 @@
                 transform:`translate(${a.x+(b.x-a.x)*t}px,${a.y+(b.y-a.y)*t-Math.sin(Math.PI*t)*18}px) rotate(${Math.sin(Math.PI*t)*3}deg)`,
                 opacity:t===1?.15:1,offset:t
             }));
-            const animacao=carta.animate(quadros,{duration:760,easing:'cubic-bezier(.4,0,.2,1)'});
+            const animacao=carta.animate(quadros,{duration:1050,easing:'cubic-bezier(.4,0,.2,1)'});
             const limpar=()=>{carta.remove();ativas.delete(animacao);};
             animacao.onfinish=limpar;animacao.oncancel=limpar;ativas.add(animacao);
         }

@@ -223,7 +223,8 @@ test('redistribuição online aparece aos dois sem revelar a ordem dos baralhos 
 });
 
 for (const modo of ['local','multiplayer','coop']) test(`Irineu mantém confusão visível e publica o autoataque em ${modo}`,()=>{
-  const p=new Partida([{id:'a',nome:'A'},{id:'b',nome:'B'}],cartas,modo),e=p.estado;e.turno=0;
+  // Isola a confusão: sortear D007 para a máquina acrescentaria cura ao cenário.
+  const p=new Partida([{id:'a',nome:'A'},{id:'b',nome:'B'}],cartas,modo,40,modo==='coop'?{representantesMaquinas:[null,null]}:{}),e=p.estado;e.turno=0;
   const alvo=modo==='coop'?2:1;
   function mover(codigo,dono,zona){let c;for(const j of e.jogadores)for(const z of ['mao','baralho']){const k=j[z].findIndex(x=>x.base.codigo===codigo);if(k>=0)c=j[z].splice(k,1)[0];}assert(c,codigo);e.jogadores[dono][zona].push(c);return c;}
   const irineu=mover('n020',0,'campo'),criatura=mover('n015',alvo,'campo');

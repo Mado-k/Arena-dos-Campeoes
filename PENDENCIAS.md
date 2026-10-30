@@ -326,15 +326,30 @@ continuam reservadas para etapa futura.
 - [x] Câmera acompanha invocações, devolve a visualização e respeita navegação manual.
 - [x] Sprites originais de fogo e veneno abaixo do nome; oito quadros por efeito.
 - [x] Efeitos de ataques, raio, confusão, cura, proteção, busca, captura e água.
-- [x] Invocação reutilizável com avatares originais para Kappa e Leviatã.
+- [x] Invocação reutilizável com avatares originais para Kappa e Toxic Ran.
 - [x] Animações usam eventos públicos do motor; dano/pontuação continuam automáticos.
 - [x] Reconexão não repete histórico; pausa cancela efeitos; movimento reduzido respeitado.
 - [x] Tutorial de 20 etapas aguarda efeitos; menu final e atalhos de toque incluídos.
 - [x] Validação: 301 testes, 51 verificações de habilidades, 600 partidas aleatórias
   e conferência no Chromium em desktop/celular, multiplayer, co-op e 2v2.
 - [ ] Luciano avaliar o ritmo, a câmera, a abertura e a escala dos personagens em seus aparelhos.
-- [ ] Confirmar a direção de arte definitiva dos avatares de Kappa e Leviatã e quais
-  outras cartas deverão invocar personagens completos. Enquanto não houver sprites
-  aprovados, os demais efeitos usam glifos originais de pixel art relacionados à habilidade.
-- [ ] Aprovar os sprites de fogo/veneno e fornecer futuras artes das cartas;
-  manter imagens de referência e dossiês privados fora do GitHub.
+- [x] Pedido seguinte implementado em 2.970: personagens/objetos para todas as
+  outras cartas; Grávida dos Robôs permanece aguardando design. Nome de n036
+  corrigido para Toxic Ran, conforme catálogo real.
+- [x] Sprites de fogo/veneno redesenhados em 2.970 conforme pedido;
+  imagens de referência e dossiês mantidos privados, fora do GitHub.
+
+
+## Todas as invocações — 2.970
+
+- [x] 46 perfis com sprites/objetos próprios; inclui representantes e o Dino.
+- [x] Fogo e veneno redesenhados com pixels maiores; indicadores dos outros estados.
+- [x] Ações visuais entre um e cinco segundos, com câmera e retorno suaves.
+- [x] Passos da IA espaçados em 3,8 s para acompanhar os efeitos sem fila excessiva.
+- [x] Armas, proteção, busca, retorno, reciclagem e cópia seguem sua função real.
+- [x] Pandora aplica efeito aos dois lados sem dano no lançamento; último Dino inclui cacto.
+- [x] Toxic Ran remove somente apoios/equipamentos de água; nome corrigido.
+- [x] Anulações de Lança do Pirarucu e Batsopra Bolha distinguem peixes e bolhas.
+- [x] Os valores exibidos distinguem dano, defesa igualada, bônus e reserva de Fenrir.
+- [ ] Aguardar Luciano enviar o design da Grávida dos Robôs para criar seu personagem.
+- [ ] Avaliação prática de Luciano: estilo dos sprites, ritmo e câmera nos seus aparelhos.

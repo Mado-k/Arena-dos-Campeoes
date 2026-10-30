@@ -100,7 +100,7 @@
     // Somente dados públicos e escalares: nunca incluir cartas de mãos ou baralhos.
     function efeitoVisual(estado, dados) {
         const evento = { seq: (estado.serieVisual || 0) + 1 };
-        for (const chave of ['tipo','codigo','elemento','origem','dono','alvo','alvoDono','dano','defesa','valor']) {
+        for (const chave of ['tipo','codigo','elemento','origem','dono','alvo','alvoDono','dano','defesa','valor','ultimo','zonaOrigem','zonaAlvo','copiada','atributo','rotulo']) {
             if (typeof dados[chave] === 'string' || Number.isFinite(dados[chave])) evento[chave] = dados[chave];
         }
         estado.serieVisual = evento.seq;
@@ -200,7 +200,7 @@
             }
             if (loc.zona === 'apoio') {
                 const arma = oc.equip.find(e => efeitosBrutos(e).silenciaAux && !silenciada(estado, e));
-                if (arma) return `${arma.base.nome} transformou os auxiliares em peixes: eles não podem usar habilidades.`;
+                if (arma) return arma.base.codigo==='n021'?`${arma.base.nome} distraiu os auxiliares com bolhas: eles não podem usar habilidades.`:`${arma.base.nome} transformou os auxiliares em peixes: eles não podem usar habilidades.`;
             }
         }
         return null;
@@ -408,6 +408,23 @@
     // gatilhos que dependem de duas criaturas frente a frente (lobisomem)
     function verificarPresenca(estado) {
         capturarNormais(estado);
+        const anuladas={};
+        estado.jogadores.forEach((j,dono)=>{
+            const cartas=[...j.campo,...j.apoio,...j.campo.flatMap(c=>c.equip)];
+            for(const c of cartas){
+                if(!silenciada(estado,c))continue;
+                for(const rival of adversarios(estado,dono)){
+                    const oc=estado.jogadores[rival].campo[0];if(!oc)continue;
+                    const ef=efeitosBrutos(oc);
+                    const fonte=ef.anulaUniverso?.some(u=>norm(u)===norm(c.base.universo))?oc:j.apoio.includes(c)?oc.equip.find(eq=>efeitosBrutos(eq).silenciaAux&&!silenciada(estado,eq)):null;
+                    if(!fonte)continue;
+                    anuladas[c.uid]=fonte.uid;
+                    if(estado.anulacoesVisuais?.[c.uid]!==fonte.uid)efeitoVisual(estado,{tipo:'anulacao',codigo:fonte.base.codigo,copiada:fonte.st.copia,origem:fonte.uid,dono:rival,alvo:c.uid,alvoDono:dono});
+                    break;
+                }
+            }
+        });
+        estado.anulacoesVisuais=anuladas;
         for (let i = 0; i < estado.jogadores.length; i++) {
             const c = estado.jogadores[i].campo[0];
             if (!c) continue;
@@ -419,7 +436,7 @@
                 c.defesa *= multiplicador;
                 c.defesaMax *= multiplicador;
                 c.st.x10 = true;
-                efeitoVisual(estado,{tipo:'reforco',codigo:c.base.codigo,origem:c.uid,dono:i,alvo:c.uid,alvoDono:i});
+                efeitoVisual(estado,{tipo:'reforco',codigo:c.base.codigo,origem:c.uid,dono:i,alvo:c.uid,alvoDono:i,valor:c.defesa,atributo:'DEF',rotulo:'DEF'});
                 log(estado, `${c.base.nome} enfrentou ${op.base.nome} (${op.base.elemento}): sua defesa foi multiplicada por ${multiplicador}!`);
             }
         }
@@ -534,7 +551,7 @@
             if (j.rep && norm(j.rep.codigo) === 'd007' && c.defesa < c.defesaMax) {
                 const recuperada = Math.min(c.defesaMax - c.defesa, fatorHabilidade(estado, estado.turno));
                 c.defesa += recuperada;
-                efeitoVisual(estado,{tipo:'cura',codigo:'D007',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,valor:recuperada,defesa:c.defesa});
+                efeitoVisual(estado,{tipo:'cura',codigo:'D007',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,valor:recuperada,defesa:c.defesa,atributo:'DEF'});
                 log(estado, `${j.rep.nome} recuperou ${recuperada} ponto(s) de defesa de ${c.base.nome}: ${c.defesa}/${c.defesaMax}.`);
             }
             const ef = efeitosDe(estado, c);
@@ -542,7 +559,7 @@
                 c.st.turnos = (c.st.turnos || 0) + 1;
                 if (c.st.turnos % 3 === 0) {
                     c.ataqueBase *= 2 * ef.fator;
-                    efeitoVisual(estado,{tipo:'reforco',codigo:'n013',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno});
+                    efeitoVisual(estado,{tipo:'reforco',codigo:'n013',origem:c.uid,dono:estado.turno,alvo:c.uid,alvoDono:estado.turno,valor:c.ataqueBase,atributo:'ATQ base',rotulo:'ATQ'});
                     log(estado, `${c.base.nome} está há ${c.st.turnos} turnos em batalha: o ataque foi multiplicado para ${c.ataqueBase}!`);
                 }
             }
@@ -670,6 +687,7 @@
             if (!efeitosBrutos(aux).dino || !(aux.st.dino > 0)) continue;
             const ef = efeitosDe(estado, aux);
             const idx = indiceOponente(estado), inimigo = estado.jogadores[idx]?.campo[0];
+            let acertou=false;
             if (j.campo[0] && ef.dino && inimigo) {
                 const ferida = ferivel(estado,idx,inimigo,aux.base);
                 const bloqueio = protecao(estado,idx,inimigo,aux.base,true) || (!ferida.ok && ferida.motivo);
@@ -680,13 +698,14 @@
                 else {
                     const dano = aux.st.danoDino ?? ef.dino;
                     inimigo.defesa -= dano;
-                    efeitoVisual(estado,{tipo:'dino',codigo:'n022',origem:aux.uid,dono:estado.turno,alvo:inimigo.uid,alvoDono:idx,dano,defesa:Math.max(0,inimigo.defesa)});
+                    efeitoVisual(estado,{tipo:'dino',codigo:'n022',origem:aux.uid,dono:estado.turno,alvo:inimigo.uid,alvoDono:idx,dano,defesa:Math.max(0,inimigo.defesa),...(aux.st.dino===1?{ultimo:1}:{})});acertou=true;
                     logAutomatico(estado, `${aux.base.nome} causou ${dano} de dano a ${inimigo.base.nome} no fim do turno de ${j.nome}. DEF restante: ${Math.max(0,inimigo.defesa)}.`);
                     if (inimigo.defesa <= 0) morrer(estado,idx,inimigo);
                 }
             } else logAutomatico(estado, `${aux.base.nome} não causou dano neste encerramento: ${!ef.dino?'habilidade anulada':!j.campo[0]?'sem criatura vinculada':'sem criatura inimiga em batalha'}.`);
             aux.st.dino--;
             if (aux.st.dino === 0) {
+                if(!acertou)efeitoVisual(estado,{tipo:'dino-fim',codigo:'n022',origem:aux.uid,dono:estado.turno,alvo:aux.uid,alvoDono:estado.turno});
                 j.apoio.splice(j.apoio.indexOf(aux), 1);
                 paraDescarte(j, aux);
                 logAutomatico(estado, `${aux.base.nome} bateu em um cacto após concluir sua habilidade, foi destruído e vai para o descarte de ${j.nome}.`);
@@ -761,15 +780,17 @@
             inst.defesa += bonus;
             inst.defesaMax += bonus;
             log(estado, `${rep.nome} deu +${bonus} de defesa para ${inst.base.nome}.`);
+            efeitoVisual(estado,{tipo:'representante',codigo:rep.codigo,origem:inst.uid,dono:estado.turno,alvo:inst.uid,alvoDono:estado.turno,valor:bonus,atributo:'DEF'});
         }
         if (ehCampeao(inst) && j.bonusCampeao > 0) {
             inst.defesa += j.bonusCampeao;
             inst.defesaMax += j.bonusCampeao;
             logAutomatico(estado, `${inst.base.nome} recebeu +${j.bonusCampeao} de defesa (herança de Zord Fenrir).`);
-            efeitoVisual(estado,{tipo:'escudo',codigo:'n023',origem:inst.uid,dono:estado.turno,alvo:inst.uid,alvoDono:estado.turno,valor:j.bonusCampeao,defesa:inst.defesa});
+            efeitoVisual(estado,{tipo:'escudo',codigo:'n023',origem:inst.uid,dono:estado.turno,alvo:inst.uid,alvoDono:estado.turno,valor:j.bonusCampeao,defesa:inst.defesa,atributo:'DEF'});
             j.bonusCampeao = 0;
         }
         j.campo.push(inst);
+        efeitoVisual(estado,{tipo:'entrada',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:inst.uid,alvoDono:estado.turno,defesa:inst.defesa,zonaOrigem:'mao',zonaAlvo:'campo'});
         for (const aux of j.apoio) if (aux.vinculo == null) aux.vinculo = inst.uid;
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em batalha.`);
@@ -793,6 +814,7 @@
         }
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} colocou ${inst.base.nome} em apoio.`);
+        if(inst.base.codigo!=='n001')efeitoVisual(estado,{tipo:silenciada(estado,inst)?'entrada':'presenca',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:j.campo[0].uid,alvoDono:estado.turno});
         const habilidade = HAB[inst.base.codigo];
         if (habilidade?.aoLancar) {
             const motivo = silenciada(estado, inst);
@@ -837,10 +859,11 @@
         alvo.defesa += defesa;
         alvo.defesaMax += defesa;
         alvo.equip.push(inst);
-        efeitoVisual(estado,{tipo:'equipar',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:alvo.uid,alvoDono:estado.turno,valor:defesa,defesa:alvo.defesa});
+        efeitoVisual(estado,{tipo:'equipar',codigo:inst.base.codigo,origem:inst.uid,dono:estado.turno,alvo:alvo.uid,alvoDono:estado.turno,valor:defesa,defesa:alvo.defesa,atributo:'DEF'});
         estado.acoes = Math.max(0, estado.acoes - 1);
         log(estado, `${j.nome} equipou ${inst.base.nome} em ${alvo.base.nome}.`);
         verificarPresenca(estado);
+        if(efeitosDe(estado,alvo).dobraBaseComItem&&cl==='item')efeitoVisual(estado,{tipo:'reforco',codigo:alvo.base.codigo,origem:alvo.uid,dono:estado.turno,alvo:alvo.uid,alvoDono:estado.turno,valor:ataqueTotal(alvo,outro(estado)?.campo[0]?.base,estado),atributo:'ATQ',rotulo:'ATQ'});
         return { ok: true };
     }
 
@@ -895,6 +918,11 @@
                 texto += ` Contra-ataque: ${d2} de dano.`;
                 contato(estado, t, a);
             } else {
+                if(t.st.paralisia>0)efeitoVisual(estado,{tipo:'paralisia',codigo:t.base.codigo,origem:t.uid,dono:indiceOponente(estado),alvo:t.uid,alvoDono:indiceOponente(estado)});
+                else {
+                    const fonte=j.apoio.find(aux=>efeitosDe(estado,aux).anulaElemento?.some(el=>norm(el)===norm(t.base.elemento)))||a;
+                    efeitoVisual(estado,{tipo:'bloqueio',codigo:fonte.base.codigo,origem:fonte.uid,dono:estado.turno,alvo:a.uid,alvoDono:estado.turno});
+                }
                 texto += ` Contra-ataque: 0 de dano (${t.st.paralisia > 0 ? `${t.base.nome} está paralisada` : f2.motivo}).`;
             }
             registrar();
@@ -989,7 +1017,7 @@
                 const escolhidos = escolherCartas(c,t.equip,'Qual equipamento será arremessado?');
                 if (!escolhidos.alvos) return escolhidos;
                 for (const alvo of escolhidos.alvos) removerEquip(c.estado, c.idxOp, t, alvo);
-                return { ok: true, texto: `arremessou ${escolhidos.alvos.map(x => x.base.nome).join(', ')} para longe: o equipamento foi para o descarte do adversário.` };
+                return { ok: true, alvosVisuais:escolhidos.alvos.map(x=>x.uid), texto: `arremessou ${escolhidos.alvos.map(x => x.base.nome).join(', ')} para longe: o equipamento foi para o descarte do adversário.` };
             }
         },
         n007: passiva('Causa dano apenas em cartas dos tipos fantasma e sombrio.',
@@ -1106,7 +1134,7 @@
                 t.st.zumbi = true;
                 const depois = t.defesa;
                 if (depois <= 0) morrer(c.estado, c.idxOp, t);
-                return { ok: true, texto: `zumbificou ${t.base.nome}: a defesa caiu de ${antes} para ${depois}.` };
+                return { ok: true, defesaVisual:depois, texto: `zumbificou ${t.base.nome}: a defesa caiu de ${antes} para ${depois}.` };
             }
         },
         n029: passiva('Se o oponente for do tipo sombrio, a defesa desta carta é multiplicada por 10.',
@@ -1142,12 +1170,12 @@
                 if (!h || h.semEfeito) return erro(`${t.base.nome} não tem habilidade que possa ser copiada.`);
                 if (h.tipo === 'passiva') {
                     c.inst.st.copia = src;
-                    return { ok: true, texto: `copiou a habilidade passiva de ${t.base.nome}: "${h.texto}"` };
+                    return { ok: true, copiada:src, texto: `copiou a habilidade passiva de ${t.base.nome}: "${h.texto}"` };
                 }
                 if (!h.local.includes('campo')) return erro(`A habilidade de ${t.base.nome} não pode ser copiada.`);
                 const copia = Object.assign({}, c, { chave: src, origem: t.base });
                 const res = h.exec(copia);
-                if (res.ok) res.texto = `copiou a habilidade de ${t.base.nome} e ${res.texto}`;
+                if (res.ok) {res.copiada=src;res.texto = `copiou a habilidade de ${t.base.nome} e ${res.texto}`;}
                 return res;
             }
         },
@@ -1173,22 +1201,22 @@
             detalhe: 'Afeta só as cartas do adversário.',
             exec(c) {
                 const o = c.o;
-                const nomes = [];
+                const nomes = [],alvosVisuais=[];
                 for (const a of o.apoio.slice()) {
                     if (norm(a.base.elemento) === 'agua') {
                         o.apoio.splice(o.apoio.indexOf(a), 1);
                         paraDescarte(o, a);
-                        nomes.push(a.base.nome);
+                        nomes.push(a.base.nome);alvosVisuais.push(a.uid);
                     }
                 }
                 const t = o.campo[0];
                 if (t) {
                     for (const e of t.equip.slice()) {
-                        if (norm(e.base.elemento) === 'agua') { removerEquip(c.estado, c.idxOp, t, e); nomes.push(e.base.nome); }
+                        if (norm(e.base.elemento) === 'agua') { removerEquip(c.estado, c.idxOp, t, e); nomes.push(e.base.nome);alvosVisuais.push(e.uid); }
                     }
                 }
                 if (!nomes.length) return erro('O adversário não tem auxiliares, itens nem armas do tipo água.');
-                return { ok: true, texto: `mandou para o descarte: ${nomes.join(', ')}.` };
+                return { ok: true, alvosVisuais, texto: `mandou para o descarte: ${nomes.join(', ')}.` };
             }
         },
         n037: passiva('Só pode ser ferido por cartas do tipo fantasma.'),
@@ -1312,12 +1340,24 @@
         }
 
         const alvoAntes = o?.campo[0];
+        const maoAntes=j.mao.length;
         const res = h.exec(c);
         if (res.erro || res.pergunta) return res;
 
-        const propria=['n005','n019','n024','n031','n035'].includes(inst.base.codigo);
+        const codigoVisual=res.copiada||inst.base.codigo;
+        const propria=['n005','n019','n024','n031','n035'].includes(codigoVisual);
         const alvoVisual=propria?(j.campo[0]||inst):alvoAntes;
-        efeitoVisual(estado,{tipo:'habilidade',codigo:inst.base.codigo,elemento:inst.base.elemento,origem:inst.uid,dono:estado.turno,alvo:alvoVisual?.uid,alvoDono:propria?estado.turno:c.idxOp});
+        const zonasVisuais={n005:['descarte','mao'],n019:['campo','mao'],n024:['descarte','baralho'],n031:['baralho','mao'],n035:['baralho','mao']};
+        const extras=zonasVisuais[codigoVisual]?{zonaOrigem:zonasVisuais[codigoVisual][0],zonaAlvo:zonasVisuais[codigoVisual][1]}:{};
+        if(['n031','n035'].includes(codigoVisual))extras.valor=j.mao.length-maoAntes;
+        if(codigoVisual==='n028')extras.defesa=res.defesaVisual;
+        if(codigoVisual==='n039')extras.defesa=alvoAntes?.defesa;
+        if(res.copiada)extras.copiada=res.copiada;
+        if(inst.base.codigo==='n002'){
+            estado.jogadores.forEach((j,i)=>j.campo.forEach(t=>efeitoVisual(estado,{tipo:'pandora-aplicada',codigo:'n002',origem:inst.uid,dono:estado.turno,alvo:t.uid,alvoDono:i})));
+        }else if(res.alvosVisuais?.length){
+            for(const alvo of res.alvosVisuais)efeitoVisual(estado,{tipo:'habilidade',codigo:inst.base.codigo,copiada:res.copiada,origem:inst.uid,dono:estado.turno,alvo,alvoDono:c.idxOp});
+        }else efeitoVisual(estado,{tipo:'habilidade',codigo:inst.base.codigo,elemento:inst.base.elemento,origem:inst.uid,dono:estado.turno,alvo:alvoVisual?.uid,alvoDono:propria?estado.turno:c.idxOp,...extras});
 
         estado.acoes = Math.max(0, estado.acoes - 1);
         let texto = `${j.nome} usou ${inst.base.nome}${res.texto ? `: ${res.texto}` : '.'}`;

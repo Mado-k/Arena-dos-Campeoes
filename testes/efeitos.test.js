@@ -12,7 +12,7 @@ for(const modo of ['local','multiplayer','coop'])test('Dino publica origem, alvo
  assert(M.colocarApoio(e,dino.uid).ok);dino.st.dino=1;inimigo.defesa=4;e.jogadores[alvo].derrotados=2;
  const antes=p.visao('a');assert(p.agir('a',{tipo:'encerrar',alvo,revisao:0}).ok);
  const depois=p.visao('a'),eventos=VFX.planejar(antes,depois),v=eventos.find(e=>e.tipo==='dino');
- assert.deepEqual(v,{seq:1,tipo:'dino',codigo:'n022',origem:dino.uid,dono:0,alvo:inimigo.uid,alvoDono:alvo,dano:4,defesa:0});
+ assert.deepEqual(v,{seq:antes.serieVisual+1,tipo:'dino',codigo:'n022',origem:dino.uid,dono:0,alvo:inimigo.uid,alvoDono:alvo,dano:4,defesa:0,ultimo:1});
  assert(depois.jogadores[0].descarte.some(c=>c.uid===dino.uid));assert.equal(depois.jogadores[alvo].derrotados,3);
  assert.equal(VFX.planejar(null,depois).length,0,'reconexão não repete histórico');
  assert.deepEqual(VFX.planejar(depois,depois),[]);assert.deepEqual(VFX.planejar({...antes,voce:99},depois),[]);
@@ -60,4 +60,67 @@ test('planejamento remove apenas o lampejo redundante e mantém o raio de Thor',
 });
 test('trajeto tem pontos exatos e arco contínuo de salto',()=>{
  const a={x:20,y:100},b={x:220,y:100};assert.deepEqual(VFX.trajeto(a,b,0,50),a);assert.deepEqual(VFX.trajeto(a,b,1,50),b);assert.deepEqual(VFX.trajeto(a,b,.5,50),{x:120,y:50});assert.deepEqual(VFX.trajeto(a,b,-1,50),a);
+});
+const Sprites=require('../public/sprites');
+test('todas as cartas têm perfil e sprite próprios, exceto a Grávida aguardando design',()=>{
+ assert.equal(Object.keys(Sprites.perfis).length,46);assert.equal(Sprites.perfil('n001'),null);
+ for(const c of cartas){if(c.codigo==='n001')continue;const p=Sprites.perfil(c.codigo);assert(p,c.codigo);assert(p.efeito);assert(p.acao);
+  if(c.codigo!=='n022'){const svg=Sprites.desenhar(c.codigo);assert.match(svg,/viewBox="0 0 32 32"/);assert.match(svg,/crispEdges/);assert(!svg.includes('image '));}
+ }
+ assert.equal(Sprites.perfil('n036').nome,'Toxic Ran');assert.equal(Sprites.perfil('n036').acao,'remover-agua');
+ assert.equal(Sprites.perfil('n030').efeito,'raio');assert.equal(Sprites.perfil('D007').acao,'curar');
+});
+test('orçamento de cada ação é de um a cinco segundos, incluindo retorno da câmera e voo das cartas',()=>{
+ const tipos=['entrada','dino','dino-fim','ataque','habilidade','fogo','veneno','captura','pandora-aplicada'];
+ for(let n=1;n<=24;n++){
+  const eventos=Array.from({length:n},(_,i)=>({tipo:tipos[i%tipos.length],codigo:i%3?'n022':'n016',seq:i+1}));
+  const cenas=VFX.roteiro(eventos);assert(cenas.length<=3);assert(cenas.every(c=>c.duracao>=1000));
+  const total=cenas.reduce((n,c)=>n+c.duracao,0)+280+1050;assert(total<=5000,total);assert(total>=1000);
+  assert.equal(cenas.flatMap(c=>c.eventos).length,eventos.length);
+ }
+});
+test('rótulos distinguem dano, defesa, compra, confusão, destruição e zumbificação',()=>{
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n039',defesa:40}),'DEF = 40');
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n028',defesa:11}),'DEF 11');
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n031',valor:3}),'3 carta(s)');
+ assert.equal(VFX.textoEvento({tipo:'reforco',codigo:'n013',valor:14,atributo:'ATQ base'}),'ATQ base 14');
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n040'}),'Derrotado');
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n034',copiada:'n039',defesa:27}),'DEF = 27');
+ assert.equal(VFX.textoEvento({tipo:'habilidade',codigo:'n005'}),'','ressuscitar para a mão não é recuperar vida');
+});
+test('Pandora marca criaturas dos dois lados sem causar dano no lançamento',()=>{
+ const {e,p,mover}=preparar();const a=mover('n013',0,'campo'),b=mover('n035',1,'campo'),pandora=mover('n002',0,'mao');
+ const defs=[a.defesa,b.defesa];assert(p.agir('a',{tipo:'habilidade',uid:pandora.uid,revisao:0}).ok);
+ const eventos=p.visao('a').efeitosVisuais.filter(e=>e.tipo==='pandora-aplicada');assert.equal(eventos.length,2);assert.deepEqual(eventos.map(e=>e.alvoDono),[0,1]);assert(eventos.every(e=>e.dano===undefined));
+ assert.deepEqual(p.estado.jogadores.map(j=>j.campo[0].defesa),defs);
+});
+test('Toxic Ran mira somente os auxiliares e equipamentos de água removidos',()=>{
+ const {e,p,mover}=preparar();const ran=mover('n036',0,'campo'),alvo=mover('n013',1,'campo');
+ const agua=mover('n009',1,'apoio'),outra=mover('n022',1,'apoio');agua.base.elemento='água';outra.base.elemento='metálico';agua.vinculo=outra.vinculo=alvo.uid;
+ const eq=mover('n026',1,'mao');eq.base.elemento='água';e.jogadores[1].mao=e.jogadores[1].mao.filter(c=>c!==eq);alvo.equip.push(eq);
+ assert(p.agir('a',{tipo:'habilidade',uid:ran.uid,revisao:0}).ok);const ev=p.visao('a').efeitosVisuais.filter(e=>e.tipo==='habilidade'&&e.codigo==='n036');assert.deepEqual(ev.map(e=>e.alvo).sort(),[agua.uid,eq.uid].sort());assert(ev.every(e=>e.alvo!==alvo.uid&&e.dano===undefined));assert(p.estado.jogadores[1].apoio.some(c=>c.uid===outra.uid));
+});
+test('armas de anulação diferenciam peixes e bolhas e não repetem a aplicação a cada verificação',()=>{
+ for(const codigo of ['n004','n021']){
+  const {e,mover}=preparar();const c=mover('n013',0,'campo'),t=mover('n035',1,'campo'),aux=mover('n022',1,'apoio'),arma=mover(codigo,0,'mao');aux.vinculo=t.uid;
+  assert(M.equipar(e,arma.uid).ok);const v=e.efeitosVisuais.filter(e=>e.tipo==='anulacao');assert.equal(v.length,1);assert.equal(v[0].codigo,codigo);assert.equal(v[0].alvo,aux.uid);
+  assert.match(M.estadoHabilidade(e,aux.uid).motivo,codigo==='n021'?/bolhas/:/peixes/);
+  e.acoes=2;M.atacar(e);assert.equal(e.efeitosVisuais.filter(e=>e.tipo==='anulacao').length,1);
+ }
+});
+test('representante informa somente o bônus real na entrada da criatura',()=>{
+ const {e,p,mover}=preparar();const c=mover('n013',0,'mao');e.jogadores[0].rep=cartas.find(c=>c.codigo==='D004');assert(p.agir('a',{tipo:'invocar',uid:c.uid,revisao:0}).ok);
+ const ev=p.visao('a').efeitosVisuais;assert(ev.some(e=>e.tipo==='entrada'&&e.codigo==='n013'));const rep=ev.find(e=>e.tipo==='representante');assert.equal(rep.codigo,'D004');assert.equal(rep.valor,10);assert.equal(rep.atributo,'DEF');
+});
+test('cópia de Kitsune retorna à mão própria também no roteiro visual',()=>{
+ const {p,mover}=preparar();const g=mover('n034',0,'campo');mover('n019',1,'campo');assert(p.agir('a',{tipo:'habilidade',uid:g.uid,revisao:0}).ok);
+ const v=p.visao('a').efeitosVisuais.find(e=>e.tipo==='habilidade');assert.equal(v.codigo,'n034');assert.equal(v.copiada,'n019');assert.equal(v.alvoDono,0);assert.equal(v.zonaOrigem,'campo');assert.equal(v.zonaAlvo,'mao');
+});
+test('último turno do Dino sem alvo também mostra o cacto, sem dano inventado',()=>{
+ const {e,mover}=preparar();mover('n013',0,'campo');const d=mover('n022',0,'mao');M.colocarApoio(e,d.uid);d.st.dino=1;M.encerrarTurno(e);
+ const v=e.efeitosVisuais.find(e=>e.tipo==='dino-fim');assert(v);assert.equal(v.dano,undefined);assert(e.jogadores[0].descarte.includes(d));
+});
+test('intervalo da máquina acomoda uma habilidade comum e o voo das cartas',()=>{
+ const ritmo=require('../public/ritmo');const cast=VFX.roteiro([{tipo:'habilidade',codigo:'n016'}]).reduce((n,c)=>n+c.duracao,0)+280+1050;
+ assert(ritmo.entreAcoesIA>=cast);assert(ritmo.entreAcoesIA+250<=5000);assert(ritmo.inicioIA>ritmo.avisoTurno);
 });

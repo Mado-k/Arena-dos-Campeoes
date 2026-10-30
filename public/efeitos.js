@@ -1,183 +1,183 @@
-/* Efeitos usam exclusivamente acontecimentos públicos do motor, sem calcular dano. */
-(function (raiz, fabrica) {
-    const api = fabrica();
-    if (typeof module === 'object' && module.exports) module.exports = api;
-    else { raiz.ArenaEfeitos = api; raiz.criarEfeitosMesa = api.criar; }
-})(typeof window !== 'undefined' ? window : globalThis, function () {
+/* A apresentação representa eventos públicos; regras e dano pertencem ao motor. */
+(function(raiz,fabrica){const api=fabrica(typeof module==='object'&&module.exports?require('./sprites'):raiz.ArenaSprites);if(typeof module==='object'&&module.exports)module.exports=api;else{raiz.ArenaEfeitos=api;raiz.criarEfeitosMesa=api.criar;}})(typeof window!=='undefined'?window:globalThis,function(S){
     'use strict';
-    function planejar(antes, depois) {
-        if (!antes || !depois || antes.voce !== depois.voce || antes.revisao === depois.revisao) return [];
-        const novas = (depois.efeitosVisuais || []).filter(e => Number.isSafeInteger(e.seq) && e.seq > (antes.serieVisual || 0));
-        // Uma aplicação específica substitui a faísca genérica da mesma habilidade.
-        return novas.filter(e => e.tipo !== 'habilidade' || !novas.some(x => x !== e && x.codigo === e.codigo && x.origem === e.origem && ['dano-feitico', 'captura', 'reforco'].includes(x.tipo)));
+    function planejar(antes,depois){
+        if(!antes||!depois||antes.voce!==depois.voce||antes.revisao===depois.revisao)return [];
+        const novos=(depois.efeitosVisuais||[]).filter(e=>Number.isSafeInteger(e.seq)&&e.seq>(antes.serieVisual||0));
+        return novos.filter(e=>e.tipo!=='habilidade'||!novos.some(x=>x!==e&&x.codigo===e.codigo&&x.origem===e.origem&&['dano-feitico','captura','reforco'].includes(x.tipo)));
     }
-    function trajeto(a, b, t, altura = 0) {
-        const p = Math.max(0, Math.min(1, t));
-        return { x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p - 4 * altura * p * (1 - p) };
+    const suave=t=>t*t*(3-2*t);
+    function trajeto(a,b,t,altura=0){const p=Math.max(0,Math.min(1,t));return{x:a.x+(b.x-a.x)*p,y:a.y+(b.y-a.y)*p-4*altura*p*(1-p)};}
+    function estilo(e){
+        if(/fogo/.test(e.tipo))return 'fogo';if(e.tipo==='veneno')return 'veneno';if(e.tipo==='confusao')return 'confusao';
+        if(e.tipo==='cura')return 'cura';if(e.tipo==='paralisia')return 'raio';if(e.tipo==='bloqueio')return 'escudo';
+        if(e.tipo==='pandora')return 'pandora';if(['representante','escudo'].includes(e.tipo))return 'defesa';
+        if(e.tipo==='ataque')return S.perfil(e.codigo)?.efeito||'golpe';
+        return S.perfil(e.copiada||e.codigo)?.efeito||'runa';
     }
-    function estilo(e) {
-        if (/fogo/.test(e.tipo)) return 'fogo';
-        if (/veneno/.test(e.tipo)) return 'veneno';
-        if (e.tipo === 'ataque') return 'golpe';
-        if (e.tipo === 'cura') return 'cura';
-        if (['escudo', 'bloqueio', 'equipar', 'heranca', 'reforco'].includes(e.tipo)) return 'escudo';
-        return ({ n001:'busca',n002:'pandora',n005:'cura',n006:'captura',n008:'captura',n016:'veneno',n017:'raio',n019:'portal',n020:'confusao',n024:'portal',n030:'sol',n031:'busca',n034:'copia',n035:'busca',n036:'agua',n039:'escudo',n040:'raio' })[e.codigo] || e.tipo === 'confusao' && 'confusao' || 'runa';
+    function textoEvento(e){
+        const codigo=e.copiada||e.codigo;
+        if(Number.isFinite(e.dano))return '−'+e.dano;
+        if(e.tipo==='bloqueio')return 'Bloqueado';
+        if(e.tipo==='paralisia')return 'Paralisado';
+        if(e.tipo==='heranca')return 'Reserva: +'+e.valor+' DEF';
+        if(e.tipo==='dino-fim')return 'Fim do apoio';
+        if(e.tipo==='entrada'&&codigo==='n032'&&Number.isFinite(e.defesa))return 'DEF '+e.defesa;
+        if(codigo==='n039'&&Number.isFinite(e.defesa))return 'DEF = '+e.defesa;
+        if(codigo==='n028'&&e.tipo==='habilidade'&&Number.isFinite(e.defesa))return 'DEF '+e.defesa;
+        if(codigo==='n040'&&e.tipo==='habilidade')return 'Derrotado';
+        if(['n031','n035'].includes(codigo)&&Number.isFinite(e.valor))return e.valor+' carta(s)';
+        if(e.tipo==='reforco'&&e.atributo&&Number.isFinite(e.valor))return e.atributo+' '+e.valor;
+        if(Number.isFinite(e.valor)&&e.valor>0)return '+'+e.valor+(e.atributo?' '+e.atributo:'');
+        if(e.tipo==='anulacao')return 'Habilidade anulada';
+        if(e.tipo==='captura')return 'Para a mão';
+        if(e.tipo==='pandora-aplicada')return 'Pandora ativa';
+        if(e.tipo==='presenca'&&codigo==='n009')return 'Efeitos ×2';
+        return '';
     }
-    function criar(mesa, { capturarVista = () => null, restaurarVista = () => {} } = {}) {
-        let geracao = 0, camera = false, rodando = false;
-        const nos = new Set(), tarefas = new Set(), revelados = new Set();
-        const movimentoReduzido = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-        function node(classe, texto) {
-            const n = document.createElement('div'); n.className = classe;
-            if (texto !== undefined) n.textContent = texto;
-            n.setAttribute('aria-hidden','true'); document.body.append(n); nos.add(n); return n;
+    // Uma ação nunca ganha uma espera por carta atingida. Alvos do mesmo efeito são simultâneos.
+    function roteiro(eventos){
+        const cenas=[];let grupo=[];
+        const fechar=()=>{if(grupo.length){cenas.push({eventos:grupo});grupo=[];}};
+        for(const e of eventos){
+            if(['dino','dino-fim','ataque'].includes(e.tipo)){fechar();cenas.push({eventos:[e]});}else grupo.push(e);
+        }fechar();
+        while(cenas.length>3){const ultima=cenas.pop();cenas.at(-1).eventos.push(...ultima.eventos);}
+        const pesos=cenas.map(c=>c.eventos.some(e=>e.tipo==='dino')?4:c.eventos.some(e=>e.tipo==='ataque')?1.8:c.eventos.some(e=>['habilidade','dano-feitico','pandora-aplicada','captura'].includes(e.tipo))?2.4:c.eventos.some(e=>['entrada','presenca','equipar','representante'].includes(e.tipo))?2:1.2);
+        const alvo=Math.min(3200,Math.max(1400,pesos.reduce((a,b)=>a+b,0)*1000));
+        const reservado=cenas.length*1000,extra=Math.max(0,alvo-reservado),soma=pesos.reduce((a,b)=>a+b,0);
+        return cenas.map((c,i)=>({...c,duracao:1000+extra*pesos[i]/soma}));
+    }
+    function criar(mesa,{capturarVista=()=>null,restaurarVista=()=>{}}={}){
+        let geracao=0,camera=false,rodando=false,ultimoQuadro=0;
+        const nos=new Set(),tarefas=new Set(),revelados=new Set();
+        const camada=document.createElement('div');camada.className='efeitos-camada';document.body.append(camada);
+        const reduzido=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function node(classe,texto){const n=document.createElement('div');n.className=classe;if(texto!==undefined)n.textContent=texto;n.setAttribute('aria-hidden','true');camada.append(n);nos.add(n);return n;}
+        function remover(n){n?.remove();nos.delete(n);}
+        function quadro(ms,acao,token=geracao){return new Promise(resolve=>{
+            let raf,inicio;
+            const tarefa={cancelar(){cancelAnimationFrame(raf);tarefas.delete(tarefa);resolve(false);}};tarefas.add(tarefa);
+            function passo(agora){if(token!==geracao||document.hidden)return tarefa.cancelar();inicio??=agora;const t=Math.min(1,(agora-inicio)/ms);acao(t,agora);if(t<1)raf=requestAnimationFrame(passo);else{tarefas.delete(tarefa);resolve(true);}}
+            raf=requestAnimationFrame(passo);
+        });}
+        function zona(dono,nome){return mesa.querySelector(`[data-jogador="${Number(dono)}"] [data-zona="${nome}"]`)||mesa;}
+        function carta(uid,dono){
+            const c=[...mesa.querySelectorAll('[data-carta]')].find(n=>n.dataset.carta===String(uid));const lado=(c||zona(dono,'campo')).closest('.assento');
+            if(lado&&!lado.getClientRects().length){lado.classList.add('vfx-revelado');revelados.add(lado);}
+            return c?.getClientRects().length?c:zona(dono,'campo');
         }
-        function remover(n) { n?.remove(); nos.delete(n); }
-        function quadro(ms, acao, token = geracao) {
-            return new Promise(resolve => {
-                let raf, inicio;
-                const tarefa = { cancelar() { cancelAnimationFrame(raf); tarefas.delete(tarefa); resolve(false); } };
-                tarefas.add(tarefa);
-                function passo(agora) {
-                    if (token !== geracao || document.hidden) return tarefa.cancelar();
-                    inicio ??= agora;
-                    const t = Math.min(1, (agora-inicio)/ms); acao(t);
-                    if (t < 1) raf = requestAnimationFrame(passo);
-                    else { tarefas.delete(tarefa); resolve(true); }
-                }
-                raf = requestAnimationFrame(passo);
-            });
+        function ponto(n){const r=n.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};}
+        function posicionar(n,p){n.style.left=p.x+'px';n.style.top=p.y+'px';}
+        function mundo(n,j){const p=ponto(n),r=j.getBoundingClientRect();return{x:p.x-r.left+j.scrollLeft,y:p.y-r.top+j.scrollTop};}
+        function tela(p,j){const r=j.getBoundingClientRect();return{x:r.left+p.x-j.scrollLeft,y:r.top+p.y-j.scrollTop};}
+        function seguir(p,j,agora){
+            if(!camera)return;const dt=ultimoQuadro?Math.min(40,agora-ultimoQuadro):16;ultimoQuadro=agora;const alfa=1-Math.exp(-dt/145),r=j.getBoundingClientRect();
+            if(j.scrollWidth>j.clientWidth)j.scrollLeft+=(p.x-r.left-j.clientWidth/2)*alfa;
+            if(j.scrollHeight>j.clientHeight)j.scrollTop+=(p.y-r.top-j.clientHeight/2)*alfa;
+            window.scrollTo({left:scrollX,top:Math.max(0,scrollY+(p.y-innerHeight*.48)*alfa),behavior:'instant'});
         }
-        function carta(uid, dono) {
-            const c = [...mesa.querySelectorAll('[data-carta]')].find(n => n.dataset.carta === String(uid));
-            const lado = c?.closest('.assento');
-            if (lado && !lado.getClientRects().length) { lado.classList.add('vfx-revelado'); revelados.add(lado); }
-            if (c?.getClientRects().length) return c;
-            return mesa.querySelector(`[data-jogador="${Number(dono)}"] [data-zona="campo"]`) || mesa;
+        function simbolo(tipo){const n=document.createElement('span');n.className='vfx-glifo';if(['fogo','veneno'].includes(tipo))n.classList.add('sprite-estado','sprite-'+tipo);else n.innerHTML=S.glifo(tipo);return n;}
+        function personagem(codigo){const n=document.createElement('div');n.className=codigo==='n022'?'sprite-dino':'sprite-criatura';if(codigo!=='n022')n.innerHTML=S.desenhar(codigo);return n;}
+        function efeitoTipo(e){
+            if(e.tipo==='entrada')return S.perfil(e.codigo)?.acao==='protecao'?'escudo':S.perfil(e.codigo)?.efeito||'runa';
+            if(e.tipo==='equipar')return 'defesa';return estilo(e);
         }
-        function ponto(n) { const r = n.getBoundingClientRect(); return { x:r.left+r.width/2, y:r.top+r.height/2 }; }
-        function posicionar(n,p) { n.style.left=p.x+'px'; n.style.top=p.y+'px'; }
-        function mundo(n, janela) { const p=ponto(n),r=janela.getBoundingClientRect();return {x:p.x-r.left+janela.scrollLeft,y:p.y-r.top+janela.scrollTop}; }
-        function tela(p, janela) { const r=janela.getBoundingClientRect();return {x:r.left+p.x-janela.scrollLeft,y:r.top+p.y-janela.scrollTop}; }
-        function seguir(p, janela) {
-            if (!camera) return;
-            const r = janela.getBoundingClientRect();
-            if(janela.scrollWidth>janela.clientWidth)janela.scrollLeft += (p.x-r.left-janela.clientWidth/2)*.12;
-            if(janela.scrollHeight>janela.clientHeight)janela.scrollTop += (p.y-r.top-janela.clientHeight/2)*.12;
-            window.scrollTo({left:scrollX,top:Math.max(0,scrollY+(p.y-innerHeight*.48)*.12),behavior:'instant'});
+        function alvoEvento(e){
+            if(e.zonaAlvo)return zona(e.dono,e.zonaAlvo);
+            return carta(e.alvo,e.alvoDono);
         }
-        function glifo(tipo) {
-            // Silhuetas próprias numa grade de 16 pixels, sem fontes de emoji.
-            const formas = {
-                raio:'M9 0H4V8H7L5 16 14 5H9Z',
-                cura:'M6 1H10V6H15V10H10V15H6V10H1V6H6Z',
-                escudo:'M2 1H14V9H12V12H10V14H6V12H4V9H2ZM5 4V8H7V11H9V8H11V4Z',
-                golpe:'M12 0H16V4H13V7H10V10H7V13H4V16H0V12H3V9H6V6H9V3H12Z',
-                agua:'M6 0H10V4H12V6H14V12H12V14H4V12H2V6H4V4H6ZM5 8V11H7V8Z',
-                confusao:'M3 1H13V3H15V11H13V13H5V11H3V5H11V9H7V7H5V11H13V3H3V15H1V3H3Z',
-                sol:'M6 0H10V3H13V6H16V10H13V13H10V16H6V13H3V10H0V6H3V3H6Z',
-                runa:'M6 0H10V3H13V6H16V10H13V13H10V16H6V13H3V10H0V6H3V3H6ZM6 5V11H10V5Z'
-            };
-            const n=document.createElementNS('http://www.w3.org/2000/svg','svg');n.setAttribute('viewBox','0 0 16 16');n.setAttribute('aria-hidden','true');
-            const p=document.createElementNS(n.namespaceURI,'path');p.setAttribute('d',formas[tipo]||formas.runa);n.append(p);return n;
+        function emitirParticulas(e,t,nodes,alvo){
+            const p=ponto(alvo);
+            for(let i=0;i<nodes.length;i++){const n=nodes[i],angulo=i*Math.PI*2/nodes.length;posicionar(n,{x:p.x+Math.cos(angulo)*t*50,y:p.y+Math.sin(angulo)*t*50});n.style.opacity=String(1-t);}
         }
-        async function impacto(e, tipo = estilo(e)) {
-            const alvo=carta(e.alvo,e.alvoDono), p=ponto(alvo);
-            const marca=node('vfx-impacto vfx-'+tipo);posicionar(marca,p);marca.append(glifo(tipo));
-            const texto=Number.isFinite(e.dano)?'−'+e.dano:Number.isFinite(e.valor)&&e.valor>0?'+'+e.valor:e.tipo==='bloqueio'?'Bloqueado':'';
-            const deslocamento=(e.seq%3)*22;
-            const numero=texto?node('vfx-numero vfx-'+tipo,texto):null;
-            if(numero)posicionar(numero,{x:p.x,y:p.y-25});
-            const estilhaços=Array.from({length:8},(_,i)=>{const n=node('vfx-particula vfx-'+tipo);return {n,angulo:i*Math.PI/4};});
-            await quadro(640,t=>{
-                const atual=ponto(alvo);posicionar(marca,atual);marca.style.transform=`translate(-50%,-50%) scale(${.6+Math.sin(t*Math.PI)*.65}) rotate(${tipo==='confusao'?t*180:0}deg)`;marca.style.opacity=String(1-t*t);
-                if(numero){posicionar(numero,{x:atual.x,y:atual.y-30-deslocamento-t*48});numero.style.opacity=String(Math.min(1,(1-t)*4));}
-                for(const {n,angulo} of estilhaços){posicionar(n,{x:atual.x+Math.cos(angulo)*t*65,y:atual.y+Math.sin(angulo)*t*65});n.style.opacity=String(1-t);}
-            });
-            remover(marca);remover(numero);for(const {n} of estilhaços)remover(n);
-        }
-        async function magia(e) {
-            const token=geracao;
-            if(e.tipo==='habilidade'&&['n016','n036'].includes(e.codigo))return invocar(e);
-            const tipo=estilo(e),origem=carta(e.origem,e.dono),alvo=carta(e.alvo,e.alvoDono);
-            if(origem!==alvo){
-                const projetil=node('vfx-projetil vfx-'+tipo);
-                if(tipo==='fogo'||tipo==='veneno')projetil.classList.add('sprite-estado','sprite-'+tipo);else projetil.append(glifo(tipo));
-                const terminou=await quadro(520,t=>{const p=trajeto(ponto(origem),ponto(alvo),t,35);posicionar(projetil,p);projetil.style.transform=`translate(-50%,-50%) rotate(${t*120}deg)`;},token);remover(projetil);if(!terminou)return;
-            }
-            if(token===geracao)await impacto(e,tipo);
-        }
-        async function invocar(e) {
+        async function cena(eventos,duracao,comCamera){
             const token=geracao,janela=mesa.querySelector('.arena-janela')||mesa;
-            const origem=carta(e.origem,e.dono),alvo=carta(e.alvo,e.alvoDono);
-            const arte=origem.querySelector('.c-arte')||origem;
-            const a=mundo(arte,janela), b=mundo(alvo,janela);a.y+=15;b.y-=15;
-            const ator=node('vfx-invocado'),recorte=document.createElement('div'),personagem=document.createElement('div'),borda=document.createElement('div');
-            const ehDino=e.codigo==='n022',tipo=ehDino?'golpe':estilo(e);
-            recorte.className='vfx-recorte';personagem.className=ehDino?'sprite-dino':'sprite-criatura vfx-'+tipo;
-            if(!ehDino){
-                // Avatares originais de Kappa e Leviatã; mesma abertura e retorno do Dino.
-                const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 32 32');
-                const kappa=[[10,2,12,3,'#b7ee7d'],[6,5,20,12,'#568447'],[10,7,12,12,'#9bd85b'],[9,9,3,3,'#162c2e'],[20,9,3,3,'#162c2e'],[12,13,8,3,'#e9ce71'],[9,19,14,9,'#426a37'],[4,19,5,5,'#9bd85b'],[23,19,5,5,'#9bd85b'],[8,28,6,4,'#9bd85b'],[19,28,6,4,'#9bd85b']];
-                const leviata=[[6,2,15,3,'#d6f7ee'],[9,5,18,6,'#6bc7d8'],[4,10,20,8,'#4195b5'],[20,7,3,3,'#172638'],[7,18,12,6,'#397a9f'],[1,22,20,6,'#6bc7d8'],[16,26,12,5,'#4195b5'],[1,18,4,7,'#d6f7ee'],[24,28,7,3,'#d6f7ee']];
-                for(const [x,y,w,h,cor]of (e.codigo==='n016'?kappa:leviata)){const r=document.createElementNS(svg.namespaceURI,'rect');for(const [k,v]of Object.entries({x,y,width:w,height:h,fill:cor}))r.setAttribute(k,v);svg.append(r);}personagem.append(svg);
+            // Mesmo emissor e mesma ação não produzem vários personagens sobrepostos.
+            const grupos=new Map();for(const e of eventos.slice(-16)){const chave=e.origem+':'+e.codigo;const g=grupos.get(chave)||[];g.push(e);grupos.set(chave,g);}
+            const conjuntos=[];
+            for(const [indice,grupo]of [...grupos.values()].entries()){
+                const e=grupo[0],perfil=S.perfil(e.codigo),origem=carta(e.origem,e.dono),alvos=grupo.map(alvoEvento),tipo=efeitoTipo(e);
+                const avatar=perfil&&e.codigo!=='n001'&&!['veneno','fogo','pandora','confusao','paralisia'].includes(e.tipo);
+                const ator=avatar?node('vfx-invocado vfx-'+tipo):null;
+                const recorte=avatar?document.createElement('div'):null,pessoa=avatar?personagem(e.codigo):null,borda=avatar?document.createElement('div'):null;
+                if(ator){recorte.className='vfx-recorte';borda.className='vfx-abertura';recorte.append(pessoa);ator.append(recorte,borda);ator.dataset.codigo=e.codigo;}
+                const arte=origem.querySelector('.c-arte')||origem;let a=mundo(arte,janela);a.y+=12;
+                if(indice&&grupo.some(x=>x.tipo==='representante'))a.x+=65;
+                const destino=alvos[0],b=mundo(destino,janela);b.y-=12;
+                const atacar=e.tipo==='ataque'||e.tipo==='dino',retorno=(e.copiada||e.codigo)==='n019'&&e.tipo==='habilidade',fimDino=e.tipo==='dino-fim';
+                const deslocar=atacar||['n006','n008','n016','n020','n028','n034','n036','n039','n040'].includes(e.codigo)&&e.tipo!=='entrada'&&e.tipo!=='equipar';
+                const perto=deslocar?trajeto(a,b,atacar?.73:.42):a;
+                const efeitos=grupo.map((ev,i)=>{
+                    const marca=node('vfx-impacto vfx-'+efeitoTipo(ev));marca.append(simbolo(efeitoTipo(ev)));marca.hidden=true;
+                    const texto=textoEvento(ev),numero=texto?node('vfx-numero vfx-'+efeitoTipo(ev),texto):null;if(numero)numero.hidden=true;
+                    const projetil=node('vfx-projetil vfx-'+efeitoTipo(ev));projetil.hidden=true;
+                    if(['fogo','veneno'].includes(efeitoTipo(ev)))projetil.classList.add('sprite-estado','sprite-'+efeitoTipo(ev));else projetil.append(simbolo(efeitoTipo(ev)));
+                    const particulas=Array.from({length:6},()=>{const n=node('vfx-particula vfx-'+efeitoTipo(ev));n.hidden=true;return n;});
+                    return{ev,marca,numero,projetil,particulas,alvo:alvos[i]};
+                });
+                const extras=[];
+                if(e.ultimo||fimDino){const cacto=node('vfx-cacto');cacto.innerHTML='<svg viewBox="0 0 16 24" shape-rendering="crispEdges"><path fill="#38683d" d="M6 1H10V23H6ZM1 7H4V14H6V17H1ZM12 4H15V14H10V11H12Z"/><path fill="#97bd65" d="M7 2H8V22H7ZM2 8H3V13H2ZM13 5H14V10H13Z"/></svg>';cacto.hidden=true;extras.push(cacto);}
+                conjuntos.push({e,ator,pessoa,borda,recorte,a,b,perto,atacar,retorno,fimDino,deslocar,efeitos,extras,origem,tipo});
             }
-            borda.className='vfx-abertura';recorte.append(personagem);ator.append(recorte,borda);
-            const anuncio=node('vfx-anuncio',(ehDino?'Dino do Google':e.codigo==='n016'?'Kappa':'Leviatã')+' saiu da carta!');anuncio.removeAttribute('aria-hidden');anuncio.setAttribute('role','status');
-            let fase='surgindo';ator.dataset.fase=fase;ator.dataset.codigo=e.codigo;
-            function orientar(destino,partida){personagem.style.setProperty('--direcao',destino.x<partida.x?-1:1);}
-            function mover(p){let atual=tela(p,janela);seguir(atual,janela);atual=tela(p,janela);posicionar(ator,atual);}
-            orientar(b,a);
-            if(!await quadro(650,t=>{mover(a);personagem.style.setProperty('--saida',(100*(1-t))+'%');},token))return;
-            recorte.style.overflow='visible';borda.hidden=true;personagem.classList.add('correndo');
-            fase='correndo';ator.dataset.fase=fase;
-            const espera={x:a.x+(b.x-a.x)*.78,y:a.y+(b.y-a.y)*.78};
-            if(!await quadro(1000,t=>mover(trajeto(a,espera,t*t*(3-2*t))),token))return;
-            personagem.classList.remove('correndo');personagem.classList.add('pulando');ator.dataset.fase='pulando';
-            if(ehDino){if(!await quadro(650,t=>mover(trajeto(espera,b,t,100)),token))return;}
-            else {
-                const projetil=node('vfx-projetil vfx-'+tipo);if(tipo==='veneno')projetil.classList.add('sprite-estado','sprite-veneno');else projetil.append(glifo(tipo));
-                if(!await quadro(550,t=>{mover(espera);posicionar(projetil,tela(trajeto(espera,b,t,25),janela));},token))return;remover(projetil);
-            }
-            ator.dataset.fase='impacto';await impacto(e,tipo);if(token!==geracao)return;
-            anuncio.textContent=ehDino?`Dino causou ${e.dano} de dano. Voltando à carta.`:'Habilidade aplicada. Voltando à carta.';
-            personagem.classList.remove('pulando');personagem.classList.add('correndo');orientar(a,b);ator.dataset.fase='voltando';
-            const volta=ehDino?b:espera;
-            if(!await quadro(1150,t=>mover(trajeto(volta,a,t*t*(3-2*t))),token))return;
-            personagem.classList.remove('correndo');recorte.style.overflow='hidden';borda.hidden=false;ator.dataset.fase='entrando';
-            await quadro(650,t=>{mover(a);personagem.style.setProperty('--saida',(100*t)+'%');},token);
-            remover(ator);remover(anuncio);
-        }
-        function limpar() {
-            geracao++;camera=false;rodando=false;
-            for(const t of [...tarefas])t.cancelar();
-            for(const n of [...nos])remover(n);
-            for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();
-            mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');
-        }
-        return {
-            planejar, ocupado:()=>rodando, interromperCamera(){camera=false;}, limpar,
-            async executar(antes,depois) {
-                const eventos=planejar(antes,depois);
-                if(!eventos.length||document.hidden||movimentoReduzido())return;
-                const token=geracao,vista=capturarVista();camera=true;rodando=true;mesa.classList.add('mesa-animando');mesa.setAttribute('aria-busy','true');
-                try {
-                    // O fim do turno acontece antes dos efeitos do próximo dono.
-                    // Agrupa só acontecimentos contíguos, preservando essa ordem.
-                    let grupo=[];
-                    const liberar=async()=>{await Promise.all(grupo.slice(-12).map(magia));grupo=[];};
-                    for(const e of eventos){
-                        if(token!==geracao)break;
-                        if(e.tipo==='dino'||e.tipo==='habilidade'&&['n016','n036'].includes(e.codigo)){
-                            await liberar();if(token!==geracao)break;await invocar(e);
-                        }else grupo.push(e);
+            const principal=conjuntos.find(c=>c.ator)||conjuntos[0];
+            const anuncio=node('vfx-anuncio','');anuncio.removeAttribute('aria-hidden');anuncio.setAttribute('role','status');
+            anuncio.textContent=principal?S.perfil(principal.e.codigo)?.nome||'Efeito da habilidade':'Efeito da habilidade';
+            await quadro(duracao,(t,agora)=>{
+                for(const c of conjuntos){
+                    const {e,ator,pessoa,a,b,perto,efeitos}=c;let atual=a,fase='surgindo';
+                    if(t<.16){pessoa?.style.setProperty('--saida',(100*(1-suave(t/.16)))+'%');}
+                    else if(t<.38){fase='correndo';atual=trajeto(a,perto,suave((t-.16)/.22));}
+                    else if(t<.55){fase=c.atacar?'pulando':'executando';atual=c.atacar?trajeto(perto,b,(t-.38)/.17,e.tipo==='dino'?90:30):perto;}
+                    else if(t<.67){fase='impacto';atual=c.atacar?b:perto;}
+                    else if(t<.86){fase='voltando';atual=trajeto(c.atacar?b:perto,c.retorno?b:a,suave((t-.67)/.19));}
+                    else{fase='entrando';atual=c.retorno?b:a;pessoa?.style.setProperty('--saida',(100*suave((t-.86)/.14))+'%');}
+                    if(pessoa&&t>=.16&&t<.86)pessoa.style.setProperty('--saida','0%');
+                    if(c.fimDino&&t>=.16){atual={x:a.x+suave(Math.min(1,(t-.16)/.5))*45,y:a.y};fase=t<.66?'correndo':'cacto';}
+                    if(e.ultimo&&t>.78){atual={x:a.x+suave(Math.min(1,(t-.78)/.16))*45,y:a.y};fase=t<.94?'voltando':'cacto';pessoa?.style.setProperty('--saida','0%');}
+                    if(ator){
+                        if(ator.dataset.fase!==fase)ator.dataset.fase=fase;
+                        c.recorte.style.overflow=['surgindo','entrando'].includes(fase)?'hidden':'visible';c.borda.hidden=!['surgindo','entrando'].includes(fase);
+                        pessoa.classList.toggle('correndo',fase==='correndo'||fase==='voltando');pessoa.classList.toggle('executando',['executando','impacto'].includes(fase));
+                        pessoa.style.setProperty('--direcao',t>.67&&c.deslocar!==false?a.x<b.x?-1:1:b.x<a.x?-1:1);
+                        pessoa.style.setProperty('--progresso',t);ator.style.opacity=(c.fimDino||e.ultimo)&&t>.94?String(Math.max(0,1-(t-.94)/.06)):'1';
+                        let p=tela(atual,janela);
+                        if(c===principal&&comCamera){
+                            const f=efeitos.find(f=>f.ev.alvoDono!==e.dono)||efeitos[0];
+                            const foco=!c.atacar&&t>=.38&&t<.67?trajeto(tela(perto,janela),ponto(f.alvo),suave(Math.min(1,(t-.38)/.17))):p;
+                            seguir(foco,janela,agora);
+                        }
+                        p=tela(atual,janela);posicionar(ator,p);
                     }
-                    if(token===geracao)await liberar();
-                } finally {
-                    if(token===geracao){const voltar=camera;limpar();if(voltar)restaurarVista(vista);}
+                    if(pessoa&&e.copiada&&t>=.38&&t<.67&&pessoa.dataset.copiada!==e.copiada){pessoa.innerHTML=S.desenhar(e.copiada);pessoa.dataset.copiada=e.copiada;}
+                    else if(pessoa&&e.copiada&&t>=.67&&pessoa.dataset.copiada){pessoa.innerHTML=S.desenhar(e.codigo);delete pessoa.dataset.copiada;}
+                    if(!ator&&c===principal&&comCamera)seguir(ponto(efeitos[0].alvo),janela,agora);
+                    for(const f of efeitos){
+                        const p=ponto(f.alvo),desde=c.atacar?tela(perto,janela):e.zonaOrigem?ponto(zona(e.dono,e.zonaOrigem)):tela(perto,janela);
+                        f.projetil.hidden=t<.38||t>.55||c.fimDino||c.atacar;
+                        if(!f.projetil.hidden)posicionar(f.projetil,trajeto(desde,p,suave((t-.38)/.17),20));
+                        const v=(t-.55)/.29,visivel=v>=0&&v<=1;f.marca.hidden=!visivel;f.particulas.forEach(n=>n.hidden=!visivel);if(f.numero)f.numero.hidden=!visivel;
+                        if(visivel){posicionar(f.marca,p);f.marca.style.transform=`translate(-50%,-50%) scale(${.65+Math.sin(Math.PI*v)*.55})`;f.marca.style.opacity=String(1-v*.8);emitirParticulas(e,v,f.particulas,f.alvo);if(f.numero){posicionar(f.numero,{x:p.x,y:p.y-30-v*38-(e.seq%2)*20});f.numero.style.opacity=String(Math.min(1,(1-v)*4));}}
+                    }
+                    for(const n of c.extras){n.hidden=t<(c.fimDino ? .15 : .76);posicionar(n,tela({x:a.x+45,y:a.y},janela));}
                 }
+            },token);
+            for(const c of conjuntos){remover(c.ator);for(const f of c.efeitos){remover(f.marca);remover(f.numero);remover(f.projetil);f.particulas.forEach(remover);}c.extras.forEach(remover);}remover(anuncio);
+        }
+        function limpar(){geracao++;camera=false;rodando=false;ultimoQuadro=0;for(const t of [...tarefas])t.cancelar();for(const n of [...nos])remover(n);for(const n of revelados)n.classList.remove('vfx-revelado');revelados.clear();mesa.classList.remove('mesa-animando');mesa.removeAttribute('aria-busy');}
+        return{planejar,ocupado:()=>rodando,interromperCamera(){camera=false;},limpar,
+            async executar(antes,depois){
+                const eventos=planejar(antes,depois);if(!eventos.length||document.hidden||reduzido())return;
+                const token=geracao,vista=capturarVista();camera=true;rodando=true;mesa.classList.add('mesa-animando');mesa.setAttribute('aria-busy','true');
+                try{
+                    for(const c of roteiro(eventos)){if(token!==geracao)break;await cena(c.eventos,c.duracao,true);}
+                    if(token===geracao&&camera&&vista){
+                        const x=scrollX,y=scrollY,j=mesa.querySelector('.arena-janela'),mx=j?.scrollLeft||0,my=j?.scrollTop||0;
+                        await quadro(280,t=>{if(!camera)return;const v=suave(t);window.scrollTo({left:x+(vista.x-x)*v,top:y+(vista.y-y)*v,behavior:'instant'});if(j&&vista.mesa)j.scrollTo({left:mx+(vista.mesa.x-mx)*v,top:my+(vista.mesa.y-my)*v,behavior:'instant'});},token);
+                    }
+                }finally{if(token===geracao){const voltar=camera;limpar();if(voltar)restaurarVista(vista);}}
             }
         };
     }
-    return { planejar, trajeto, estilo, criar };
+    return{planejar,trajeto,estilo,textoEvento,roteiro,criar};
 });

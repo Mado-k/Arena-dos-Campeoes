@@ -1,5 +1,5 @@
 /* Sprites próprios de estado; quadros discretos, deslocamento contínuo. */
-.sprite-estado { display:inline-block; flex:none; width:20px; height:20px; background-image:url('assets/efeitos/estados-pixel.png'); background-size:400% 400%; image-rendering:pixelated; animation:quadros-fogo .9s steps(1,end) infinite; }
+.sprite-estado { display:inline-block; flex:none; width:20px; height:20px; background-image:url('assets/efeitos/estados-pixel.png'); background-size:400% 400%; image-rendering:pixelated; animation:quadros-fogo 1.2s steps(1,end) infinite; }
 .sprite-veneno { animation-name:quadros-veneno; }
 @keyframes quadros-fogo { 0%,100%{background-position:0 0}12.5%{background-position:33.333% 0}25%{background-position:66.666% 0}37.5%{background-position:100% 0}50%{background-position:0 33.333%}62.5%{background-position:33.333% 33.333%}75%{background-position:66.666% 33.333%}87.5%{background-position:100% 33.333%} }
 @keyframes quadros-veneno { 0%,100%{background-position:0 66.666%}12.5%{background-position:33.333% 66.666%}25%{background-position:66.666% 66.666%}37.5%{background-position:100% 66.666%}50%{background-position:0 100%}62.5%{background-position:33.333% 100%}75%{background-position:66.666% 100%}87.5%{background-position:100% 100%} }
@@ -37,3 +37,45 @@
 .sprite-criatura.correndo svg { animation:criatura-passo .32s steps(2,end) infinite; }
 @keyframes criatura-passo { 50% { transform:translateY(-2px) rotate(-3deg); } }
 @media(prefers-reduced-motion:reduce) { .sprite-criatura.correndo svg { animation:none; } }
+
+/* Modelos próprios em grade de 32 px; nenhum avatar recebe suavização de borda. */
+.vfx-glifo { display:block; width:100%; height:100%; }
+.vfx-glifo svg { width:100%; height:100%; fill:currentColor; shape-rendering:crispEdges; }
+.sprite-criatura svg { overflow:visible; }
+.sprite-criatura .pix-bracos,.sprite-criatura .pix-pernas,.sprite-criatura .pix-tampa { transform-box:fill-box; transform-origin:center; }
+.sprite-criatura.correndo .pix-pernas { animation:pernas-pixel .3s steps(2,end) infinite; }
+.sprite-criatura.executando .pix-bracos { animation:gesto-pixel .55s ease-in-out infinite alternate; }
+.sprite-criatura.executando .pix-aura { animation:aura-pixel .65s steps(2,end) infinite; }
+.vfx-invocado[data-codigo="n002"] .sprite-criatura.executando .pix-tampa { transform:translateY(-5px); }
+.vfx-invocado[data-codigo="n024"] .sprite-criatura.executando { rotate:12deg; }
+.vfx-invocado[data-codigo="n028"] .sprite-criatura.executando { rotate:-10deg; }
+.vfx-invocado[data-codigo="n026"] .sprite-criatura.executando { scale:1.15; }
+.vfx-cacto { position:fixed; z-index:490; width:38px; height:58px; pointer-events:none; transform:translate(-50%,-100%); }
+.vfx-cacto svg { width:100%; height:100%; shape-rendering:crispEdges; }
+.vfx-folhas { color:#9dd887; }.vfx-peixe,.vfx-bolha,.vfx-canto { color:#8edce1; }
+.vfx-bifrost,.vfx-busca,.vfx-cartas,.vfx-forca,.vfx-sol,.vfx-luz { color:#f6d994; }
+.vfx-duplicar,.vfx-gravidade,.vfx-retorno,.vfx-redemoinho,.vfx-ressurreicao { color:#c3b3f0; }
+.vfx-zumbi { color:#b5c29c; }.vfx-fantasma,.vfx-lua,.vfx-recusa { color:#c9a4e6; }
+.vfx-igualar,.vfx-defesa,.vfx-heranca { color:#a8dfd7; }.vfx-ruptura,.vfx-corte { color:#e9b3ca; }
+@keyframes pernas-pixel { 50% { transform:translate(1px,-1px); } }
+@keyframes gesto-pixel { to { transform:translateY(-2px); } }
+@keyframes aura-pixel { 50% { opacity:.5; } }
+@media(prefers-reduced-motion:reduce) { .sprite-criatura * { animation:none!important; } }
+
+.mini-estado { display:inline-flex; width:13px; height:13px; flex:none; animation:aura-pixel 1.4s steps(2,end) infinite; }
+.mini-estado svg { width:100%; height:100%; shape-rendering:crispEdges; }
+.estado-raio { color:#ffe599; }.estado-confusao,.estado-canto { color:#d8b5f4; }.estado-zumbi { color:#b9c791; }.estado-peixe,.estado-bolha { color:#97d8e9; }
+.detalhe-online .mini-estado { width:20px; height:20px; }
+@media(prefers-reduced-motion:reduce) { .mini-estado { animation:none; } }
+
+.retrato-pixel { display:inline-flex; width:44px; height:44px; align-self:center; margin:auto; }
+.retrato-pixel svg { width:100%; height:100%; shape-rendering:crispEdges; }
+.arena-janela:not(.arena-foco) :is(.assento-oeste,.assento-leste) .retrato-pixel { transform:rotate(var(--giro-arte)); }
+/* Muitos estados não empurram atributos/descrições para fora da carta. */
+.carta-online .estados-pixel { flex-wrap:nowrap; min-height:16px; gap:2px; }
+.carta-online .estados-pixel:has(.estado-pixel:nth-child(3)) .estado-pixel > span:last-child { display:none; }
+.carta-online .estados-pixel:has(.estado-pixel:nth-child(3)) .sprite-estado { width:13px; height:13px; }
+.carta-online .estados-pixel:has(.estado-pixel:nth-child(3)) .estado-pixel { gap:0; }
+
+/* Sprites fora da câmera não podem alargar a página nem redimensionar o celular. */
+.efeitos-camada { position:fixed; inset:0; z-index:490; contain:layout paint; overflow:clip; pointer-events:none; }

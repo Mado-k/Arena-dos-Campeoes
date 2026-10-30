@@ -170,6 +170,7 @@
             const inicial = () => caixa.append(el('span', (base.nome || '?').charAt(0).toUpperCase(), 'inicial'));
             if (!base.imagem) {
                 if(base.codigo==='n022'){const dino=el('span',undefined,'sprite-dino retrato-dino');dino.setAttribute('aria-hidden','true');caixa.append(dino);}
+                else if(window.ArenaSprites?.perfil(base.codigo)){const retrato=el('span',undefined,'retrato-pixel');retrato.innerHTML=ArenaSprites.desenhar(base.codigo);retrato.setAttribute('aria-hidden','true');caixa.append(retrato);}
                 else inicial();
                 return caixa;
             }
@@ -213,6 +214,16 @@
                 sprite.setAttribute('aria-hidden','true');efeito.append(sprite,el('span',nome));
                 efeito.title=nome+': '+(Number.isFinite(dano)?dano:'')+' de dano no início do turno do dono.';
                 efeito.setAttribute('aria-label',efeito.title);linha.append(efeito);
+            }
+            const extras=[];
+            if(c.st.paralisia)extras.push(['raio','Paralisia']);
+            if(c.st.confusao)extras.push(['confusao','Confusão']);
+            if(c.st.zumbi)extras.push(['zumbi','Zumbi']);
+            if(c.habilidade?.anulada){const motivo=c.habilidade.motivo||'';extras.push([/peixes/.test(motivo)?'peixe':/bolhas/.test(motivo)?'bolha':'canto',/peixes/.test(motivo)?'Peixe':/bolhas/.test(motivo)?'Distraído':'Anulada']);}
+            for(const [tipo,nome]of extras){
+                const efeito=el('span',undefined,'estado-pixel estado-'+tipo),sprite=el('span',undefined,'mini-estado');
+                if(window.ArenaSprites)sprite.innerHTML=ArenaSprites.glifo(tipo);
+                sprite.setAttribute('aria-hidden','true');efeito.title=nome;efeito.setAttribute('aria-label',nome);efeito.append(sprite,el('span',nome));linha.append(efeito);
             }
             return linha.childElementCount?linha:null;
         }
@@ -618,7 +629,7 @@
             const antes = movimentos.capturar(estado);
             if(exibirResultadoPadrao&&antes&&proximo.vencedor!==null&&proximo.revisao!==estado.revisao&&!resultadoMostrado&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
                 resultadoPendente=true;clearTimeout(timerResultado);
-                timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},850);
+                timerResultado=setTimeout(()=>{resultadoPendente=false;if(estado?.vencedor!==null&&estado)mostrarResultado();},1150);
             }
             const mudouTurno=estado&&proximo.vencedor===null&&proximo.numTurno>estado.numTurno;
             if (mudouTurno) {

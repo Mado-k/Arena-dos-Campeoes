@@ -625,7 +625,7 @@ com dez cartas, 18 etapas e o mesmo roteiro de regras.
 
 O Dino do Google é invocado por uma abertura na própria carta, corre, salta sobre
 seu alvo e volta à carta. O dano permanece o definido no motor (incluindo Fuleco,
-proteções e limite de turnos). Kappa e Leviatã usam a mesma abertura com avatares
+proteções e limite de turnos). Kappa e Toxic Ran usam a mesma abertura com avatares
 próprios, seguida de veneno ou água. Fogo e veneno têm oito quadros de animação
 cada e aparecem abaixo do nome da criatura afetada. Outros efeitos identificam
 ataques, raios, confusão, cura, defesa, busca, captura e reciclagem.
@@ -654,3 +654,33 @@ Validação desta versão: `npm test` passou com 301 testes, 51 verificações d
 habilidades e 600 partidas aleatórias. A conferência no Chromium percorreu as
 20 etapas do tutorial em desktop e celular, os efeitos no multiplayer/co-op/2v2,
 a câmera manual e automática, pausa, saída e sincronização em segundo plano.
+
+
+### Invocações completas e ritmo (2.970)
+
+`public/sprites.js` centraliza 46 perfis visuais: personagens, armas, itens,
+feitiços e representantes, incluindo o sprite oficial do Dino. A Grávida dos
+Robôs permanece sem novo personagem até Luciano enviar seu design. Cada efeito
+usa o evento verdadeiro do motor: origem, alvo público, valor e zona apropriada.
+O perfil n036 foi corrigido para Toxic Ran; não existe carta Leviatã no catálogo
+atual. A habilidade remove os apoios/equipamentos de água adversários e não causa
+dano ao campeão. Pandora indica todas as criaturas atingidas pelo efeito, sem
+dano no lançamento; peixes e bolhas distinguem as duas armas de anulação.
+
+A duração é orçada por ação, com cenas simultâneas para vários alvos, retorno de
+câmera de 280 ms e voo de cartas de 1.050 ms, mantendo o conjunto entre um e cinco
+segundos. Cópia usa o efeito realmente copiado; Kitsune retorna ao lado próprio;
+herança indica reserva para o próximo campeão; o último uso do Dino mostra o
+cacto. As regras numéricas não foram rebalanceadas. As máquinas aguardam 3,8 segundos
+entre passos (com pequena variação no Local), dando tempo para os efeitos
+terminarem sem acumular uma longa fila de animações.
+
+Os sprites também servem de ilustração provisória quando uma carta não tem imagem
+cadastrada. Artes fornecidas depois têm prioridade. Fogo e veneno têm uma nova
+versão mais pixelada. Indicadores sob o nome incluem ainda paralisia, confusão,
+zumbificação e anulação. As quatro páginas de partida carregam o mesmo módulo.
+
+Validação 2.970: 311 testes, 51 verificações de habilidades e 600 partidas
+aleatórias. Chromium confirmou as 20 etapas do tutorial em desktop/celular,
+12 cenas com ações reais por formato de tela, os 46 modelos e as proteções de
+câmera manual, pausa, saída, reconexão e segundo plano.
