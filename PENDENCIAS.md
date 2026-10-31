@@ -196,7 +196,7 @@ Após o próximo deploy, conferir as novidades desta revisão:
 
 - [x] Botão Encerrar turno maior e destacado durante a vez, com brilho suave ao acabar as ações e respeito a movimento reduzido.
 
-## Preparação das equipes no Local — 2.460
+## Preparação das equipes no Local — 2.460 BETA
 
 - [x] Quantidade inicial de cartas em cada ficha, abaixo do bônus dos humanos.
 - [x] Adversárias acima das pessoas, com nome, representante e cartas; controles junto à equipe correspondente.
@@ -216,7 +216,7 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 - [x] Adaptação aos padrões públicos dos adversários e coordenação dos alvos dos aliados, com memória limitada à partida.
 - [x] Limite e memória da IA persistem na retomada e são restaurados quando uma gravação falha.
 
-## Interação e legibilidade — 2.480
+## Interação e legibilidade —empate BETA
 
 - [x] Dois cliques/toques na carta da própria mão executam a jogada principal; primeiro clique seleciona para leitura.
 - [x] Regras de turno, ações, auxiliares e equipamentos preservadas; cartas de oponentes e do campo continuam apenas selecionáveis pelo atalho.
@@ -224,14 +224,14 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 - [x] Alternância entre foco e tabuleiro completo mais destacada e acessível no celular.
 - [x] Changelog mostra versão atual e mudanças, com descrições voltadas aos jogadores.
 
-## Leitura da mesa e Grávida dos Robôs — 2.495
+## Leitura da mesa e Grávida dos Robôs — 2.495 BETA
 
 - [x] Cartas do tabuleiro completo e versos aumentados em mais 25%, com assentos ajustados.
 - [x] Bloco de texto das cartas na orientação normal da página, preservando posições e artes.
 - [x] Grávida dos Robôs passiva ao entrar em apoio, com busca automática sem segunda ação; sem metálica, a própria auxiliar é descartada.
 - [x] Busca respeita Fuleco, anulação e vínculo com criatura; não repete em turnos seguintes.
 
-## Imagem das cartas — 2.500
+## Imagem das cartas — 2.500 BETA
 
 - [x] Cartas do tabuleiro completo ampliadas para 120 × 200, com área de imagem de 84 pixels de altura.
 - [x] Imagens inteiras, sem recorte, com campos e pilhas ajustados e leitura na orientação da página.
@@ -240,7 +240,7 @@ mantém seu formato provisório; esta configuração adicional se aplica ao Loca
 O catálogo público consultado ainda não contém imagens cadastradas. As cartas
 continuam exibindo suas iniciais até que as artes sejam adicionadas.
 
-## Orientação e retorno da visualização — 2.510
+## Orientação e retorno da visualização — 2.510 BETA
 
 - [x] Todos os textos dos campos na orientação da página, incluindo nomes, rótulos, botões, equipamentos e contagens.
 - [x] Campos espelhados por layout; artes mantêm a orientação para o centro.
@@ -250,7 +250,7 @@ continuam exibindo suas iniciais até que as artes sejam adicionadas.
 - [x] No Local entre pessoas, posição de cada participante guardada separadamente e restaurada após a passagem do dispositivo.
 
 
-## Turnos, arenas e iniciantes — 2.535
+## Turnos, arenas e iniciantes — 2.535 BETA
 
 - [x] “É a sua vez” com OK obrigatório nos modos Local, multiplayer, co-op e treino; demais participantes mantêm o aviso de encerramento.
 - [x] Identificação das arenas 2v2, sorteio inicial e ordem agrupada por arena, incluindo início por máquinas no Local.
@@ -262,7 +262,7 @@ continuam exibindo suas iniciais até que as artes sejam adicionadas.
 No 2v2, a escolha de alvo existente é preservada. Regras definitivas do co-op
 continuam reservadas para etapa futura.
 
-## Ações, pilhas e eliminação — 2.560
+## Ações, pilhas e eliminação — 2.560 BETA
 
 - [x] Contador de ações junto ao nome de todos os participantes, inclusive máquinas; removido da barra global.
 - [x] Compra direta pela pilha com custo de uma ação, consulta gratuita do descarte e alternativas de teclado/botões.
@@ -272,32 +272,32 @@ continuam reservadas para etapa futura.
 - [x] Treino com 18 etapas pratica essas interações e substitui Marie por Guss, mantendo dez cartas e vitória garantida pelo roteiro.
 
 
-## Visibilidade das ações — 2.565
+## Visibilidade das ações — 2.565 BETA
 
 - [x] Indicadores maiores, números em negrito, fundo contrastante e marcadores ampliados.
 - [x] Destaque dourado para o participante da vez, mantendo o contador junto ao nome.
 
-## Selos da vez — 2.570
+## Selos da vez — 2.570 BETA
 
 - [x] “Sua vez” e “Joga agora” ampliados para a mesma tipografia e altura do indicador de ações.
 
-## Nome e cor da vez — 2.575
+## Nome e cor da vez — 2.575 BETA
 
 - [x] Nome apenas com o mesmo tamanho de fonte dos indicadores, sem fundo ou moldura.
 - [x] “Sua vez” na paleta escura e dourada do contador; “Joga agora” mantém o verde.
 
-## Pontuação legível — 2.580
+## Pontuação legível — 2.580 BETA
 
 - [x] “Campeões derrotados”, números, marcadores e espaçamentos ampliados em 20%, sem mudar as regras.
 
-## Revisão do tutorial — 2.585
+## Revisão do tutorial — 2.585 BETA
 
 - [x] Conferidos controles da mesa, pilhas, eliminação, indicadores, resultados e retorno da visualização.
 - [x] Incluídos OK de início de turno, treino de 18 etapas, arenas, seleção de alvos e dificuldades.
 - [x] Completadas prontidão, convite, reconexão, espectadores, habilidades, estados e representantes.
 - [x] Incluídos catálogo, filtros, detalhes e changelog; índice ampliado com os assuntos disponíveis.
 
-## Irineu e Thor Circuito — 2.595
+## Irineu e Thor Circuito — 2.595 BETA
 
 - [x] Confusão preserva sua etiqueta durante o turno afetado e publica autoataque, dano e defesa restante; expira no encerramento do dono.
 - [x] Confusão letal segue a pontuação normal de campeões e o encerramento de partida.
@@ -305,14 +305,14 @@ continuam reservadas para etapa futura.
 - [x] Thor publica aplicação/alcance; nova aplicação não encurta uma paralisia existente.
 - [x] Mantidos os limites do catálogo: Irineu 1 turno/recarga 3; Thor 1 turno contra universo Game; Fuleco amplia duração.
 
-## Avisos do treino — 2.600
+## Avisos do treino — 2.600 BETA
 
 - [x] HUD de início de turno aparece só na explicação inicial, com o OK destacado.
 - [x] Próximos turnos continuam pelo roteiro, sem nova confirmação em modal.
 - [x] Conclusão pelo guia sem aviso duplicado de vitória, preservando replay e acesso ao Local.
 - [x] Partidas normais mantêm seus avisos e resultados completos.
 
-## Orientação da Partida TUTORIAL — 2.620
+## Orientação da Partida TUTORIAL — 2.620 BETA
 
 - [x] Nome atualizado nos acessos; CTA principal da homepage trocado com Jogar agora.
 - [x] Guia ampliado, progresso visível e botão de ajuda com maior contraste.
@@ -342,7 +342,7 @@ continuam reservadas para etapa futura.
   imagens de referência e dossiês mantidos privados, fora do GitHub.
 
 
-## Todas as invocações — 2.970
+## Todas as invocações — 2.970 BETA
 
 - [x] 46 perfis com sprites/objetos próprios; inclui representantes e o Dino.
 - [x] Fogo e veneno redesenhados com pixels maiores; indicadores dos outros estados.
@@ -383,15 +383,14 @@ continuam reservadas para etapa futura.
 - [x] Encerrar turno abaixo da pilha de compra em todos os modos/visões; tutorial aponta para o novo botão.
 - [x] Salvamentos antigos migram o prazo do Dino uma única vez; salvamentos atuais preservam a preparação.
 
-## Câmera mais suave — 3.995
+## Câmera mais suave — BETA 3.995
 
 - [x] Aceleração amortecida e velocidade limitada no acompanhamento das invocações.
 - [x] Faixa de enquadramento evita perseguir cada pequeno deslocamento ou salto.
 - [x] Rolagem interna descontada antes de mover a página, evitando correções duplicadas.
 - [x] Retorno de 650 ms com aceleração e desaceleração graduais; intervalo da IA de 4,2 s acomoda o retorno.
-- [ ] Luciano avaliar a suavidade da câmera nos seus aparelhos.
 
-## Pixel arts no catálogo — 4.000
+## Pixel arts no catálogo — BETA 4.000
 
 - [x] 46 arquivos de ilustração exportados dos sprites aprovados, incluindo o Dino.
 - [x] Atualização transacional de `cartas.imagem` somente quando vazio; artes existentes preservadas.
@@ -401,7 +400,7 @@ continuam reservadas para etapa futura.
 - [x] Banco local atualizado com 46 caminhos; reexecução sem alterações e artes existentes preservadas.
 - [x] Suíte completa, recuperação do banco e servidor real verificados; catálogo/câmera conferidos no Chromium em desktop e celular.
 
-## Zumbificação e avisos — 4.010
+## Zumbificação e avisos — BETA 4.010
 
 - [x] Criaturas do universo zumbi e criaturas já zumbificadas recusam a transformação sem gastar ação nem alterar defesa/estado.
 - [x] Bloqueio verificado no Local, multiplayer e co-op, com Fuleco e após salvar/restaurar.
